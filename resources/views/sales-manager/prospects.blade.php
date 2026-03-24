@@ -1,0 +1,822 @@
+@extends('sales-manager.layout')
+
+@section('title', 'Prospects - Senior Manager')
+@section('page-title', 'Prospects')
+
+@push('styles')
+<style>
+    /* Base container styles - prevent overflow */
+    .bg-white.rounded-lg.shadow.p-6.mb-6 {
+        box-sizing: border-box;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    #prospectsCards {
+        box-sizing: border-box;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    #prospectsGrid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+    
+    @media (max-width: 1024px) {
+        #prospectsGrid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        /* Container overflow fix */
+        .bg-white.rounded-lg.shadow.p-6.mb-6 {
+            overflow-x: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 12px !important;
+            margin: 0;
+        }
+        
+        #prospectsCards {
+            overflow-x: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        #prospectsGrid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Prospect cards - prevent overflow and ensure 50% width */
+        #prospectsGrid > div {
+            max-width: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+        
+        #prospectsGrid > div > .p-5 {
+            padding: 12px !important;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+        
+        /* Ensure all text elements don't overflow */
+        #prospectsGrid > div * {
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        /* Search and filter controls */
+        .flex.items-center.justify-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .flex.gap-2 {
+            width: 100%;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 4px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .flex.gap-2 input,
+        .flex.gap-2 select {
+            padding: 8px 6px;
+            min-width: 0;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        
+        .flex.gap-2 {
+            overflow: hidden;
+        }
+        
+        .flex.gap-2 input {
+            width: 25%;
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+        
+        .flex.gap-2 select:nth-of-type(1) {
+            width: 25%;
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+        
+        .flex.gap-2 select:nth-of-type(2) {
+            width: 25%;
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+        
+        /* Prospect cards responsive */
+        .bg-white.rounded-lg.shadow {
+            padding: 16px !important;
+        }
+        
+        /* Pagination responsive */
+        #pagination {
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        /* Hide empty state on mobile */
+        .empty-state-mobile {
+            display: none !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        /* Extra small screens - keep 2 columns for 50%-50% layout */
+        #prospectsGrid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0.5rem !important;
+        }
+        
+        .bg-white.rounded-lg.shadow.p-6.mb-6 {
+            padding: 10px !important;
+        }
+    }
+    
+    .prospect-card {
+        transition: all 0.3s ease;
+    }
+    
+    .prospect-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Prospect action buttons - matching task section style */
+    .prospect-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 2px solid #f0f0f0;
+    }
+    
+    .prospect-action-btn {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    
+    .prospect-action-btn i {
+        font-size: 14px;
+    }
+    
+    .btn-short-detail {
+        background: linear-gradient(135deg, #25603F 0%, #063A1C 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 10px rgba(6, 58, 28, 0.25);
+    }
+    
+    .btn-short-detail:hover {
+        background: linear-gradient(135deg, #1e4d32 0%, #043118 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(6, 58, 28, 0.35);
+    }
+    
+    .btn-full-detail {
+        background: linear-gradient(135deg, #25603F 0%, #063A1C 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(6, 58, 28, 0.25);
+    }
+    
+    .btn-full-detail:hover {
+        background: linear-gradient(135deg, #1e4d32 0%, #043118 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(6, 58, 28, 0.35);
+    }
+    
+    /* Status pill */
+    .prospect-status {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e8f0fe;
+        color: #1a56db;
+        border: 1px solid #cdd9f6;
+    }
+    .prospect-status.pending {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fcd34d;
+    }
+    .prospect-status.verified,
+    .prospect-status.connected {
+        background: #e0f7ef;
+        color: #0b3a2d;
+        border-color: #b1e5d5;
+    }
+    .prospect-status.rejected {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-color: #fecdd3;
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="flex items-center justify-between mb-6" style="flex-wrap: wrap; gap: 12px;">
+        <div class="flex gap-2" style="flex-wrap: nowrap; align-items: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+            <input 
+                type="text" 
+                id="searchInput"
+                placeholder="Search prospects..." 
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                style="flex: 1; min-width: 0; max-width: 25%; box-sizing: border-box;"
+                onkeyup="handleSearch()"
+            >
+            <select 
+                id="statusFilter"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                style="flex: 1; min-width: 0; max-width: 25%; box-sizing: border-box;"
+                onchange="loadProspects()"
+            >
+                <option value="all">All Status</option>
+                <option value="pending_verification">Pending Verification</option>
+                <option value="verified">Verified</option>
+                <option value="rejected">Rejected</option>
+            </select>
+            <select 
+                id="userFilter"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                style="flex: 1; min-width: 0; max-width: 25%; box-sizing: border-box;"
+                onchange="loadProspects()"
+            >
+                <option value="">All Users</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12">
+        <i class="fas fa-spinner fa-spin text-gray-400 text-4xl mb-4"></i>
+        <p class="text-gray-500">Loading prospects...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-12 empty-state-mobile" style="display: none;">
+        <i class="fas fa-star text-gray-300 text-6xl mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Prospects Found</h3>
+        <p class="text-gray-500">No prospects match your current filters.</p>
+    </div>
+
+    <!-- Prospects Cards -->
+    <div id="prospectsCards" style="display: none;">
+        <div id="prospectsGrid">
+            <!-- Prospects will be loaded here -->
+        </div>
+        
+        <!-- Pagination -->
+        <div id="pagination" class="mt-6 flex items-center justify-between">
+            <!-- Pagination will be loaded here -->
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+    const API_BASE_URL = '{{ url("/api/sales-manager") }}';
+    const API_TOKEN = '{{ $api_token }}';
+    let searchTimeout = null;
+    let teamMembers = [];
+    let currentUser = null;
+
+    // Get auth headers with Bearer token
+    function getAuthHeaders() {
+        return {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_TOKEN}`,
+        };
+    }
+
+    // Load team members for filter
+    async function loadTeamMembers() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/profile`, {
+                headers: getAuthHeaders(),
+                credentials: 'same-origin',
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                currentUser = data.user;
+                teamMembers = data.team_members || [];
+                
+                // Populate user filter dropdown
+                const userFilter = document.getElementById('userFilter');
+                if (userFilter) {
+                    // Clear existing options
+                    userFilter.innerHTML = '<option value="">All Users</option>';
+                    
+                    // Add current user (manager)
+                    if (currentUser && currentUser.id) {
+                        const option = document.createElement('option');
+                        option.value = currentUser.id;
+                        option.textContent = `${currentUser.name} (Me)`;
+                        userFilter.appendChild(option);
+                    }
+                    
+                    // Add team members
+                    if (teamMembers && teamMembers.length > 0) {
+                        teamMembers.forEach(member => {
+                            if (member && member.id && member.name) {
+                                const option = document.createElement('option');
+                                option.value = member.id;
+                                option.textContent = member.name;
+                                userFilter.appendChild(option);
+                            }
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading team members:', error);
+        }
+    }
+
+    // Store all prospects data
+    let allProspects = [];
+
+    // Load prospects
+    async function loadProspects(page = 1) {
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const prospectsCards = document.getElementById('prospectsCards');
+        const prospectsGrid = document.getElementById('prospectsGrid');
+        
+        loadingState.style.display = 'block';
+        emptyState.style.display = 'none';
+        prospectsCards.style.display = 'none';
+
+        try {
+            const status = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchInput').value;
+            const assignedTo = document.getElementById('userFilter')?.value || '';
+            
+            const params = new URLSearchParams({
+                page: page,
+                per_page: 15,
+            });
+            
+            if (status !== 'all') {
+                params.append('verification_status', status);
+            }
+            
+            if (search) {
+                params.append('search', search);
+            }
+            
+            if (assignedTo) {
+                params.append('assigned_to', assignedTo);
+            }
+
+            const response = await fetch(`${API_BASE_URL}/prospects?${params}`, {
+                headers: getAuthHeaders(),
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load prospects');
+            }
+
+            const data = await response.json();
+
+            if (data.data && data.data.length > 0) {
+                allProspects = data.data;
+                prospectsGrid.innerHTML = '';
+                data.data.forEach(prospect => {
+                    const card = createProspectCard(prospect);
+                    prospectsGrid.appendChild(card);
+                });
+                
+                renderPagination(data);
+                prospectsCards.style.display = 'block';
+                emptyState.style.display = 'none';
+            } else {
+                prospectsCards.style.display = 'none';
+                emptyState.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error loading prospects:', error);
+            alert('Failed to load prospects. Please try again.');
+        } finally {
+            loadingState.style.display = 'none';
+        }
+    }
+
+    // Create prospect card
+    function createProspectCard(prospect) {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200';
+        card.id = `prospect-card-${prospect.id}`;
+        card.style.cssText = 'max-width: 100%; width: 100%; box-sizing: border-box; min-width: 0; overflow: hidden;';
+        
+        const createdBy = prospect.telecaller ? prospect.telecaller.name : (prospect.created_by ? prospect.created_by.name : 'N/A');
+        const createdAt = new Date(prospect.created_at).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        const statusBadge = getProspectStatusBadge(prospect);
+
+        card.innerHTML = `
+            <div class="p-5" style="max-width: 100%; box-sizing: border-box; overflow: hidden; word-wrap: break-word;">
+                <div class="flex items-start justify-between mb-3" style="gap: 8px; min-width: 0;">
+                    <div class="flex-1" style="min-width: 0; overflow: hidden;">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-1" style="word-wrap: break-word; overflow-wrap: break-word;">${prospect.customer_name || 'N/A'}</h3>
+                    </div>
+                    ${statusBadge ? `<span class="prospect-status ${statusBadge.className}" style="flex-shrink: 0;">${statusBadge.label}</span>` : ''}
+                </div>
+                
+                <div class="space-y-2 mb-4">
+                    ${prospect.phone ? `
+                    <div class="flex items-center text-sm text-gray-600">
+                        <i class="fas fa-phone w-5 text-gray-400"></i>
+                        <span>${prospect.phone}</span>
+                    </div>
+                    ` : ''}
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-calendar w-5 text-gray-400"></i>
+                        <span>${createdAt}</span>
+                    </div>
+                </div>
+
+                <div class="prospect-actions">
+                    <a 
+                        href="/sales-manager/prospects/${prospect.id}" 
+                        class="prospect-action-btn btn-full-detail"
+                        title="Full Detail"
+                    >
+                        <i class="fas fa-eye"></i>
+                        <span>View Detail</span>
+                    </a>
+                    <button 
+                        class="prospect-action-btn btn-short-detail" 
+                        onclick="openShortDetailModal(${prospect.id})"
+                        title="Short Detail"
+                    >
+                        <i class="fas fa-info-circle"></i>
+                        <span>Short Detail</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Expandable Details Section -->
+            <div 
+                id="details-${prospect.id}" 
+                class="hidden border-t border-gray-200 bg-gray-50 p-5"
+                style="transition: all 0.3s ease;"
+            >
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        ${prospect.lead_score ? `
+                        <div class="col-span-2">
+                            <span class="text-gray-500">Lead Score:</span>
+                            <span class="font-medium text-gray-900 ml-2">${renderStarRating(prospect.lead_score)} <span class="text-gray-500 text-xs">(${prospect.lead_score}/5)</span></span>
+                        </div>
+                        ` : ''}
+                        <div>
+                            <span class="text-gray-500">Phone:</span>
+                            <span class="font-medium text-gray-900 ml-2">${prospect.phone || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Budget:</span>
+                            <span class="font-medium text-gray-900 ml-2">${prospect.budget ? '₹' + parseFloat(prospect.budget).toLocaleString('en-IN') : 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Location:</span>
+                            <span class="font-medium text-gray-900 ml-2">${prospect.preferred_location || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Size:</span>
+                            <span class="font-medium text-gray-900 ml-2">${prospect.size || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Purpose:</span>
+                            <span class="font-medium text-gray-900 ml-2">${prospect.purpose === 'end_user' ? 'End User' : (prospect.purpose === 'investment' ? 'Investment' : 'N/A')}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Possession:</span>
+                            <span class="font-medium text-gray-900 ml-2">${prospect.possession || 'N/A'}</span>
+                        </div>
+                    </div>
+                    ${prospect.remark ? `
+                    <div class="mt-3 p-3 bg-white rounded border border-gray-200">
+                        <span class="text-xs font-medium text-gray-500 uppercase">Remark:</span>
+                        <p class="text-sm text-gray-700 mt-1">${prospect.remark}</p>
+                    </div>
+                    ` : ''}
+                    ${prospect.manager_remark ? `
+                    <div class="mt-3 p-3 bg-green-50 rounded border border-green-200">
+                        <span class="text-xs font-medium text-green-700 uppercase">Manager Remark:</span>
+                        <p class="text-sm text-green-800 mt-1">${prospect.manager_remark}</p>
+                    </div>
+                    ` : ''}
+                    ${prospect.lead_status ? `
+                    <div class="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                        <span class="text-xs font-medium text-blue-700 uppercase">Lead Status:</span>
+                        <span class="ml-2 inline-block px-3 py-1 rounded-full text-xs font-semibold ${getLeadStatusBadgeClass(prospect.lead_status)}">${getLeadStatusLabel(prospect.lead_status)}</span>
+                    </div>
+                    ` : ''}
+                    ${prospect.rejection_reason ? `
+                    <div class="mt-3 p-3 bg-red-50 rounded border border-red-200">
+                        <span class="text-xs font-medium text-red-700 uppercase">Rejection Reason:</span>
+                        <p class="text-sm text-red-800 mt-1">${prospect.rejection_reason}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        return card;
+    }
+
+    function getLeadStatusLabel(status) {
+        const labels = {
+            'hot': 'Hot',
+            'warm': 'Warm',
+            'cold': 'Cold',
+            'junk': 'Junk'
+        };
+        return labels[status] || status;
+    }
+    
+    function getLeadStatusBadgeClass(status) {
+        const classes = {
+            'hot': 'bg-red-100 text-red-800 border-red-200',
+            'warm': 'bg-orange-100 text-orange-800 border-orange-200',
+            'cold': 'bg-blue-100 text-blue-800 border-blue-200',
+            'junk': 'bg-gray-100 text-gray-800 border-gray-200'
+        };
+        return classes[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+    
+    // Render star rating
+    function renderStarRating(rating) {
+        if (!rating || rating < 1 || rating > 5) {
+            return '<span class="text-gray-400">No rating</span>';
+        }
+        let stars = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= rating) {
+                stars += '<span style="color: #fbbf24; font-size: 16px;">★</span>';
+            } else {
+                stars += '<span style="color: #d1d5db; font-size: 16px;">☆</span>';
+            }
+        }
+        return stars;
+    }
+    
+    // Get status badge
+    function getStatusBadge(status) {
+        const badges = {
+            'pending_verification': '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>',
+            'pending': '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>',
+            'verified': '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Verified</span>',
+            'rejected': '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>',
+        };
+        return badges[status] || '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">' + status + '</span>';
+    }
+
+    // Prospect card status pill mapping
+    function getProspectStatusBadge(prospect) {
+        const status = (prospect.call_status || prospect.verification_status || 'pending').toLowerCase();
+        const map = {
+            'pending_verification': { label: 'Pending', className: 'pending' },
+            'pending': { label: 'Pending', className: 'pending' },
+            'connected': { label: 'Connected', className: 'connected' },
+            'verified': { label: 'Verified', className: 'verified' },
+            'rejected': { label: 'Rejected', className: 'rejected' }
+        };
+        return map[status] || { label: status.charAt(0).toUpperCase() + status.slice(1), className: 'pending' };
+    }
+
+    // Render pagination
+    function renderPagination(data) {
+        const pagination = document.getElementById('pagination');
+        if (data.last_page <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+
+        let html = '<div class="flex items-center gap-2">';
+        
+        // Previous button
+        if (data.current_page > 1) {
+            html += `<button onclick="loadProspects(${data.current_page - 1})" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>`;
+        }
+        
+        // Page numbers
+        for (let i = 1; i <= data.last_page; i++) {
+            if (i === 1 || i === data.last_page || (i >= data.current_page - 2 && i <= data.current_page + 2)) {
+                html += `<button onclick="loadProspects(${i})" class="px-3 py-2 border border-gray-300 rounded-lg ${i === data.current_page ? 'bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white' : 'hover:bg-gray-50'}">${i}</button>`;
+            } else if (i === data.current_page - 3 || i === data.current_page + 3) {
+                html += `<span class="px-3 py-2">...</span>`;
+            }
+        }
+        
+        // Next button
+        if (data.current_page < data.last_page) {
+            html += `<button onclick="loadProspects(${data.current_page + 1})" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>`;
+        }
+        
+        html += '</div>';
+        html += `<div class="text-sm text-gray-500">Showing ${data.from} to ${data.to} of ${data.total} prospects</div>`;
+        
+        pagination.innerHTML = html;
+    }
+
+    // Toggle details section
+    function toggleDetails(prospectId) {
+        const detailsDiv = document.getElementById(`details-${prospectId}`);
+        const chevron = document.getElementById(`chevron-${prospectId}`);
+        const btn = document.getElementById(`viewDetailsBtn-${prospectId}`);
+        
+        if (detailsDiv.classList.contains('hidden')) {
+            detailsDiv.classList.remove('hidden');
+            chevron.classList.remove('fa-chevron-down');
+            chevron.classList.add('fa-chevron-up');
+            btn.innerHTML = `<i class="fas fa-chevron-up mr-2" id="chevron-${prospectId}"></i> Hide Details`;
+        } else {
+            detailsDiv.classList.add('hidden');
+            chevron.classList.remove('fa-chevron-up');
+            chevron.classList.add('fa-chevron-down');
+            btn.innerHTML = `<i class="fas fa-chevron-down mr-2" id="chevron-${prospectId}"></i> View Details`;
+        }
+    }
+
+    // Open WhatsApp
+    function openWhatsApp(phone) {
+        if (!phone || phone === 'N/A') {
+            alert('Phone number not available');
+            return;
+        }
+        const cleanedPhone = phone.replace(/[^\d+]/g, '');
+        if (!cleanedPhone) {
+            alert('Invalid phone number');
+            return;
+        }
+        window.open(`https://wa.me/${cleanedPhone}`, '_blank');
+    }
+
+    // Make call
+    function makeCall(phone) {
+        if (!phone || phone === 'N/A') {
+            alert('Phone number not available');
+            return;
+        }
+        const cleanedPhone = phone.replace(/[^\d+]/g, '');
+        if (!cleanedPhone) {
+            alert('Invalid phone number');
+            return;
+        }
+        window.location.href = `tel:${cleanedPhone}`;
+    }
+
+    // Handle search with debounce
+    function handleSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadProspects(1);
+        }, 500);
+    }
+
+    // Load prospects on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTeamMembers();
+        loadProspects();
+    });
+
+    // Short Detail Modal Functions
+    function openShortDetailModal(prospectId) {
+        const prospect = allProspects.find(p => p.id === prospectId);
+        if (!prospect) return;
+        
+        const modal = document.getElementById('shortDetailModal');
+        const content = document.getElementById('shortDetailContent');
+        
+        content.innerHTML = `
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    ${prospect.budget ? `
+                    <div>
+                        <span class="text-gray-500">Budget:</span>
+                        <span class="font-medium text-gray-900 ml-2">₹${parseFloat(prospect.budget).toLocaleString('en-IN')}</span>
+                    </div>
+                    ` : ''}
+                    ${prospect.preferred_location ? `
+                    <div>
+                        <span class="text-gray-500">Location:</span>
+                        <span class="font-medium text-gray-900 ml-2">${prospect.preferred_location}</span>
+                    </div>
+                    ` : ''}
+                    ${prospect.size ? `
+                    <div>
+                        <span class="text-gray-500">Size:</span>
+                        <span class="font-medium text-gray-900 ml-2">${prospect.size}</span>
+                    </div>
+                    ` : ''}
+                    ${prospect.purpose ? `
+                    <div>
+                        <span class="text-gray-500">Purpose:</span>
+                        <span class="font-medium text-gray-900 ml-2">${prospect.purpose === 'end_user' ? 'End User' : (prospect.purpose === 'investment' ? 'Investment' : prospect.purpose)}</span>
+                    </div>
+                    ` : ''}
+                    ${prospect.possession ? `
+                    <div>
+                        <span class="text-gray-500">Possession:</span>
+                        <span class="font-medium text-gray-900 ml-2">${prospect.possession}</span>
+                    </div>
+                    ` : ''}
+                    ${prospect.lead_score ? `
+                    <div class="col-span-2">
+                        <span class="text-gray-500">Lead Score:</span>
+                        <span class="font-medium text-gray-900 ml-2">${renderStarRating(prospect.lead_score)} <span class="text-gray-500 text-xs">(${prospect.lead_score}/5)</span></span>
+                    </div>
+                    ` : ''}
+                </div>
+                ${prospect.remark || prospect.employee_remark ? `
+                <div class="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
+                    <span class="text-xs font-medium text-gray-500 uppercase">Remark:</span>
+                    <p class="text-sm text-gray-700 mt-1">${prospect.remark || prospect.employee_remark || 'N/A'}</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        modal.style.display = 'block';
+    }
+
+    function closeShortDetailModal() {
+        document.getElementById('shortDetailModal').style.display = 'none';
+    }
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+        const modal = document.getElementById('shortDetailModal');
+        if (event.target === modal) {
+            closeShortDetailModal();
+        }
+    }
+</script>
+
+<!-- Short Detail Modal -->
+<div id="shortDetailModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0;">
+            <h2 style="margin: 0; font-size: 20px; font-weight: 600; color: #063A1C;">Short Detail</h2>
+            <button class="close-modal" onclick="closeShortDetailModal()" style="background: none; border: none; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+        <div id="shortDetailContent" class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <!-- Content will be populated dynamically -->
+        </div>
+    </div>
+</div>
+@endpush
+

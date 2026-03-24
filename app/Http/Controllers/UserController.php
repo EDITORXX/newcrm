@@ -1,0 +1,360 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Models\Role;
+use App\Models\SystemSettings;
+use App\Services\NewUserMailService;
+use App\Services\NotificationService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+
+class UserController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function index(Request $request)
+    {
+        $currentUser = $request->user();
+        
+        // Ensure role is loaded
+        if ($currentUser && !$currentUser->relationLoaded('role')) {
+            $currentUser->load('role');
+        }
+        
+        if (!$currentUser->canManageUsers() && !$currentUser->isSalesHead()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $query = User::with(['role', 'manager']);
+
+        // If Sales Head, show only team members
+        if ($currentUser->isSalesHead() && !$currentUser->canManageUsers()) {
+            $teamMemberIds = $currentUser->getAllTeamMemberIds();
+            if (!empty($teamMemberIds)) {
+                $query->whereIn('id', array_merge([$currentUser->id], $teamMemberIds));
+            } else {
+                // If no team members, show only the Sales Head
+                $query->where('id', $currentUser->id);
+            }
+        }
+
+        // Hide admin users from CRM view
+        if ($currentUser->isCrm() && !$currentUser->isAdmin()) {
+            $query->whereHas('role', function($q) {
+                $q->where('slug', '!=', Role::ADMIN);
+            });
+        }
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('role')) {
+            $query->whereHas('role', function ($q) use ($request) {
+                $q->where('slug', $request->role);
+            });
+        }
+
+        $users = $query->latest()->paginate(15);
+        $roles = Role::where('is_active', true)->get();
+
+        // Hierarchy data (all active users with role + manager, for org chart)
+        $hierarchyUsers = User::with(['role', 'manager'])
+            ->where('is_active', true)
+            ->get()
+            ->map(fn($u) => [
+                'id'        => $u->id,
+                'name'      => $u->name,
+                'role'      => $u->role->name ?? 'Unknown',
+                'role_slug' => $u->role->slug ?? '',
+                'manager_id'=> $u->manager_id,
+                'avatar'    => strtoupper(substr($u->name, 0, 1)),
+            ])->values()->toArray();
+
+        return view('users.index', compact('users', 'roles', 'hierarchyUsers'));
+    }
+
+    public function create()
+    {
+        $currentUser = request()->user();
+        
+        if (!$currentUser->canManageUsers()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $roles = Role::where('is_active', true)->get();
+        
+        // Filter roles for CRM users - only allow Sales Executive, Assistant Sales Manager, Senior Manager
+        if ($currentUser->isCrm() && !$currentUser->isAdmin()) {
+            $roles = $roles->filter(function($role) {
+                return in_array($role->slug, [Role::SALES_EXECUTIVE, Role::ASSISTANT_SALES_MANAGER, Role::SALES_MANAGER]);
+            });
+        }
+        
+        $managers = User::where('is_active', true)
+            ->whereHas('role', function($q) {
+                $q->whereIn('slug', [Role::ADMIN, Role::CRM, Role::SALES_MANAGER, Role::SENIOR_MANAGER, Role::ASSISTANT_SALES_MANAGER]);
+            })
+            ->with('role')
+            ->get();
+
+        return view('users.form', [
+            'user' => null,
+            'roles' => $roles,
+            'managers' => $managers,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $currentUser = $request->user();
+        
+        if (!$currentUser->canManageUsers()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'phone' => 'nullable|string|max:20',
+            'role_id' => 'required|exists:roles,id',
+            'manager_id' => 'nullable|exists:users,id',
+            'is_active' => 'boolean',
+        ]);
+
+        // Validate role_id - CRM users cannot create Admin or CRM users
+        if ($currentUser->isCrm() && !$currentUser->isAdmin()) {
+            $role = Role::find($validated['role_id']);
+            if ($role && in_array($role->slug, [Role::ADMIN, Role::CRM])) {
+                return redirect()->back()
+                    ->withErrors(['role_id' => 'CRM users cannot create Admin or CRM users.'])
+                    ->withInput();
+            }
+        }
+
+        $plainPassword = $validated['password'];
+        $validated['password'] = Hash::make($validated['password']);
+        $validated['is_active'] = $request->has('is_active') ? true : false;
+
+        $user = User::create($validated);
+
+        if (filter_var(SystemSettings::get('send_welcome_email_to_new_user', '1'), FILTER_VALIDATE_BOOLEAN)) {
+            app(NewUserMailService::class)->sendWelcomeEmailIfEnabled($user, $plainPassword);
+        }
+        if (filter_var(SystemSettings::get('notify_admin_on_new_user', '1'), FILTER_VALIDATE_BOOLEAN)) {
+            app(NotificationService::class)->notifyAdminsNewUser($user);
+        }
+
+        return redirect()->route('users.index')
+            ->with('success', 'User created successfully.');
+    }
+
+    public function show(User $user)
+    {
+        $currentUser = request()->user();
+        
+        if (!$currentUser->canManageUsers() && $currentUser->id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $user->load(['role', 'manager', 'teamMembers.role']);
+
+        return view('users.show', compact('user'));
+    }
+
+    /**
+     * Send credentials email to existing user (new temp password, then email).
+     */
+    public function sendCredentialsEmail(User $user)
+    {
+        $currentUser = request()->user();
+        if (!$currentUser->canManageUsers()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            $user->refresh();
+            $user->load(['role', 'manager']);
+            $tempPassword = Str::random(10);
+            $user->update(['password' => Hash::make($tempPassword)]);
+            app(NewUserMailService::class)->sendCredentialsEmail($user, $tempPassword);
+            return redirect()->back()->with('success', 'Credentials email sent to ' . $user->email);
+        } catch (\Exception $e) {
+            Log::error('Send credentials email failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to send: ' . $e->getMessage());
+        }
+    }
+
+    public function edit(User $user)
+    {
+        $currentUser = request()->user();
+        
+        if (!$currentUser->canManageUsers() && $currentUser->id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $roles = Role::where('is_active', true)->get();
+        
+        // Filter roles for CRM users - only allow Sales Executive, Assistant Sales Manager, Senior Manager
+        if ($currentUser->isCrm() && !$currentUser->isAdmin()) {
+            $roles = $roles->filter(function($role) {
+                return in_array($role->slug, [Role::SALES_EXECUTIVE, Role::ASSISTANT_SALES_MANAGER, Role::SALES_MANAGER]);
+            });
+        }
+        
+        $managers = User::where('is_active', true)
+            ->where('id', '!=', $user->id)
+            ->whereHas('role', function($q) {
+                $q->whereIn('slug', [Role::ADMIN, Role::CRM, Role::SALES_MANAGER, Role::SENIOR_MANAGER, Role::ASSISTANT_SALES_MANAGER]);
+            })
+            ->with('role')
+            ->get();
+
+        return view('users.form', [
+            'user' => $user,
+            'roles' => $roles,
+            'managers' => $managers,
+        ]);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $currentUser = $request->user();
+        
+        if (!$currentUser->canManageUsers() && $currentUser->id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
+            'password' => 'sometimes|nullable|string|min:8',
+            'phone' => 'nullable|string|max:20',
+            'role_id' => 'sometimes|exists:roles,id',
+            'manager_id' => 'nullable|exists:users,id',
+            'is_active' => 'boolean',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'current_password' => 'sometimes|required_with:password',
+        ]);
+
+        // Handle password change with current password verification
+        if (isset($validated['password']) && !empty($validated['password'])) {
+            if (isset($validated['current_password'])) {
+                if (!Hash::check($validated['current_password'], $user->password)) {
+                    if ($request->expectsJson() || $request->is('api/*')) {
+                        return response()->json(['message' => 'Current password is incorrect'], 422);
+                    }
+                    return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect']);
+                }
+            }
+            $validated['password'] = Hash::make($validated['password']);
+            unset($validated['current_password']);
+        } else {
+            unset($validated['password'], $validated['current_password']);
+        }
+        
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if exists
+            if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+            
+            // Store new profile picture
+            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+            $validated['profile_picture'] = $path;
+        } else {
+            unset($validated['profile_picture']);
+        }
+
+        // Only Admin or CRM can change roles
+        if (isset($validated['role_id'])) {
+            if (!$currentUser->canManageUsers()) {
+                unset($validated['role_id']);
+            } else {
+                // CRM users cannot assign Admin or CRM roles
+                if ($currentUser->isCrm() && !$currentUser->isAdmin()) {
+                    $role = Role::find($validated['role_id']);
+                    if ($role && in_array($role->slug, [Role::ADMIN, Role::CRM])) {
+                        if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                            return response()->json(['message' => 'CRM users cannot assign Admin or CRM roles'], 403);
+                        }
+                        return redirect()->back()
+                            ->withErrors(['role_id' => 'CRM users cannot assign Admin or CRM roles.'])
+                            ->withInput();
+                    }
+                }
+                // Log role change for audit
+                if ($user->role_id != $validated['role_id']) {
+                    $oldRole = $user->role->name ?? 'Unknown';
+                    $newRole = Role::find($validated['role_id'])->name ?? 'Unknown';
+                    Log::info("Role changed for user {$user->id} ({$user->name}): {$oldRole} -> {$newRole}", [
+                        'changed_by' => $currentUser->id,
+                        'changed_by_name' => $currentUser->name,
+                    ]);
+                }
+            }
+        }
+
+        if (isset($validated['is_active'])) {
+            $validated['is_active'] = $request->has('is_active') ? true : false;
+        }
+
+        $user->update($validated);
+        $user->refresh();
+
+        // Return JSON for AJAX requests
+        if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User updated successfully.',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'profile_picture' => $user->profile_picture ? asset('storage/' . $user->profile_picture) : null,
+                ]
+            ]);
+        }
+
+        return redirect()->route('users.show', $user)
+            ->with('success', 'User updated successfully. You can now send credentials email with the new details.');
+    }
+
+    public function destroy(User $user)
+    {
+        $currentUser = request()->user();
+        
+        // Only Admin can delete users
+        if (!$currentUser->isAdmin()) {
+            abort(403, 'Only administrators can delete users.');
+        }
+
+        if ($currentUser->id === $user->id) {
+            return redirect()->route('users.index')
+                ->with('error', 'Cannot delete your own account.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('users.index')
+            ->with('success', 'User deleted successfully.');
+    }
+}
+
