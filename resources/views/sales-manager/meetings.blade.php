@@ -347,38 +347,36 @@
         }
         .filters {
             flex-direction: row;
-            flex-wrap: nowrap;
-            gap: 4px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .filters .filter-select,
         .filters .filter-btn {
-            width: 25%;
-            flex: 0 0 25%;
-            padding: 8px 6px;
-            font-size: 12px;
+            width: calc(50% - 4px);
+            flex: 1 1 calc(50% - 4px);
+            padding: 10px 12px;
+            font-size: 13px;
             box-sizing: border-box;
-        }
-        h2.text-2xl {
-            display: none !important;
-        }
-        div[style*="display: flex"][style*="justify-content: space-between"] > a.btn-primary,
-        div[style*="display: flex"][style*="justify-content: space-between"] > button.btn-primary {
-            display: none !important;
         }
         .filters .filter-btn.btn.btn-primary {
             display: flex !important;
         }
         div[style*="display: flex"][style*="justify-content: space-between"] {
-            margin-bottom: 0 !important;
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
+        }
+        div[style*="display: flex"][style*="justify-content: space-between"] > div:last-child {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         .mobile-text {
             display: inline;
         }
         .desktop-text {
-            display: none;
+            display: inline;
         }
         #customDateInputs {
             width: 100%;

@@ -128,19 +128,18 @@
             display: inline; /* Shown on desktop */
         }
         
-        /* Mobile: Single line header with user name and time */
+        /* Mobile: Keep desktop header hierarchy, just compress spacing */
         @media (max-width: 767px) {
             .header {
-                padding: 10px 12px;
+                padding: 12px;
                 margin-bottom: 12px;
-                flex-direction: row;
-                align-items: center;
-                gap: 8px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
             }
             
             .header-top {
-                flex: 1;
-                min-width: 0;
+                width: 100%;
             }
             
             .header-title-mobile {
@@ -148,18 +147,20 @@
                 line-height: 1.3;
                 width: 100%;
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 6px;
             }
             
-            /* Hide page title on mobile */
             .header-page-title-desktop {
-                display: none !important;
+                display: block !important;
+                width: 100%;
+                font-size: 20px;
             }
             
-            /* Show user info on mobile */
             .header-user-info-mobile {
                 display: flex;
-                flex: 1;
+                width: 100%;
                 min-width: 0;
             }
             
@@ -176,14 +177,14 @@
             }
             
             .header-actions {
-                flex: 0 0 auto;
-                width: auto;
+                width: 100%;
             }
             
             .header-actions-row {
-                flex-direction: column;
-                gap: 4px;
-                align-items: flex-end;
+                flex-direction: row;
+                gap: 8px;
+                align-items: center;
+                justify-content: space-between;
             }
             
             #datetimeClock {
@@ -201,7 +202,8 @@
             }
             
             .header-user-name-desktop {
-                display: none !important;
+                display: inline-flex !important;
+                max-width: calc(100% - 112px);
             }
         }
         .btn { 
