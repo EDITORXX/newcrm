@@ -594,10 +594,10 @@
     }
     .asm-stat-card {
         border-radius: 18px;
-        border: 1px solid #e4e0d7;
-        background: #fff !important;
-        box-shadow: 0 12px 26px rgba(16, 24, 20, 0.05) !important;
-        color: #18201b !important;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: linear-gradient(135deg, #0a4e39 0%, #126347 52%, #1f7a59 100%) !important;
+        box-shadow: 0 18px 36px rgba(6, 58, 28, 0.18) !important;
+        color: #fff !important;
         position: relative;
         overflow: hidden;
     }
@@ -605,7 +605,7 @@
         content: '';
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at top right, rgba(13,107,79,0.08), transparent 45%);
+        background: radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 42%);
         pointer-events: none;
     }
     .asm-stat-card .stat-head {
@@ -620,19 +620,20 @@
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: #667068 !important;
+        color: rgba(255,255,255,0.68) !important;
         margin-bottom: 8px;
     }
     .asm-stat-card .stat-value {
         font-size: 32px;
         font-weight: 700;
-        color: #18201b !important;
+        color: #ffffff !important;
         line-height: 1;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.16);
     }
     .asm-stat-card .stat-label {
         margin-top: 6px;
         font-size: 13px;
-        color: #667068 !important;
+        color: rgba(255,255,255,0.92) !important;
     }
     .asm-stat-card .stat-icon {
         width: 44px;
@@ -641,9 +642,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: #e6f3ee;
+        background: rgba(255,255,255,0.92);
         color: #0d6b4f;
         font-size: 16px;
+        box-shadow: 0 10px 22px rgba(0,0,0,0.12);
     }
     .asm-panel {
         background: #fff;

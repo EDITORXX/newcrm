@@ -358,9 +358,31 @@
             padding: 0 12px;
         }
         
-        /* Sidebar Toggle Button - Hidden (not needed for icon-only mode) */
+        /* Sidebar Toggle Button */
         .sidebar-toggle {
-            display: none !important; /* Hide toggle button - sidebar always icon-only */
+            display: none;
+            position: fixed;
+            top: 22px;
+            left: 212px;
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            background: linear-gradient(135deg, #12382c 0%, #0b241c 100%);
+            color: #fff;
+            box-shadow: 0 14px 28px rgba(0,0,0,0.22);
+            z-index: 1101;
+            align-items: center;
+            justify-content: center;
+            transition: left 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .sidebar-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 34px rgba(0,0,0,0.28);
+            background: linear-gradient(135deg, #174736 0%, #0d2c22 100%);
+        }
+        .sidebar-toggle-icon {
+            transition: transform 0.25s ease;
         }
         
         /* Main Content - Mobile First: Full width */
@@ -451,10 +473,7 @@
                 display: none !important;
             }
             .sidebar-toggle {
-                top: 50%;
-                left: 52px; /* Position on right edge of 64px sidebar */
-                transform: translateY(-50%);
-                border-radius: 50%;
+                display: inline-flex !important;
             }
             #datetimeClock {
                 font-size: 14px;
@@ -737,6 +756,34 @@
         body.asm-shell html body #mainContent {
             background: transparent !important;
         }
+        body.asm-shell.sidebar-collapsed #sidebar,
+        body.asm-shell.sidebar-collapsed #sidebar.sidebar-expanded,
+        body.asm-shell.sidebar-collapsed #sidebar.sidebar-hidden {
+            width: 78px !important;
+        }
+        body.asm-shell.sidebar-collapsed #sidebar > div:first-child {
+            padding: 18px 10px 14px;
+            text-align: center;
+        }
+        body.asm-shell.sidebar-collapsed #sidebar > div:first-child h2,
+        body.asm-shell.sidebar-collapsed #sidebar > div:first-child p {
+            display: none !important;
+        }
+        body.asm-shell.sidebar-collapsed #sidebar nav {
+            padding: 10px 8px;
+        }
+        body.asm-shell.sidebar-collapsed .sidebar-link {
+            justify-content: center !important;
+            padding: 12px 10px;
+            gap: 0;
+        }
+        body.asm-shell.sidebar-collapsed .sidebar-link span {
+            display: none !important;
+        }
+        body.asm-shell.sidebar-collapsed .sidebar-link i {
+            margin-right: 0 !important;
+            width: 18px;
+        }
         @media (min-width: 768px) {
             body.asm-shell #mainContent,
             body.asm-shell div#mainContent,
@@ -744,6 +791,18 @@
                 margin-left: 232px !important;
                 width: calc(100% - 232px) !important;
             }
+            body.asm-shell.sidebar-collapsed #mainContent,
+            body.asm-shell.sidebar-collapsed div#mainContent,
+            body.asm-shell.sidebar-collapsed html body #mainContent {
+                margin-left: 78px !important;
+                width: calc(100% - 78px) !important;
+            }
+        }
+        body.asm-shell.sidebar-collapsed .sidebar-toggle {
+            left: 58px;
+        }
+        body.asm-shell.sidebar-collapsed .sidebar-toggle-icon {
+            transform: rotate(180deg);
         }
         body.asm-shell #datetimeClock {
             background: linear-gradient(135deg, #0d6b4f 0%, #0f5b45 100%);
@@ -839,16 +898,26 @@
     <script>
         // Mobile detection and initial layout - run immediately to override inline styles
         (function() {
+            function isDesktopSidebarCollapsed() {
+                try { return localStorage.getItem('asm_sidebar_collapsed') === '1'; } catch (e) { return false; }
+            }
+
             function fixMobileLayout() {
                 const isMobile = window.innerWidth < 768;
                 const sidebar = document.getElementById('sidebar');
                 const mainContent = document.getElementById('mainContent');
+                const sidebarToggle = document.getElementById('sidebarToggle');
+                const collapsed = !isMobile && isDesktopSidebarCollapsed();
                 
                 if (isMobile) {
                     // Mobile: Hide sidebar and remove left margin from mainContent
+                    document.body.classList.remove('sidebar-collapsed');
                     if (sidebar) {
                         sidebar.style.display = 'none';
                         sidebar.style.width = '0';
+                    }
+                    if (sidebarToggle) {
+                        sidebarToggle.style.display = 'none';
                     }
                     // Override inline style on mainContent using setProperty with important
                     if (mainContent) {
@@ -859,15 +928,19 @@
                         mainContent.style.setProperty('left', '0', 'important');
                     }
                 } else {
-                    // Desktop: Icon-only sidebar
+                    document.body.classList.toggle('sidebar-collapsed', collapsed);
+                    // Desktop: premium collapsible sidebar
                     if (sidebar) {
                         sidebar.classList.remove('sidebar-expanded', 'sidebar-hidden');
-                        sidebar.style.width = '232px';
+                        sidebar.style.width = collapsed ? '78px' : '232px';
                         sidebar.style.display = 'block';
                     }
+                    if (sidebarToggle) {
+                        sidebarToggle.style.display = 'inline-flex';
+                    }
                     if (mainContent) {
-                        mainContent.style.setProperty('margin-left', '232px', 'important');
-                        mainContent.style.setProperty('width', 'calc(100% - 232px)', 'important');
+                        mainContent.style.setProperty('margin-left', collapsed ? '78px' : '232px', 'important');
+                        mainContent.style.setProperty('width', collapsed ? 'calc(100% - 78px)' : 'calc(100% - 232px)', 'important');
                     }
                 }
             }
@@ -889,7 +962,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
     
     <!-- Sidebar Toggle Button -->
-    <button id="sidebarToggle" class="sidebar-toggle" title="Toggle Sidebar" style="display: none;">
+    <button id="sidebarToggle" class="sidebar-toggle" title="Toggle Navigation" aria-label="Toggle Navigation" style="display: none;">
         <i class="fas fa-chevron-left sidebar-toggle-icon" id="sidebarToggleIcon"></i>
     </button>
     
@@ -1258,9 +1331,11 @@
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
+            const sidebarToggle = document.getElementById('sidebarToggle');
             
             function updateLayout() {
                 const isMobile = window.innerWidth <= 767;
+                const isCollapsed = !isMobile && document.body.classList.contains('sidebar-collapsed');
                 
                 if (sidebar) {
                     if (isMobile) {
@@ -1268,11 +1343,14 @@
                         sidebar.style.display = 'none';
                         sidebar.style.width = '0';
                     } else {
-                        // Desktop: Icon-only (64px)
+                        // Desktop: collapsible navigation
                         sidebar.classList.remove('sidebar-expanded', 'sidebar-hidden');
-                        sidebar.style.width = '232px';
+                        sidebar.style.width = isCollapsed ? '78px' : '232px';
                         sidebar.style.display = 'block';
                     }
+                }
+                if (sidebarToggle) {
+                    sidebarToggle.style.display = isMobile ? 'none' : 'inline-flex';
                 }
                 
                 if (mainContent) {
@@ -1284,11 +1362,22 @@
                         mainContent.style.setProperty('padding-right', '0', 'important');
                         mainContent.style.setProperty('left', '0', 'important');
                     } else {
-                        // Desktop: 64px margin for icon-only sidebar
-                        mainContent.style.setProperty('margin-left', '232px', 'important');
-                        mainContent.style.setProperty('width', 'calc(100% - 232px)', 'important');
+                        mainContent.style.setProperty('margin-left', isCollapsed ? '78px' : '232px', 'important');
+                        mainContent.style.setProperty('width', isCollapsed ? 'calc(100% - 78px)' : 'calc(100% - 232px)', 'important');
                     }
                 }
+            }
+
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    if (window.innerWidth <= 767) return;
+                    const collapsed = !document.body.classList.contains('sidebar-collapsed');
+                    document.body.classList.toggle('sidebar-collapsed', collapsed);
+                    try {
+                        localStorage.setItem('asm_sidebar_collapsed', collapsed ? '1' : '0');
+                    } catch (e) {}
+                    updateLayout();
+                });
             }
             
             // Initial setup
