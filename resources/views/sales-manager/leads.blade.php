@@ -5,10 +5,110 @@
 
 @push('styles')
 <style>
+    .lead-view-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem;
+        background: #edf2f7;
+        border: 1px solid #dbe4ee;
+        border-radius: 9999px;
+    }
+
+    .lead-view-toggle button {
+        border: 0;
+        background: transparent;
+        color: #5f6c7b;
+        padding: 0.7rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .lead-view-toggle button.active {
+        background: linear-gradient(135deg, #063A1C, #205A44);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(6, 58, 28, 0.18);
+    }
+
     #leadsGrid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
+    }
+
+    .leads-list-shell {
+        border: 1px solid #e5e7eb;
+        border-radius: 1.25rem;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .leads-list-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .leads-list-table thead th {
+        background: #f8fafc;
+        color: #475467;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.95rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .leads-list-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: top;
+    }
+
+    .leads-list-table tbody tr:hover {
+        background: #fcfdfd;
+    }
+
+    .lead-list-name {
+        color: #101828;
+        font-weight: 700;
+        font-size: 0.96rem;
+    }
+
+    .lead-list-sub {
+        color: #667085;
+        font-size: 0.84rem;
+        margin-top: 0.2rem;
+    }
+
+    .lead-remark-text {
+        color: #344054;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        max-width: 320px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .lead-list-actions {
+        display: flex;
+        gap: 0.5rem;
+        min-width: 190px;
+    }
+
+    .lead-list-actions a,
+    .lead-list-actions button {
+        flex: 1 1 0;
+        border-radius: 0.85rem;
+        padding: 0.72rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
     }
     
     /* Lead card container - ensure proper sizing */
@@ -94,6 +194,23 @@
         #leadsGrid {
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
+        }
+
+        .lead-view-toggle {
+            width: 100%;
+            justify-content: stretch;
+        }
+
+        .lead-view-toggle button {
+            flex: 1 1 0;
+        }
+
+        .leads-list-shell {
+            overflow-x: auto;
+        }
+
+        .leads-list-table {
+            min-width: 880px;
         }
         
         /* Search and filter controls */
@@ -256,6 +373,14 @@
                 <i class="fas fa-plus mr-1"></i>Lead
             </button>
         </div>
+        <div class="lead-view-toggle">
+            <button type="button" id="leadCardsViewBtn" class="active" onclick="setLeadView('cards')">
+                <i class="fas fa-th-large mr-2"></i>Cards
+            </button>
+            <button type="button" id="leadListViewBtn" onclick="setLeadView('list')">
+                <i class="fas fa-list-ul mr-2"></i>List
+            </button>
+        </div>
     </div>
 
     <!-- Loading State -->
@@ -279,6 +404,30 @@
         
         <!-- Pagination -->
         <div id="pagination" class="mt-6 flex items-center justify-between">
+            <!-- Pagination will be loaded here -->
+        </div>
+    </div>
+
+    <div id="leadsList" style="display: none;">
+        <div class="leads-list-shell">
+            <table class="leads-list-table">
+                <thead>
+                    <tr>
+                        <th>Lead</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                        <th>Assigned</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsListBody">
+                    <!-- Leads list rows -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="paginationList" class="mt-6 flex items-center justify-between">
             <!-- Pagination will be loaded here -->
         </div>
     </div>
@@ -441,6 +590,7 @@
     let currentLeadId = null;
     let teamMembers = [];
     let currentUser = null;
+    let currentLeadView = 'cards';
 
     // Get auth headers with Bearer token
     function getAuthHeaders() {
@@ -449,6 +599,91 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${API_TOKEN}`,
         };
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function setLeadView(view) {
+        currentLeadView = view === 'list' ? 'list' : 'cards';
+        document.getElementById('leadCardsViewBtn')?.classList.toggle('active', currentLeadView === 'cards');
+        document.getElementById('leadListViewBtn')?.classList.toggle('active', currentLeadView === 'list');
+        document.getElementById('leadsCards').style.display = currentLeadView === 'cards' && allLeads.length ? 'block' : 'none';
+        document.getElementById('leadsList').style.display = currentLeadView === 'list' && allLeads.length ? 'block' : 'none';
+    }
+
+    function getLeadRemark(lead) {
+        const formValues = lead.form_values || lead.formFields || {};
+        const candidates = [
+            lead.manager_remark,
+            lead.remark,
+            lead.notes,
+            lead.requirements,
+            formValues.manager_remark,
+            formValues.remark,
+        ];
+
+        const remark = candidates.find(item => typeof item === 'string' && item.trim());
+        return remark ? remark.trim() : 'No remark added';
+    }
+
+    function formatLeadStatus(status) {
+        return String(status || 'new')
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function createLeadListRow(lead) {
+        const assignedTo = lead.active_assignments && lead.active_assignments.length > 0
+            ? lead.active_assignments[0].assigned_to.name
+            : 'Unassigned';
+        const createdAt = new Date(lead.created_at).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+        const remark = getLeadRemark(lead);
+
+        return `
+            <tr>
+                <td>
+                    <div class="lead-list-name">${escapeHtml(lead.name || 'N/A')}</div>
+                    <div class="lead-list-sub"><i class="fas fa-phone mr-2 text-gray-400"></i>${escapeHtml(lead.phone || 'N/A')}</div>
+                    ${lead.email ? `<div class="lead-list-sub"><i class="fas fa-envelope mr-2 text-gray-400"></i>${escapeHtml(lead.email)}</div>` : ''}
+                </td>
+                <td>
+                    <div class="mb-2">${getStatusBadge(lead.status)}</div>
+                    <div class="lead-list-sub">${escapeHtml(formatLeadStatus(lead.status))}</div>
+                </td>
+                <td>
+                    <div class="lead-remark-text" title="${escapeHtml(remark)}">${escapeHtml(remark)}</div>
+                </td>
+                <td>
+                    <div class="text-sm font-semibold text-gray-800">${escapeHtml(assignedTo)}</div>
+                    <div class="lead-list-sub">${escapeHtml(lead.preferred_location || 'No location')}</div>
+                </td>
+                <td>
+                    <div class="text-sm font-semibold text-gray-800">${escapeHtml(createdAt)}</div>
+                    <div class="lead-list-sub">${escapeHtml(lead.budget || 'Budget not set')}</div>
+                </td>
+                <td>
+                    <div class="lead-list-actions">
+                        <a href="/leads/${lead.id}" class="flex items-center justify-center bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white hover:from-[#205A44] hover:to-[#15803d] transition-all duration-200 shadow-md">
+                            <i class="fas fa-eye mr-2"></i>View
+                        </a>
+                        <button type="button" onclick="viewShortDetails(${lead.id})" class="flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md">
+                            <i class="fas fa-info-circle mr-2"></i>Short
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 
     // Load team members for filter
@@ -514,10 +749,13 @@
         const emptyState = document.getElementById('emptyState');
         const leadsCards = document.getElementById('leadsCards');
         const leadsGrid = document.getElementById('leadsGrid');
+        const leadsList = document.getElementById('leadsList');
+        const leadsListBody = document.getElementById('leadsListBody');
         
         loadingState.style.display = 'block';
         emptyState.style.display = 'none';
         leadsCards.style.display = 'none';
+        leadsList.style.display = 'none';
 
         try {
             const status = document.getElementById('statusFilter').value;
@@ -555,16 +793,20 @@
             if (data.data && data.data.length > 0) {
                 allLeads = data.data;
                 leadsGrid.innerHTML = '';
+                leadsListBody.innerHTML = '';
                 data.data.forEach(lead => {
                     const card = createLeadCard(lead);
                     leadsGrid.appendChild(card);
+                    leadsListBody.insertAdjacentHTML('beforeend', createLeadListRow(lead));
                 });
                 
                 renderPagination(data);
-                leadsCards.style.display = 'block';
                 emptyState.style.display = 'none';
+                setLeadView(currentLeadView);
             } else {
+                allLeads = [];
                 leadsCards.style.display = 'none';
+                leadsList.style.display = 'none';
                 emptyState.style.display = 'block';
             }
         } catch (error) {
@@ -779,9 +1021,16 @@
 
     // Render pagination
     function renderPagination(data) {
-        const pagination = document.getElementById('pagination');
+        const paginations = [
+            document.getElementById('pagination'),
+            document.getElementById('paginationList'),
+        ];
         if (data.last_page <= 1) {
-            pagination.innerHTML = '';
+            paginations.forEach((pagination) => {
+                if (pagination) {
+                    pagination.innerHTML = '';
+                }
+            });
             return;
         }
 
@@ -809,7 +1058,11 @@
         html += '</div>';
         html += `<div class="text-sm text-gray-500">Showing ${data.from} to ${data.to} of ${data.total} leads</div>`;
         
-        pagination.innerHTML = html;
+        paginations.forEach((pagination) => {
+            if (pagination) {
+                pagination.innerHTML = html;
+            }
+        });
     }
 
     // Toggle lead details
@@ -1622,4 +1875,3 @@
     });
 </script>
 @endpush
-

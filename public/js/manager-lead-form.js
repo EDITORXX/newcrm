@@ -87,7 +87,7 @@
         const chips = [];
         chips.push({
             tone: 'teal',
-            label: data.has_prospect ? 'Prospect verification' : 'Direct lead'
+            label: 'Lead detail form'
         });
         if (data.lead_id) chips.push({ tone: 'blue', label: `Lead #${data.lead_id}` });
         if (data.prospect_id) chips.push({ tone: 'purple', label: `Prospect #${data.prospect_id}` });
@@ -160,7 +160,7 @@
         const modalTitle = getModalTitleElement();
 
         if (modalTitle) {
-            modalTitle.textContent = data.has_prospect === true ? 'Prospect Verification' : 'Lead Detail Form';
+            modalTitle.textContent = 'Lead Detail Form';
         }
 
         container.dataset.leadId = data.lead_id || '';
@@ -175,7 +175,7 @@
                 <div class="manager-lead-header">
                     <div class="manager-lead-header-copy">
                         <div class="manager-lead-breadcrumb">CRM › Leads › <span>Lead detail form</span></div>
-                        <h2>${data.has_prospect ? 'Prospect verification' : 'Lead detail form'}</h2>
+                        <h2>Lead detail form</h2>
                         <p>Fill in customer requirements, profiling, and choose the next CRM action.</p>
                     </div>
                     <div class="manager-lead-chip-row">${renderInfoChips(data)}</div>
