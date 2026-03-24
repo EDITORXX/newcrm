@@ -13,11 +13,11 @@
     }
     .meeting-card {
         background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
-        padding: 22px;
-        border-radius: 24px;
+        padding: 18px;
+        border-radius: 20px;
         box-shadow: 0 18px 45px rgba(6, 58, 28, 0.08);
         border: 1px solid rgba(32, 90, 68, 0.10);
-        border-left: 5px solid #205A44;
+        border-left: 4px solid #205A44;
         display: flex;
         flex-direction: column;
         min-height: 100%;
@@ -39,7 +39,7 @@
     .meeting-header {
         display: flex;
         flex-direction: column;
-        margin-bottom: 18px;
+        margin-bottom: 14px;
     }
     .meeting-actions {
         margin-top: auto;
@@ -53,28 +53,28 @@
         margin-left: 0;
     }
     .meeting-info h3 {
-        font-size: 1.45rem;
+        font-size: 1.2rem;
         font-weight: 700;
         color: #063A1C;
         letter-spacing: -0.02em;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
     .meeting-subtitle {
         color: #64748b;
-        font-size: 0.95rem;
-        margin-bottom: 18px;
+        font-size: 0.9rem;
+        margin-bottom: 12px;
     }
     .meeting-meta {
         display: grid;
-        gap: 10px;
+        gap: 8px;
     }
     .meeting-meta-item {
         display: flex;
         align-items: flex-start;
         gap: 10px;
         color: #475569;
-        font-size: 0.95rem;
-        line-height: 1.45;
+        font-size: 0.88rem;
+        line-height: 1.35;
     }
     .meeting-meta-item i {
         width: 16px;
@@ -103,7 +103,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 18px;
+        margin-top: 14px;
     }
     .badge {
         display: inline-flex;
@@ -147,11 +147,11 @@
         color: #991b1b;
     }
     .btn {
-        padding: 12px 16px;
+        padding: 10px 14px;
         border: none;
-        border-radius: 14px;
+        border-radius: 12px;
         cursor: pointer;
-        font-size: 0.95rem;
+        font-size: 0.88rem;
         font-weight: 700;
         transition: all 0.3s;
         text-decoration: none;
@@ -191,11 +191,11 @@
     }
     .status-note {
         text-align: center;
-        padding: 12px;
-        border-radius: 14px;
+        padding: 10px;
+        border-radius: 12px;
         background: #fff7e6;
         color: #92400e;
-        font-size: 0.88rem;
+        font-size: 0.82rem;
         font-weight: 600;
         border: 1px solid #fde68a;
     }
@@ -262,13 +262,22 @@
         #meetingsContainer {
             grid-template-columns: 1fr;
             gap: 1rem;
+            max-width: 420px;
+            margin: 0 auto;
         }
         .meeting-card {
-            padding: 16px;
-            border-radius: 20px;
+            padding: 15px;
+            border-radius: 18px;
         }
         .meeting-info h3 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+        }
+        .meeting-subtitle,
+        .meeting-meta-item {
+            font-size: 0.84rem;
+        }
+        .meeting-actions {
+            gap: 8px;
         }
         .filters {
             flex-direction: row;

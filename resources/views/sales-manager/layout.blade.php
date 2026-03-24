@@ -958,8 +958,6 @@
                             <div id="clockDate">-- -- ----</div>
                         </div>
                         <span class="asm-user-chip header-user-name-desktop"><span class="avatar">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>{{ auth()->user()->name }}</span>
-                        <button type="button" id="btnEnablePush" hidden aria-hidden="true" style="display: none !important; font-size: 12px; padding: 6px 10px; background: #205A44; color: #fff; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">Enable push notifications</button>
-                        <span id="pushStatus" hidden aria-hidden="true" style="display: none !important; font-size: 12px; color: #059669;"></span>
                     </div>
                 </div>
             </div>
