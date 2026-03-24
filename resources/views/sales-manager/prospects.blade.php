@@ -5,6 +5,33 @@
 
 @push('styles')
 <style>
+    .prospect-view-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem;
+        background: #edf2f7;
+        border: 1px solid #dbe4ee;
+        border-radius: 9999px;
+    }
+
+    .prospect-view-toggle button {
+        border: 0;
+        background: transparent;
+        color: #5f6c7b;
+        padding: 0.7rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .prospect-view-toggle button.active {
+        background: linear-gradient(135deg, #063A1C, #205A44);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(6, 58, 28, 0.18);
+    }
+
     /* Base container styles - prevent overflow */
     .bg-white.rounded-lg.shadow.p-6.mb-6 {
         box-sizing: border-box;
@@ -249,6 +276,98 @@
         color: #b91c1c;
         border-color: #fecdd3;
     }
+
+    .prospects-list-shell {
+        border: 1px solid #e5e7eb;
+        border-radius: 1.25rem;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .prospects-list-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .prospects-list-table thead th {
+        background: #f8fafc;
+        color: #475467;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.95rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .prospects-list-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: top;
+    }
+
+    .prospects-list-table tbody tr:hover {
+        background: #fcfdfd;
+    }
+
+    .prospect-list-name {
+        color: #101828;
+        font-weight: 700;
+        font-size: 0.96rem;
+    }
+
+    .prospect-list-sub {
+        color: #667085;
+        font-size: 0.84rem;
+        margin-top: 0.2rem;
+    }
+
+    .prospect-remark-text {
+        color: #344054;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        max-width: 320px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .prospect-list-actions {
+        display: flex;
+        gap: 0.5rem;
+        min-width: 190px;
+    }
+
+    .prospect-list-actions a,
+    .prospect-list-actions button {
+        flex: 1 1 0;
+        border-radius: 0.85rem;
+        padding: 0.72rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .prospect-view-toggle {
+            width: 100%;
+            justify-content: stretch;
+        }
+
+        .prospect-view-toggle button {
+            flex: 1 1 0;
+        }
+
+        .prospects-list-shell {
+            overflow-x: auto;
+        }
+
+        .prospects-list-table {
+            min-width: 900px;
+        }
+    }
 </style>
 @endpush
 
@@ -285,6 +404,14 @@
                 <!-- Options will be populated dynamically -->
             </select>
         </div>
+        <div class="prospect-view-toggle">
+            <button type="button" id="prospectCardsViewBtn" class="active" onclick="setProspectView('cards')">
+                <i class="fas fa-th-large mr-2"></i>Cards
+            </button>
+            <button type="button" id="prospectListViewBtn" onclick="setProspectView('list')">
+                <i class="fas fa-list-ul mr-2"></i>List
+            </button>
+        </div>
     </div>
 
     <!-- Loading State -->
@@ -311,6 +438,30 @@
             <!-- Pagination will be loaded here -->
         </div>
     </div>
+
+    <div id="prospectsList" style="display: none;">
+        <div class="prospects-list-shell">
+            <table class="prospects-list-table">
+                <thead>
+                    <tr>
+                        <th>Prospect</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                        <th>Created By</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="prospectsListBody">
+                    <!-- Prospect rows -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="paginationList" class="mt-6 flex items-center justify-between">
+            <!-- Pagination will be loaded here -->
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -321,6 +472,7 @@
     let searchTimeout = null;
     let teamMembers = [];
     let currentUser = null;
+    let currentProspectView = 'cards';
 
     // Get auth headers with Bearer token
     function getAuthHeaders() {
@@ -329,6 +481,83 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${API_TOKEN}`,
         };
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function setProspectView(view) {
+        currentProspectView = view === 'list' ? 'list' : 'cards';
+        document.getElementById('prospectCardsViewBtn')?.classList.toggle('active', currentProspectView === 'cards');
+        document.getElementById('prospectListViewBtn')?.classList.toggle('active', currentProspectView === 'list');
+        document.getElementById('prospectsCards').style.display = currentProspectView === 'cards' && allProspects.length ? 'block' : 'none';
+        document.getElementById('prospectsList').style.display = currentProspectView === 'list' && allProspects.length ? 'block' : 'none';
+    }
+
+    function getProspectRemark(prospect) {
+        const candidates = [
+            prospect.manager_remark,
+            prospect.remark,
+            prospect.employee_remark,
+            prospect.rejection_reason,
+        ];
+        const remark = candidates.find(item => typeof item === 'string' && item.trim());
+        return remark ? remark.trim() : 'No remark added';
+    }
+
+    function createProspectListRow(prospect) {
+        const createdBy = prospect.telecaller ? prospect.telecaller.name : (prospect.created_by ? prospect.created_by.name : 'N/A');
+        const createdAt = new Date(prospect.created_at).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        const statusBadge = getProspectStatusBadge(prospect);
+        const remark = getProspectRemark(prospect);
+
+        return `
+            <tr>
+                <td>
+                    <div class="prospect-list-name">${escapeHtml(prospect.customer_name || 'N/A')}</div>
+                    <div class="prospect-list-sub"><i class="fas fa-phone mr-2 text-gray-400"></i>${escapeHtml(prospect.phone || 'N/A')}</div>
+                    ${prospect.preferred_location ? `<div class="prospect-list-sub"><i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>${escapeHtml(prospect.preferred_location)}</div>` : ''}
+                </td>
+                <td>
+                    ${statusBadge ? `<span class="prospect-status ${statusBadge.className}">${statusBadge.label}</span>` : '<span class="prospect-status">Unknown</span>'}
+                    ${prospect.lead_status ? `<div class="prospect-list-sub mt-2">${escapeHtml(getLeadStatusLabel(prospect.lead_status))}</div>` : ''}
+                </td>
+                <td>
+                    <div class="prospect-remark-text" title="${escapeHtml(remark)}">${escapeHtml(remark)}</div>
+                </td>
+                <td>
+                    <div class="text-sm font-semibold text-gray-800">${escapeHtml(createdBy)}</div>
+                    <div class="prospect-list-sub">${escapeHtml(prospect.purpose === 'end_user' ? 'End User' : (prospect.purpose === 'investment' ? 'Investment' : (prospect.purpose || 'No purpose')))}</div>
+                </td>
+                <td>
+                    <div class="text-sm font-semibold text-gray-800">${escapeHtml(createdAt)}</div>
+                    <div class="prospect-list-sub">${escapeHtml(prospect.budget || 'Budget not set')}</div>
+                </td>
+                <td>
+                    <div class="prospect-list-actions">
+                        <a href="/sales-manager/prospects/${prospect.id}" class="flex items-center justify-center bg-gradient-to-r from-[#25603F] to-[#063A1C] text-white hover:from-[#1e4d32] hover:to-[#043118] transition-all duration-200 shadow-md">
+                            <i class="fas fa-eye mr-2"></i>View
+                        </a>
+                        <button type="button" onclick="openShortDetailModal(${prospect.id})" class="flex items-center justify-center bg-gradient-to-r from-[#25603F] to-[#063A1C] text-white hover:from-[#1e4d32] hover:to-[#043118] transition-all duration-200 shadow-md">
+                            <i class="fas fa-info-circle mr-2"></i>Short
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 
     // Load team members for filter
@@ -385,10 +614,13 @@
         const emptyState = document.getElementById('emptyState');
         const prospectsCards = document.getElementById('prospectsCards');
         const prospectsGrid = document.getElementById('prospectsGrid');
+        const prospectsList = document.getElementById('prospectsList');
+        const prospectsListBody = document.getElementById('prospectsListBody');
         
         loadingState.style.display = 'block';
         emptyState.style.display = 'none';
         prospectsCards.style.display = 'none';
+        prospectsList.style.display = 'none';
 
         try {
             const status = document.getElementById('statusFilter').value;
@@ -426,16 +658,20 @@
             if (data.data && data.data.length > 0) {
                 allProspects = data.data;
                 prospectsGrid.innerHTML = '';
+                prospectsListBody.innerHTML = '';
                 data.data.forEach(prospect => {
                     const card = createProspectCard(prospect);
                     prospectsGrid.appendChild(card);
+                    prospectsListBody.insertAdjacentHTML('beforeend', createProspectListRow(prospect));
                 });
                 
                 renderPagination(data);
-                prospectsCards.style.display = 'block';
                 emptyState.style.display = 'none';
+                setProspectView(currentProspectView);
             } else {
+                allProspects = [];
                 prospectsCards.style.display = 'none';
+                prospectsList.style.display = 'none';
                 emptyState.style.display = 'block';
             }
         } catch (error) {
@@ -639,9 +875,16 @@
 
     // Render pagination
     function renderPagination(data) {
-        const pagination = document.getElementById('pagination');
+        const paginations = [
+            document.getElementById('pagination'),
+            document.getElementById('paginationList'),
+        ];
         if (data.last_page <= 1) {
-            pagination.innerHTML = '';
+            paginations.forEach((pagination) => {
+                if (pagination) {
+                    pagination.innerHTML = '';
+                }
+            });
             return;
         }
 
@@ -669,7 +912,11 @@
         html += '</div>';
         html += `<div class="text-sm text-gray-500">Showing ${data.from} to ${data.to} of ${data.total} prospects</div>`;
         
-        pagination.innerHTML = html;
+        paginations.forEach((pagination) => {
+            if (pagination) {
+                pagination.innerHTML = html;
+            }
+        });
     }
 
     // Toggle details section
@@ -819,4 +1066,3 @@
     </div>
 </div>
 @endpush
-
