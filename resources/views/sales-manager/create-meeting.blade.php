@@ -5,23 +5,87 @@
 
 @push('styles')
 <style>
-    .form-container {
-        background: white;
-        padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        max-width: 800px;
+    .schedule-shell {
+        max-width: 980px;
         margin: 0 auto;
     }
+    .form-container {
+        background: #fff;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(32, 90, 68, 0.10);
+        box-shadow: 0 24px 50px rgba(6, 58, 28, 0.08);
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 0;
+    }
+    .schedule-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 26px 28px;
+        background: linear-gradient(135deg, #e4f4ee 0%, #eef8f2 100%);
+        border-bottom: 1px solid #deede5;
+    }
+    .schedule-head-main {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .schedule-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: rgba(11, 107, 79, 0.12);
+        color: #0b6b4f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .schedule-head h2 {
+        margin: 0;
+        font-size: 1.9rem;
+        font-weight: 700;
+        color: #0a3a23;
+        letter-spacing: -0.03em;
+    }
+    .schedule-head p {
+        margin: 4px 0 0;
+        color: #5f6d65;
+        font-size: 0.95rem;
+    }
+    .schedule-badge {
+        border-radius: 999px;
+        background: #0b6b4f;
+        color: #fff;
+        padding: 7px 16px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .schedule-body {
+        padding: 28px;
+    }
+    #meetingForm {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px 20px;
+    }
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 0;
+    }
+    .form-group.form-wide {
+        grid-column: 1 / -1;
     }
     .form-group label {
         display: block;
         margin-bottom: 8px;
-        font-weight: 500;
-        color: #333;
-        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.95rem;
     }
     .form-group label .required {
         color: #ef4444;
@@ -30,25 +94,30 @@
     .form-group select,
     .form-group textarea {
         width: 100%;
-        padding: 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: border-color 0.3s;
-        background: white;
-        color: #333;
+        padding: 14px 16px;
+        border: 1px solid #d7e0d9;
+        border-radius: 14px;
+        font-size: 15px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #fff;
+        color: #1f2937;
     }
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
         outline: none;
-        border-color: #205A44;
-        background: white;
+        border-color: #0b6b4f;
+        box-shadow: 0 0 0 4px rgba(11, 107, 79, 0.08);
     }
     .form-group input[readonly] {
-        background: white;
-        cursor: not-allowed;
-        color: #333;
+        background: #f8faf9;
+        color: #4b5563;
+    }
+    .form-meta-note {
+        grid-column: 1 / -1;
+        margin-top: -4px;
+        color: #6b7280;
+        font-size: 0.82rem;
     }
     .photo-preview {
         display: flex;
@@ -85,40 +154,55 @@
         justify-content: center;
         font-size: 12px;
     }
+    .form-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-top: 10px;
+        padding-top: 22px;
+        border-top: 1px solid #edf1ee;
+    }
+    .form-actions-copy {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+    .form-actions-buttons {
+        display: flex;
+        gap: 12px;
+    }
     .btn {
-        padding: 12px 24px;
+        padding: 13px 24px;
         border: none;
-        border-radius: 8px;
+        border-radius: 14px;
         cursor: pointer;
-        font-size: 16px;
-        font-weight: 500;
+        font-size: 15px;
+        font-weight: 700;
         transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
     }
     .btn-primary {
-        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        background: linear-gradient(135deg, #0b6b4f 0%, #084d3a 100%);
         color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        background: #205A44;
-        color: white;
+        box-shadow: 0 14px 28px rgba(11, 107, 79, 0.18);
     }
     .btn-primary:hover {
-        background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+        background: linear-gradient(135deg, #09563f 0%, #063a2b 100%);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        background: #063A1C;
+        box-shadow: 0 18px 32px rgba(11, 107, 79, 0.24);
     }
     .btn-secondary {
-        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-        color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        background: #6b7280;
-        color: white;
+        background: #fff;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
     }
     .btn-secondary:hover {
-        background: linear-gradient(135deg, #15803d 0%, #166534 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        background: #4b5563;
+        background: #f9fafb;
     }
     .alert {
         padding: 12px 16px;
@@ -136,13 +220,48 @@
         color: #991b1b;
         border: 1px solid #fecaca;
     }
+    @media (max-width: 768px) {
+        .schedule-head,
+        .schedule-body {
+            padding: 20px;
+        }
+        .schedule-head {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+        #meetingForm {
+            grid-template-columns: 1fr;
+        }
+        .form-group.form-wide,
+        .form-meta-note,
+        .form-actions {
+            grid-column: auto;
+        }
+        .form-actions,
+        .form-actions-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
 </style>
 @endpush
 
 @section('content')
+<div class="schedule-shell">
 <div class="form-container">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Schedule New Meeting</h2>
-    
+    <div class="schedule-head">
+        <div class="schedule-head-main">
+            <div class="schedule-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div>
+                <h2>Schedule meeting</h2>
+                <p>Structured CRM form with better field visibility and cleaner data entry.</p>
+            </div>
+        </div>
+        <span class="schedule-badge">Meeting</span>
+    </div>
+    <div class="schedule-body">
     <div id="alertContainer"></div>
     
     @if(isset($dynamicForm) && $dynamicForm)
@@ -299,15 +418,15 @@
             <input type="datetime-local" id="scheduled_at" name="scheduled_at" required>
         </div>
 
-        <div class="form-group">
+        <div class="form-group form-wide">
             <label for="meeting_notes">Meeting Notes</label>
             <textarea id="meeting_notes" name="meeting_notes" rows="4" placeholder="Additional notes..."></textarea>
         </div>
 
-        <div class="form-group">
+        <div class="form-group form-wide">
             <label for="photos">Photos (Multiple, max 5MB each)</label>
             <input type="file" id="photos" name="photos[]" multiple accept="image/jpeg,image/jpg,image/png,image/webp">
-            <small style="color: #6b7280; font-size: 12px;">You can select multiple images (JPEG, PNG, WEBP)</small>
+            <div class="form-meta-note">You can select multiple images (JPEG, PNG, WEBP), maximum 5MB each.</div>
             <div id="photoPreview" class="photo-preview"></div>
         </div>
 
@@ -315,16 +434,21 @@
         <input type="hidden" id="lead_id" name="lead_id" value="{{ request('lead_id') }}">
         <input type="hidden" id="prospect_id" name="prospect_id" value="{{ request('prospect_id') }}">
 
-        <div style="display: flex; gap: 10px; margin-top: 24px;">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-calendar-check mr-2"></i>Schedule Meeting
-            </button>
-            <a href="{{ route('sales-manager.meetings') }}" class="btn btn-secondary">
-                <i class="fas fa-times mr-2"></i>Cancel
-            </a>
+        <div class="form-actions">
+            <div class="form-actions-copy">Meeting entry will be saved directly to the CRM activity timeline.</div>
+            <div class="form-actions-buttons">
+                <a href="{{ route('sales-manager.meetings') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-calendar-check"></i>Schedule Meeting
+                </button>
+            </div>
         </div>
     </form>
     @endif
+</div>
+</div>
 </div>
 @endsection
 
@@ -337,7 +461,7 @@
     }
 
     // Photo preview
-    document.getElementById('photos').addEventListener('change', function(e) {
+    document.getElementById('photos')?.addEventListener('change', function(e) {
         const preview = document.getElementById('photoPreview');
         preview.innerHTML = '';
         
@@ -374,7 +498,7 @@
     }
 
     // Form submission
-    document.getElementById('meetingForm').addEventListener('submit', async function(e) {
+    document.getElementById('meetingForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const formData = new FormData(this);
@@ -428,8 +552,9 @@
     }
 
     // Set minimum date to today
-    document.getElementById('date_of_visit').min = new Date().toISOString().split('T')[0];
-    document.getElementById('scheduled_at').min = new Date().toISOString().slice(0, 16);
+    const dateOfVisitInput = document.getElementById('date_of_visit');
+    const scheduledAtInput = document.getElementById('scheduled_at');
+    if (dateOfVisitInput) dateOfVisitInput.min = new Date().toISOString().split('T')[0];
+    if (scheduledAtInput) scheduledAtInput.min = new Date().toISOString().slice(0, 16);
 </script>
 @endpush
-

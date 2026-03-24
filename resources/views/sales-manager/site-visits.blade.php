@@ -7,32 +7,25 @@
 <style>
     #visitsContainer {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.25rem;
-    }
-    @media (max-width: 1024px) {
-        #visitsContainer {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-    @media (max-width: 768px) {
-        #visitsContainer {
-            grid-template-columns: 1fr;
-        }
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.5rem;
+        align-items: stretch;
     }
     .visit-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #3b82f6;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        padding: 22px;
+        border-radius: 24px;
+        box-shadow: 0 18px 45px rgba(23, 97, 168, 0.08);
+        border: 1px solid rgba(23, 97, 168, 0.10);
+        border-left: 5px solid #1761A8;
         display: flex;
         flex-direction: column;
-        transition: transform 0.2s, box-shadow 0.2s;
+        min-height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     }
     .visit-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 24px 52px rgba(23, 97, 168, 0.12);
     }
     .visit-card.completed {
         border-left-color: #10b981;
@@ -46,13 +39,13 @@
     .visit-header {
         display: flex;
         flex-direction: column;
-        margin-bottom: 12px;
+        margin-bottom: 18px;
     }
     .visit-actions {
-        margin-top: 12px;
+        margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
     .visit-actions .btn {
         width: 100%;
@@ -60,23 +53,58 @@
         margin-top: 0;
     }
     .visit-info h3 {
-        font-size: 18px;
-        font-weight: 600;
-        color: #063A1C;
-        margin-bottom: 8px;
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #0f3d67;
+        letter-spacing: -0.02em;
+        margin-bottom: 6px;
     }
-    .visit-info p {
-        color: #6b7280;
-        font-size: 14px;
-        margin: 4px 0;
+    .visit-subtitle {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin-bottom: 18px;
+    }
+    .visit-meta {
+        display: grid;
+        gap: 10px;
+    }
+    .visit-meta-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.45;
+    }
+    .visit-meta-item i {
+        width: 16px;
+        color: #1761A8;
+        margin-top: 4px;
+        flex-shrink: 0;
+    }
+    .visit-meta-item strong {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 2px;
+    }
+    .visit-status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
     }
     .badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 500;
-        margin-right: 8px;
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
     }
     .badge-scheduled {
         background: #dbeafe;
@@ -99,64 +127,70 @@
         color: #065f46;
     }
     .badge-closer-pending {
-        background: #fef3c7;
-        color: #92400e;
+        background: #e0edff;
+        color: #1d4ed8;
     }
     .badge-closer-verified {
         background: #10b981;
         color: white;
     }
     .btn {
-        padding: 8px 16px;
+        padding: 12px 16px;
         border: none;
-        border-radius: 6px;
+        border-radius: 14px;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 0.95rem;
+        font-weight: 700;
         transition: all 0.3s;
         text-decoration: none;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
     .btn-primary {
-        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        background: linear-gradient(135deg, #1761A8 0%, #124a82 100%);
         color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 22px rgba(23, 97, 168, 0.22);
     }
     .btn-primary:hover {
-        background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+        background: linear-gradient(135deg, #124a82 0%, #0e3b67 100%);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 14px 28px rgba(23, 97, 168, 0.28);
     }
     .btn-success {
         background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
         color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        background: #10b981;
-        color: white;
+        box-shadow: 0 10px 22px rgba(22, 163, 74, 0.18);
     }
     .btn-danger {
-        background: #ef4444;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         color: white;
     }
-    .btn:hover {
-        opacity: 0.9;
+    .btn-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        box-shadow: 0 10px 22px rgba(245, 158, 11, 0.18);
+    }
+    .status-note {
+        text-align: center;
+        padding: 12px;
+        border-radius: 14px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 0.88rem;
+        font-weight: 600;
+        border: 1px solid #bfdbfe;
     }
     .empty-state {
         text-align: center;
         padding: 60px 20px;
         color: #9ca3af;
     }
-    
-    /* Hide empty states on mobile */
-    @media (max-width: 767px) {
-        .empty-state {
-            display: none !important;
-        }
-    }
     .filters {
         background: white;
         padding: 16px;
-        border-radius: 12px;
+        border-radius: 16px;
         margin-bottom: 20px;
         display: flex;
         gap: 12px;
@@ -169,23 +203,18 @@
         min-width: 0;
         box-sizing: border-box;
     }
+    .filter-select,
+    .filters input[type="date"] {
+        padding: 10px 12px;
+        border: 1px solid #d5dfeb;
+        border-radius: 12px;
+        font-size: 14px;
+    }
     .mobile-text {
         display: none;
     }
     .desktop-text {
         display: inline;
-    }
-    .filter-select {
-        padding: 8px 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        font-size: 14px;
-    }
-    .filters input[type="date"] {
-        padding: 8px 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        font-size: 14px;
     }
     #customDateInputs {
         display: none;
@@ -194,6 +223,16 @@
     #customDateInputs.show {
         display: flex;
     }
+    @media (max-width: 767px) {
+        .empty-state {
+            display: none !important;
+        }
+    }
+    @media (min-width: 769px) and (max-width: 1280px) {
+        #visitsContainer {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
     @media (max-width: 768px) {
         #visitsContainer {
             grid-template-columns: 1fr;
@@ -201,12 +240,10 @@
         }
         .visit-card {
             padding: 16px;
+            border-radius: 20px;
         }
         .visit-info h3 {
-            font-size: 16px;
-        }
-        .visit-info p {
-            font-size: 13px;
+            font-size: 1.2rem;
         }
         .filters {
             flex-direction: row;
@@ -221,12 +258,7 @@
             font-size: 12px;
             box-sizing: border-box;
         }
-        .filters label {
-            display: none;
-        }
-        div[style*="display: flex"][style*="justify-content: space-between"] > h2 {
-            display: none !important;
-        }
+        div[style*="display: flex"][style*="justify-content: space-between"] > h2,
         div[style*="display: flex"][style*="justify-content: space-between"] > a.btn-primary {
             display: none !important;
         }
@@ -244,10 +276,6 @@
         }
         .desktop-text {
             display: none;
-        }
-        .filters input[type="date"] {
-            width: 100%;
-            padding: 10px;
         }
         #customDateInputs {
             width: 100%;
@@ -472,13 +500,21 @@
                         <div class="visit-header">
                             <div class="visit-info">
                                 <h3>${customerName}</h3>
-                                <p><i class="fas fa-phone mr-2"></i>${phone}</p>
-                                <p><i class="fas fa-calendar mr-2"></i>Scheduled: ${new Date(visit.scheduled_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                                ${visit.completed_at ? `<p><i class="fas fa-check-circle mr-2"></i>Completed: ${new Date(visit.completed_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
-                                <p><i class="fas fa-tag mr-2"></i>Budget: ${budget}</p>
-                                ${propertyType !== 'N/A' ? `<p><i class="fas fa-building mr-2"></i>Property: ${propertyType}</p>` : ''}
-                                ${project !== 'N/A' ? `<p><i class="fas fa-map-marker-alt mr-2"></i>Project: ${project}</p>` : ''}
-                                <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+                                <div class="visit-subtitle">${phone}</div>
+                                <div class="visit-meta">
+                                    <div class="visit-meta-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <div><strong>Scheduled</strong>${new Date(visit.scheduled_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                                    </div>
+                                    ${visit.completed_at ? `<div class="visit-meta-item"><i class="fas fa-check-circle"></i><div><strong>Completed</strong>${new Date(visit.completed_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div></div>` : ''}
+                                    <div class="visit-meta-item">
+                                        <i class="fas fa-tag"></i>
+                                        <div><strong>Budget</strong>${budget}</div>
+                                    </div>
+                                    ${propertyType !== 'N/A' ? `<div class="visit-meta-item"><i class="fas fa-building"></i><div><strong>Property</strong>${propertyType}</div></div>` : ''}
+                                    ${project !== 'N/A' ? `<div class="visit-meta-item"><i class="fas fa-map-marker-alt"></i><div><strong>Project</strong>${project}</div></div>` : ''}
+                                </div>
+                                <div class="visit-status-row">
                                     <span class="badge ${statusBadge}">${visit.status}</span>
                                     ${visit.verification_status ? `<span class="badge ${verificationBadge}">${visit.verification_status}</span>` : ''}
                                     ${visit.closer_status ? `<span class="badge ${closerBadge}">Closer: ${visit.closer_status}</span>` : ''}
@@ -488,28 +524,28 @@
                         <div class="visit-actions">
                             ${visit.status === 'scheduled' ? `
                                 <button class="btn btn-success" onclick="showCompleteSiteVisitModal(${visit.id})">
-                                    <i class="fas fa-check mr-2"></i>Complete
+                                    <i class="fas fa-check"></i>Complete
                                 </button>
-                                <button class="btn" style="background: #f59e0b; color: white;" onclick="showRescheduleSiteVisitModal(${visit.id})">
-                                    <i class="fas fa-calendar-alt mr-2"></i>Reschedule
+                                <button class="btn btn-warning" onclick="showRescheduleSiteVisitModal(${visit.id})">
+                                    <i class="fas fa-calendar-alt"></i>Reschedule
                                 </button>
                                 <button class="btn btn-danger" onclick="showMarkDeadModal('site-visit', ${visit.id})">
-                                    <i class="fas fa-skull mr-2"></i>Mark as Dead
+                                    <i class="fas fa-skull"></i>Mark as Dead
                                 </button>
                             ` : ''}
                             ${visit.status === 'completed' && visit.verification_status === 'pending' ? `
-                                <div style="text-align: center; padding: 8px;">
-                                    <span class="badge badge-pending">Awaiting Verification</span>
+                                <div class="status-note">
+                                    Awaiting Verification
                                 </div>
                             ` : ''}
                             ${visit.verification_status === 'verified' && !visit.closer_status && !visit.closing_verification_status ? `
                                 <button class="btn btn-primary" onclick="showRequestCloserModal(${visit.id})">
-                                    <i class="fas fa-handshake mr-2"></i>Request Closing
+                                    <i class="fas fa-handshake"></i>Request Closing
                                 </button>
                             ` : ''}
                             ${visit.closing_verification_status === 'pending' ? `
-                                <div style="text-align: center; padding: 8px;">
-                                    <span class="badge badge-closer-pending">Closing Awaiting CRM Verification</span>
+                                <div class="status-note">
+                                    Closing Awaiting CRM Verification
                                 </div>
                             ` : ''}
                             ${visit.closing_verification_status === 'verified' && visit.closer_status === 'verified' ? `
@@ -517,7 +553,7 @@
                                     <span class="badge badge-closer-verified">Closing Verified ✓</span>
                                 </div>
                                 <button class="btn btn-success" onclick="showRequestIncentiveModal(${visit.id})" style="width: 100%;">
-                                    <i class="fas fa-money-bill-wave mr-2"></i>Request Incentive
+                                    <i class="fas fa-money-bill-wave"></i>Request Incentive
                                 </button>
                             ` : ''}
                             ${visit.closing_verification_status === 'rejected' ? `
@@ -527,12 +563,12 @@
                             ` : ''}
                             ${visit.status === 'completed' ? `
                                 <button class="btn btn-danger" onclick="showMarkDeadModal('site-visit', ${visit.id})">
-                                    <i class="fas fa-skull mr-2"></i>Mark as Dead
+                                    <i class="fas fa-skull"></i>Mark as Dead
                                 </button>
                             ` : ''}
                             ${visit.lead_id ? `
                                 <a href="/leads/${visit.lead_id}" target="_blank" class="btn btn-primary" style="width: 100%; margin-top: 8px; text-align: center; text-decoration: none;">
-                                    <i class="fas fa-eye mr-2"></i>View Detail
+                                    <i class="fas fa-eye"></i>View Detail
                                 </a>
                             ` : ''}
                         </div>
@@ -1507,4 +1543,3 @@
 }
 </style>
 @endpush
-

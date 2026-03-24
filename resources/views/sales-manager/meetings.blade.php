@@ -7,22 +7,25 @@
 <style>
     #meetingsContainer {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 1.25rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.5rem;
+        align-items: stretch;
     }
     .meeting-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #3b82f6;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
+        padding: 22px;
+        border-radius: 24px;
+        box-shadow: 0 18px 45px rgba(6, 58, 28, 0.08);
+        border: 1px solid rgba(32, 90, 68, 0.10);
+        border-left: 5px solid #205A44;
         display: flex;
         flex-direction: column;
-        transition: transform 0.2s, box-shadow 0.2s;
+        min-height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     }
     .meeting-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 24px 52px rgba(6, 58, 28, 0.12);
     }
     .meeting-card.completed {
         border-left-color: #10b981;
@@ -36,35 +39,80 @@
     .meeting-header {
         display: flex;
         flex-direction: column;
-        margin-bottom: 12px;
+        margin-bottom: 18px;
     }
     .meeting-actions {
-        margin-top: 12px;
+        margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
     .meeting-actions .btn {
         width: 100%;
         margin-top: 0;
+        margin-left: 0;
     }
     .meeting-info h3 {
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 1.45rem;
+        font-weight: 700;
         color: #063A1C;
-        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+        margin-bottom: 6px;
     }
-    .meeting-info p {
-        color: #6b7280;
-        font-size: 14px;
-        margin: 4px 0;
+    .meeting-subtitle {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin-bottom: 18px;
+    }
+    .meeting-meta {
+        display: grid;
+        gap: 10px;
+    }
+    .meeting-meta-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.45;
+    }
+    .meeting-meta-item i {
+        width: 16px;
+        color: #205A44;
+        margin-top: 4px;
+        flex-shrink: 0;
+    }
+    .meeting-meta-item strong {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 2px;
+    }
+    .meeting-link {
+        color: #1761A8;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .meeting-link:hover {
+        text-decoration: underline;
+    }
+    .meeting-status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
     }
     .badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
     }
     .badge-scheduled {
         background: #dbeafe;
@@ -99,63 +147,80 @@
         color: #991b1b;
     }
     .btn {
-        padding: 8px 16px;
+        padding: 12px 16px;
         border: none;
-        border-radius: 6px;
+        border-radius: 14px;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 0.95rem;
+        font-weight: 700;
         transition: all 0.3s;
         text-decoration: none;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
     .btn-primary {
-        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        background: linear-gradient(135deg, #205A44 0%, #0f5132 100%);
         color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 22px rgba(32, 90, 68, 0.22);
     }
     .btn-primary:hover {
-        background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+        background: linear-gradient(135deg, #184634 0%, #0a3a23 100%);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 14px 28px rgba(32, 90, 68, 0.28);
     }
     .btn-success {
         background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
         color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 22px rgba(22, 163, 74, 0.18);
     }
     .btn-success:hover {
         background: linear-gradient(135deg, #15803d 0%, #166534 100%);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 14px 28px rgba(22, 163, 74, 0.24);
     }
     .btn-danger {
-        background: #ef4444;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         color: white;
+    }
+    .btn-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        box-shadow: 0 10px 22px rgba(245, 158, 11, 0.18);
+    }
+    .status-note {
+        text-align: center;
+        padding: 12px;
+        border-radius: 14px;
+        background: #fff7e6;
+        color: #92400e;
+        font-size: 0.88rem;
+        font-weight: 600;
+        border: 1px solid #fde68a;
+    }
+    .status-note small {
+        display: block;
+        margin-top: 4px;
+        color: #a16207;
+        font-size: 0.77rem;
+        font-weight: 500;
     }
     .empty-state {
         text-align: center;
         padding: 60px 20px;
         color: #9ca3af;
     }
-    
-    /* Hide empty states on mobile */
-    @media (max-width: 767px) {
-        .empty-state {
-            display: none !important;
-        }
-    }
     .filters {
         background: white;
         padding: 16px;
-        border-radius: 12px;
+        border-radius: 16px;
         margin-bottom: 20px;
         display: flex;
         gap: 12px;
         flex-wrap: nowrap;
         align-items: center;
     }
-    
     .filters .filter-select,
     .filters .filter-btn {
         flex: 1;
@@ -163,39 +228,53 @@
         min-width: 0;
         box-sizing: border-box;
     }
-    
+    .filter-select,
+    .filters input[type="date"] {
+        padding: 10px 12px;
+        border: 1px solid #d7e0d9;
+        border-radius: 12px;
+        font-size: 14px;
+    }
     .mobile-text {
         display: none;
     }
-    
     .desktop-text {
         display: inline;
     }
-    
-    @media (max-width: 768px) {
+    #customDateInputs {
+        display: none;
+        gap: 8px;
+    }
+    #customDateInputs.show {
+        display: flex;
+    }
+    @media (max-width: 767px) {
+        .empty-state {
+            display: none !important;
+        }
+    }
+    @media (min-width: 769px) and (max-width: 1280px) {
         #meetingsContainer {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.75rem;
         }
-        
+    }
+    @media (max-width: 768px) {
+        #meetingsContainer {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
         .meeting-card {
             padding: 16px;
+            border-radius: 20px;
         }
-        
         .meeting-info h3 {
-            font-size: 16px;
+            font-size: 1.2rem;
         }
-        
-        .meeting-info p {
-            font-size: 13px;
-        }
-        
         .filters {
             flex-direction: row;
             flex-wrap: nowrap;
             gap: 4px;
         }
-        
         .filters .filter-select,
         .filters .filter-btn {
             width: 25%;
@@ -204,78 +283,40 @@
             font-size: 12px;
             box-sizing: border-box;
         }
-        
-        .filters label {
-            display: none;
-        }
-        
-        /* Hide "My Meetings" title in phone view */
         h2.text-2xl {
             display: none !important;
         }
-        
-        /* Hide "Schedule New Meeting" button in phone view */
         div[style*="display: flex"][style*="justify-content: space-between"] > a.btn-primary,
         div[style*="display: flex"][style*="justify-content: space-between"] > button.btn-primary {
             display: none !important;
         }
-
-        /* Show filter action buttons on phone view (one-click meeting/site visit) */
         .filters .filter-btn.btn.btn-primary {
             display: flex !important;
         }
-        
-        /* Also hide the entire header div container if needed */
         div[style*="display: flex"][style*="justify-content: space-between"] {
             margin-bottom: 0 !important;
-        }
-        
-        /* Show mobile text, hide desktop text in phone view */
-        .mobile-text {
-            display: inline;
-        }
-        
-        .desktop-text {
-            display: none;
-        }
-        
-        .filters input[type="date"] {
-            width: 100%;
-            padding: 10px;
-        }
-        
-        #customDateInputs {
-            width: 100%;
-            flex-direction: column;
-        }
-        
-        .filters > div:first-child {
-            flex-direction: column;
-            width: 100%;
-        }
-        
-        /* Header responsive */
-        div[style*="display: flex"][style*="justify-content: space-between"] {
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
         }
-        
-        div[style*="display: flex"][style*="justify-content: space-between"] .btn {
-            width: 100%;
+        .mobile-text {
+            display: inline;
         }
-        
-        /* Modal responsive */
+        .desktop-text {
+            display: none;
+        }
+        #customDateInputs {
+            width: 100%;
+            flex-direction: column;
+        }
         .modal-content {
             width: 95% !important;
             max-width: 95% !important;
             padding: 16px !important;
         }
-        
         .form-group {
             margin-bottom: 14px;
         }
-        
         .form-group input,
         .form-group select,
         .form-group textarea {
@@ -283,34 +324,13 @@
             padding: 10px;
             font-size: 14px;
         }
-        
         .form-group > div[style*="display: flex"] {
             flex-direction: column;
             gap: 10px;
         }
-        
         .form-group > div[style*="display: flex"] button {
             width: 100%;
         }
-    }
-    .filter-select {
-        padding: 8px 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        font-size: 14px;
-    }
-    .filters input[type="date"] {
-        padding: 8px 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        font-size: 14px;
-    }
-    #customDateInputs {
-        display: none;
-        gap: 8px;
-    }
-    #customDateInputs.show {
-        display: flex;
     }
 </style>
 @endpush
@@ -674,15 +694,23 @@
                         <div class="meeting-header">
                             <div class="meeting-info">
                                 <h3>${meeting.customer_name || 'N/A'}</h3>
-                                <p><i class="fas fa-phone mr-2"></i>${meeting.phone || 'N/A'}</p>
-                                <p><i class="fas fa-calendar mr-2"></i>Scheduled: ${new Date(meeting.scheduled_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                                ${meeting.completed_at ? `<p><i class="fas fa-check-circle mr-2"></i>Completed: ${new Date(meeting.completed_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>` : ''}
-                                <p><i class="fas fa-tag mr-2"></i>Budget: ${meeting.budget_range || 'N/A'}</p>
-                                ${meeting.property_type ? `<p><i class="fas fa-building mr-2"></i>Property: ${meeting.property_type}</p>` : ''}
-                                ${meeting.meeting_mode ? `<p><i class="fas ${meeting.meeting_mode === 'online' ? 'fa-video' : 'fa-map-marker-alt'} mr-2"></i>${meeting.meeting_mode === 'online' ? 'Online' : 'Offline'} Meeting</p>` : ''}
-                                ${meeting.location ? `<p><i class="fas fa-map-marker-alt mr-2"></i>${meeting.location}</p>` : ''}
-                                ${meeting.meeting_link ? `<p><i class="fas fa-link mr-2"></i><a href="${meeting.meeting_link}" target="_blank" class="text-blue-600 hover:underline">Join Meeting</a></p>` : ''}
-                                <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+                                <div class="meeting-subtitle">${meeting.phone || 'Phone not available'}</div>
+                                <div class="meeting-meta">
+                                    <div class="meeting-meta-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <div><strong>Scheduled</strong>${new Date(meeting.scheduled_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                                    </div>
+                                    ${meeting.completed_at ? `<div class="meeting-meta-item"><i class="fas fa-check-circle"></i><div><strong>Completed</strong>${new Date(meeting.completed_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div></div>` : ''}
+                                    <div class="meeting-meta-item">
+                                        <i class="fas fa-tag"></i>
+                                        <div><strong>Budget</strong>${meeting.budget_range || 'N/A'}</div>
+                                    </div>
+                                    ${meeting.property_type ? `<div class="meeting-meta-item"><i class="fas fa-building"></i><div><strong>Property</strong>${meeting.property_type}</div></div>` : ''}
+                                    ${meeting.meeting_mode ? `<div class="meeting-meta-item"><i class="fas ${meeting.meeting_mode === 'online' ? 'fa-video' : 'fa-map-marker-alt'}"></i><div><strong>Mode</strong>${meeting.meeting_mode === 'online' ? 'Online meeting' : 'Offline meeting'}</div></div>` : ''}
+                                    ${meeting.location ? `<div class="meeting-meta-item"><i class="fas fa-map-marker-alt"></i><div><strong>Location</strong>${meeting.location}</div></div>` : ''}
+                                    ${meeting.meeting_link ? `<div class="meeting-meta-item"><i class="fas fa-link"></i><div><strong>Join Link</strong><a href="${meeting.meeting_link}" target="_blank" class="meeting-link">Open meeting link</a></div></div>` : ''}
+                                </div>
+                                <div class="meeting-status-row">
                                     <span class="badge ${statusBadge}">${meeting.status}</span>
                                     ${meeting.verification_status ? `<span class="badge ${verificationBadge}">${meeting.verification_status}</span>` : ''}
                                     <span class="badge ${confirmationStatusBadge}">${confirmationStatusText}</span>
@@ -691,42 +719,40 @@
                         </div>
                         <div class="meeting-actions">
                             ${meeting.lead_id ? `
-                                <a href="/leads/${meeting.lead_id}" 
-                                   class="btn" 
-                                   style="background: linear-gradient(135deg, #063A1C 0%, #205A44 100%); color: white; margin-bottom: 8px; width: 100%; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-eye mr-2"></i>Lead Detail
+                                <a href="/leads/${meeting.lead_id}" class="btn btn-primary">
+                                    <i class="fas fa-eye"></i>Lead Detail
                                 </a>
                             ` : ''}
                             ${meeting.status === 'scheduled' && meeting.customer_confirmation_status !== 'cancelled' ? `
                                 ${meeting.customer_confirmation_status === 'pending' ? `
-                                    <button class="btn" style="background: #f59e0b; color: white;" onclick="rescheduleMeeting(${meeting.id})">
-                                        <i class="fas fa-calendar mr-2"></i>Reschedule
+                                    <button class="btn btn-warning" onclick="rescheduleMeeting(${meeting.id})">
+                                        <i class="fas fa-calendar"></i>Reschedule
                                     </button>
                                     <button class="btn btn-danger" onclick="cancelMeeting(${meeting.id})">
-                                        <i class="fas fa-times mr-2"></i>Cancel Meeting
+                                        <i class="fas fa-times"></i>Cancel Meeting
                                     </button>
                                 ` : ''}
                                 <button class="btn btn-success" onclick="showCompleteMeetingModal(${meeting.id})">
-                                    <i class="fas fa-check mr-2"></i>Complete
+                                    <i class="fas fa-check"></i>Complete
                                 </button>
                                 <button class="btn btn-danger" onclick="showMarkDeadModal('meeting', ${meeting.id})">
-                                    <i class="fas fa-skull mr-2"></i>Mark as Dead
+                                    <i class="fas fa-skull"></i>Mark as Dead
                                 </button>
                             ` : ''}
                             ${meeting.status === 'completed' ? `
                                 ${meeting.verification_status === 'verified' ? `
                                     <button class="btn btn-primary" onclick="showConvertToSiteVisitModal(${meeting.id})">
-                                        <i class="fas fa-exchange-alt mr-2"></i>Convert to Site Visit
+                                        <i class="fas fa-exchange-alt"></i>Convert to Site Visit
                                     </button>
                                 ` : ''}
                                 ${meeting.verification_status === 'pending' ? `
-                                    <div style="text-align: center; padding: 8px;">
-                                        <span class="badge badge-pending">Awaiting Verification</span>
-                                        ${meeting.pending_verification_with ? `<div class="mt-1 text-xs text-gray-600" style="margin-top: 4px;">Pending with: ${(meeting.pending_verification_with || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+                                    <div class="status-note">
+                                        Awaiting Verification
+                                        ${meeting.pending_verification_with ? `<small>Pending with: ${(meeting.pending_verification_with || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</small>` : ''}
                                     </div>
                                 ` : ''}
                                 <button class="btn btn-danger" onclick="showMarkDeadModal('meeting', ${meeting.id})">
-                                    <i class="fas fa-skull mr-2"></i>Mark as Dead
+                                    <i class="fas fa-skull"></i>Mark as Dead
                                 </button>
                             ` : ''}
                         </div>
@@ -1984,4 +2010,3 @@
 }
 </style>
 @endpush
-
