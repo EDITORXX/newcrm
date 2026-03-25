@@ -143,7 +143,7 @@
     }
     
     /* Button container in cards */
-    .bg-white.rounded-lg.shadow-md .flex.gap-2 {
+    .bg-white.rounded-lg.shadow-md .lead-card-action-row {
         width: 100%;
         box-sizing: border-box;
         overflow: visible;
@@ -151,8 +151,8 @@
     }
     
     /* Buttons in lead cards */
-    .bg-white.rounded-lg.shadow-md .flex.gap-2 a,
-    .bg-white.rounded-lg.shadow-md .flex.gap-2 button {
+    .bg-white.rounded-lg.shadow-md .lead-card-action-row a,
+    .bg-white.rounded-lg.shadow-md .lead-card-action-row button {
         flex: 1 1 0;
         min-width: 0;
         max-width: calc(50% - 4px);
@@ -168,6 +168,7 @@
         border: 1px solid #d1d5db;
         background: #ffffff;
         color: #6b7280;
+        flex: 0 0 auto !important;
         width: 36px;
         height: 36px;
         border-radius: 10px;
@@ -199,7 +200,7 @@
     }
 
     /* Filters layout - desktop: one line, mobile: stacked */
-    .flex.gap-2 {
+    .lead-filters-row {
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
@@ -210,8 +211,8 @@
         box-sizing: border-box;
     }
     
-    .flex.gap-2 input,
-    .flex.gap-2 select {
+    .lead-filters-row input,
+    .lead-filters-row select {
         flex: 1;
         min-width: 0;
         max-width: 100%;
@@ -248,44 +249,44 @@
             gap: 12px;
         }
         
-        .flex.gap-2 {
+        .lead-filters-row {
             width: 100%;
             flex-direction: row;
             flex-wrap: nowrap;
             gap: 4px;
         }
         
-        .flex.gap-2 input,
-        .flex.gap-2 select {
+        .lead-filters-row input,
+        .lead-filters-row select {
             padding: 8px 6px;
             min-width: 0;
             font-size: 12px;
             box-sizing: border-box;
         }
         
-        .flex.gap-2 {
+        .lead-filters-row {
             overflow: hidden;
         }
         
-        .flex.gap-2 input {
+        .lead-filters-row input {
             width: 25%;
             flex: 0 0 25%;
             max-width: 25%;
         }
         
-        .flex.gap-2 select:nth-of-type(1) {
+        .lead-filters-row select:nth-of-type(1) {
             width: 25%;
             flex: 0 0 25%;
             max-width: 25%;
         }
         
-        .flex.gap-2 select:nth-of-type(2) {
+        .lead-filters-row select:nth-of-type(2) {
             width: 25%;
             flex: 0 0 25%;
             max-width: 25%;
         }
         
-        .flex.gap-2 button {
+        .lead-filters-row button {
             width: 25%;
             flex: 0 0 25%;
             max-width: 25%;
@@ -311,14 +312,14 @@
         }
         
         /* Ensure buttons don't overflow in cards */
-        .bg-white.rounded-lg.shadow .flex.gap-2 {
+        .bg-white.rounded-lg.shadow .lead-card-action-row {
             width: 100%;
             box-sizing: border-box;
             overflow: visible;
         }
         
-        .bg-white.rounded-lg.shadow .flex.gap-2 a,
-        .bg-white.rounded-lg.shadow .flex.gap-2 button {
+        .bg-white.rounded-lg.shadow .lead-card-action-row a,
+        .bg-white.rounded-lg.shadow .lead-card-action-row button {
             flex: 1 1 0;
             min-width: 0;
             max-width: 50%;
@@ -358,7 +359,7 @@
 @section('content')
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <div class="flex items-center justify-between mb-6" style="flex-wrap: wrap; gap: 12px;">
-        <div class="flex gap-2" style="flex-wrap: nowrap; align-items: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+        <div class="lead-filters-row flex gap-2" style="flex-wrap: nowrap; align-items: center; width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;">
             <input 
                 type="text" 
                 id="searchInput"
@@ -1008,7 +1009,7 @@
                 </div>
             </div>
 
-            <div class="flex gap-2 mt-4" style="width: 100%; box-sizing: border-box;">
+            <div class="lead-card-action-row flex gap-2 mt-4" style="width: 100%; box-sizing: border-box;">
                 <a 
                     href="/leads/${lead.id}" 
                     class="flex-1 flex items-center justify-center px-2 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d] transition-all duration-200 font-medium text-xs shadow-md min-w-0 overflow-hidden"
