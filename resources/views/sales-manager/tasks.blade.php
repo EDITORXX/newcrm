@@ -824,6 +824,10 @@
     .modal.active {
         display: flex;
     }
+    body.modal-open {
+        overflow: hidden;
+        touch-action: none;
+    }
     .spinner {
         border: 3px solid #f3f3f3;
         border-top: 3px solid #205A44;
@@ -890,9 +894,17 @@
     #managerLeadRequirementFormModal .modal-content {
         padding: 0;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100dvh - 32px);
     }
     #managerLeadRequirementFormModal .modal-body {
         padding: 20px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        flex: 1;
+        min-height: 0;
     }
     #managerLeadRequirementFormModal .modal-header h3 {
         color: #ffffff;
@@ -911,6 +923,13 @@
     }
     #managerLeadRequirementFormModal .modal-header .close-btn:hover {
         background: rgba(255, 255, 255, 0.22);
+    }
+    #managerLeadRequirementFormModal.modal {
+        align-items: flex-start;
+        padding: 12px 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
     .close-modal {
         background: none;
@@ -1441,6 +1460,11 @@
     function setCurrentTaskId(value) {
         currentTaskId = value;
         window.currentTaskId = value;
+    }
+
+    function syncModalBodyLock() {
+        const hasActiveModal = document.querySelector('.modal.active');
+        document.body.classList.toggle('modal-open', !!hasActiveModal);
     }
     
     // Attach to window for global access
@@ -2497,6 +2521,7 @@
         const container = document.getElementById('managerLeadFormContainer');
         
         modal.classList.add('active');
+        syncModalBodyLock();
         container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="display: inline-block;"></div><p style="margin-top: 15px; color: #666;">Loading form...</p></div>';
         
         try {
@@ -2518,6 +2543,7 @@
     function closeManagerLeadRequirementFormModal() {
         const modal = document.getElementById('managerLeadRequirementFormModal');
         modal.classList.remove('active');
+        syncModalBodyLock();
         document.getElementById('managerLeadFormContainer').innerHTML = '';
         window.managerTaskOutcomeContext = null;
         // Reset currentTaskId when modal is closed (user cancelled)
