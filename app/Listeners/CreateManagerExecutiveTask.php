@@ -25,6 +25,10 @@ class CreateManagerExecutiveTask
         try {
             $prospect = $event->prospect;
 
+            if (!$prospect->telecaller_id) {
+                return;
+            }
+
             // Check if prospect has manager_id (assigned manager)
             $verificationAssigneeId = $prospect->assigned_manager ?? $prospect->manager_id;
 

@@ -30,6 +30,10 @@ class CreateManagerVerificationCallTask
                 return;
             }
 
+            if (!$prospect->telecaller_id) {
+                return;
+            }
+
             // Get the person assigned for verification
             // Priority: assigned_manager > manager_id
             $verificationAssigneeId = $prospect->assigned_manager ?? $prospect->manager_id;

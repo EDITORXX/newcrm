@@ -1033,7 +1033,7 @@
             <div class="header">
                 <div class="header-top">
                     <h1 class="header-title-mobile asm-header-title" style="font-size: 24px; font-weight: 700; color: #063A1C;">
-                        <span class="eyebrow">{{ auth()->user()->getDisplayRoleName() ?? 'Assistant Sales Manager' }} Workspace</span>
+                        <span class="eyebrow">Dashboard</span>
                         <span class="header-page-title-desktop title">@yield('page-title', 'Dashboard')</span>
                         <div class="header-user-info-mobile">
                             <span class="header-user-name-mobile">{{ auth()->user()->name }}</span>

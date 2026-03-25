@@ -23,6 +23,52 @@ use Carbon\Carbon;
 
 class SalesManagerController extends Controller
 {
+    private function applySubordinateProspectVerificationScope($query, User $user, $teamMemberIds = null)
+    {
+        $teamMemberIds = $teamMemberIds instanceof \Illuminate\Support\Collection
+            ? $teamMemberIds
+            : collect($teamMemberIds ?? []);
+
+        return $query->where(function ($q) use ($user, $teamMemberIds) {
+            if ($teamMemberIds->isNotEmpty()) {
+                $q->whereIn('telecaller_id', $teamMemberIds);
+            }
+
+            $q->orWhereHas('telecaller', function ($telecallerQuery) use ($user) {
+                $telecallerQuery->where('manager_id', $user->id);
+            });
+        });
+    }
+
+    private function prospectRequiresManagerVerification(?Prospect $prospect, User $user, $teamMemberIds = null): bool
+    {
+        if (!$prospect) {
+            return false;
+        }
+
+        if (!in_array($prospect->verification_status ?? '', ['pending', 'pending_verification'], true)) {
+            return false;
+        }
+
+        if (!$prospect->telecaller_id) {
+            return false;
+        }
+
+        $teamMemberIds = $teamMemberIds instanceof \Illuminate\Support\Collection
+            ? $teamMemberIds
+            : collect($teamMemberIds ?? []);
+
+        if ($teamMemberIds->isNotEmpty() && $teamMemberIds->contains((int) $prospect->telecaller_id)) {
+            return true;
+        }
+
+        if (!$prospect->relationLoaded('telecaller')) {
+            $prospect->load('telecaller');
+        }
+
+        return (int) ($prospect->telecaller->manager_id ?? 0) === (int) $user->id;
+    }
+
     /**
      * Get profile data with team members
      */
@@ -107,23 +153,11 @@ class SalesManagerController extends Controller
         $teamMemberIds = $teamMembers->pluck('id');
         
         // Use same query structure as getProspects for consistency
-        $pendingVerifications = Prospect::where(function($q) use ($teamMemberIds, $user) {
-            // Always start with manager_id and assigned_manager checks
-            $q->where('manager_id', $user->id)
-              ->orWhere('assigned_manager', $user->id);
-            
-            // Prospects from team members
-            if ($teamMemberIds->isNotEmpty()) {
-                $q->orWhereIn('telecaller_id', $teamMemberIds);
-            }
-            
-            // OR prospects where telecaller's manager_id matches (for old prospects)
-            $q->orWhereHas('telecaller', function($telecallerQuery) use ($user) {
-                $telecallerQuery->where('manager_id', $user->id);
-            });
-        })
-        ->whereIn('verification_status', ['pending', 'pending_verification'])
-        ->count();
+        $pendingVerifications = $this->applySubordinateProspectVerificationScope(
+            Prospect::query(),
+            $user,
+            $teamMemberIds
+        )->whereIn('verification_status', ['pending', 'pending_verification'])->count();
         
         // Log for debugging
         \Log::info('Senior Manager getProfile - Pending verifications', [
@@ -545,6 +579,9 @@ class SalesManagerController extends Controller
         if (!$user->relationLoaded('role')) {
             $user->load('role');
         }
+
+        $restrictPendingVerificationToSubordinates =
+            $user->isSalesManager() || $user->isSeniorManager() || $user->isAssistantSalesManager();
         
         // Query prospects
         $query = Prospect::with(['telecaller', 'manager', 'lead', 'createdBy']);
@@ -637,6 +674,9 @@ class SalesManagerController extends Controller
             $status = $request->verification_status;
             // Map frontend values to database values
             if ($status === 'pending_verification') {
+                if ($restrictPendingVerificationToSubordinates) {
+                    $this->applySubordinateProspectVerificationScope($query, $user, $teamMemberIds ?? collect());
+                }
                 $query->whereIn('verification_status', ['pending', 'pending_verification']);
             } elseif ($status === 'verified') {
                 $query->whereIn('verification_status', ['verified', 'approved']);
@@ -698,9 +738,14 @@ class SalesManagerController extends Controller
         // Note: Database uses 'pending' but frontend expects 'pending_verification'
         // Database uses 'approved' but frontend expects 'verified'
         // "all" count excludes rejected prospects
+        $pendingVerificationCountQuery = clone $baseQuery;
+        if ($restrictPendingVerificationToSubordinates) {
+            $this->applySubordinateProspectVerificationScope($pendingVerificationCountQuery, $user, $teamMemberIds ?? collect());
+        }
+
         $counts = [
             'all' => (clone $baseQuery)->where('verification_status', '!=', 'rejected')->count(),
-            'pending_verification' => (clone $baseQuery)->whereIn('verification_status', ['pending', 'pending_verification'])->count(),
+            'pending_verification' => $pendingVerificationCountQuery->whereIn('verification_status', ['pending', 'pending_verification'])->count(),
             'verified' => (clone $baseQuery)->whereIn('verification_status', ['verified', 'approved'])->count(),
             'rejected' => (clone $baseQuery)->where('verification_status', 'rejected')->count(),
         ];
@@ -740,8 +785,9 @@ class SalesManagerController extends Controller
 
         $data = $validator->validated();
         $data['manager_id'] = $user->id;
+        $data['assigned_manager'] = $user->id;
         $data['created_by'] = $user->id;
-        $data['verification_status'] = 'pending';
+        $data['verification_status'] = 'approved';
 
         // If lead_id provided, link it
         if (isset($data['lead_id'])) {
@@ -767,6 +813,7 @@ class SalesManagerController extends Controller
     {
         try {
             $user = $request->user();
+            $teamMemberIds = $user ? $user->teamMembers()->pluck('id') : collect();
             
             if (!$user) {
                 \Log::warning('Senior Manager getTasks - User not authenticated');
@@ -986,14 +1033,14 @@ class SalesManagerController extends Controller
                     $prospect = $task->lead->prospects->sortByDesc('created_at')->first();
                     
                     if ($prospect) {
-                        $hasProspect = true;
+                        $hasProspect = $this->prospectRequiresManagerVerification($prospect, $user, $teamMemberIds);
                         $leadStatus = $prospect->lead_status ?? null;
                         $prospectData = [
                             'id' => $prospect->id,
                             'verification_status' => $prospect->verification_status ?? null,
                             'lead_status' => $prospect->lead_status ?? null,
                             'telecaller_id' => $prospect->telecaller_id ?? null,
-                            'is_pending_verification' => in_array($prospect->verification_status ?? '', ['pending', 'pending_verification']),
+                            'is_pending_verification' => $hasProspect,
                         ];
                     }
                 }
@@ -1062,6 +1109,14 @@ class SalesManagerController extends Controller
                 
                 $tasksArray[] = $taskData;
             }
+
+            $tasksArray = array_values(array_filter($tasksArray, function ($task) {
+                if (($task['category'] ?? null) !== 'prospect') {
+                    return true;
+                }
+
+                return ($task['has_prospect'] ?? false) === true;
+            }));
 
             if ($normalizedCategoryFilter && $normalizedCategoryFilter !== 'all') {
                 $tasksArray = array_values(array_filter($tasksArray, function ($task) use ($normalizedCategoryFilter) {
