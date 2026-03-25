@@ -75,6 +75,52 @@
         gap: 20px;
         margin-top: 20px;
     }
+    .asm-outcome-modal .modal-body {
+        padding: 0 20px 24px;
+    }
+    .asm-outcome-modal-body {
+        padding: 20px 0 0;
+        text-align: center;
+    }
+    .asm-outcome-copy {
+        font-size: 15px;
+        color: #374151;
+        margin: 0 0 24px;
+        line-height: 1.6;
+    }
+    .asm-outcome-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .asm-outcome-btn {
+        min-height: 58px;
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 16px;
+        text-align: center;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .asm-outcome-btn:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+    }
+    .asm-outcome-btn-green { background: #205A44; }
+    .asm-outcome-btn-slate { background: #6b7280; }
+    .asm-outcome-btn-blue { background: #2563eb; }
+    .asm-outcome-btn-amber { background: #f59e0b; }
+    .asm-outcome-btn-red { background: #dc2626; }
+    .asm-outcome-btn-full {
+        grid-column: 1 / -1;
+    }
     @media (max-width: 768px) {
         .tasks-container {
             padding: 12px !important;
@@ -240,6 +286,42 @@
             padding: 10px 16px;
             font-size: 12px;
             justify-content: center;
+        }
+        .asm-outcome-modal {
+            width: calc(100vw - 24px);
+            max-width: 420px !important;
+        }
+        .asm-outcome-modal .modal-header {
+            padding: 18px 18px 14px;
+        }
+        .asm-outcome-modal .modal-header h3 {
+            font-size: 18px;
+        }
+        .asm-outcome-modal .modal-body {
+            padding: 0 18px 18px;
+        }
+        .asm-outcome-copy {
+            font-size: 14px;
+            margin-bottom: 18px;
+        }
+        .asm-outcome-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .asm-outcome-btn {
+            min-height: 54px;
+            font-size: 14px;
+            padding: 12px 10px;
+            gap: 6px;
+        }
+    }
+    @media (max-width: 420px) {
+        .asm-outcome-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        .asm-outcome-btn {
+            min-height: 52px;
+            font-size: 13px;
         }
     }
     
@@ -844,31 +926,36 @@
 
 <!-- Step 1: Call Outcome Modal -->
 <div id="verifyRejectPromptModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content asm-outcome-modal" style="max-width: 500px;">
         <div class="modal-header">
             <h3>Call Outcome</h3>
             <button class="close-modal" onclick="closeTaskOutcomeModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <div style="padding: 20px; text-align: center;">
-                <p style="font-size: 16px; color: #333; margin-bottom: 30px;">
+            <div class="asm-outcome-modal-body">
+                <p class="asm-outcome-copy">
                     Select the outcome for this completed ASM call:
                 </p>
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                    <button type="button" class="btn-verify" onclick="selectTaskOutcome('interested')" style="padding: 12px 24px; background: #205A44; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-                        <i class="fas fa-thumbs-up" style="margin-right: 8px;"></i>Interested
+                <div class="asm-outcome-grid">
+                    <button type="button" class="asm-outcome-btn asm-outcome-btn-green" onclick="selectTaskOutcome('interested')">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span>Interested</span>
                     </button>
-                    <button type="button" class="btn-reject" onclick="selectTaskOutcome('not_interested')" style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-                        <i class="fas fa-user-slash" style="margin-right: 8px;"></i>Not Interested
+                    <button type="button" class="asm-outcome-btn asm-outcome-btn-slate" onclick="selectTaskOutcome('not_interested')">
+                        <i class="fas fa-user-slash"></i>
+                        <span>Not Interested</span>
                     </button>
-                    <button type="button" class="btn-cnp" onclick="selectTaskOutcome('follow_up')" style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-                        <i class="fas fa-clock" style="margin-right: 8px;"></i>Follow Up
+                    <button type="button" class="asm-outcome-btn asm-outcome-btn-blue" onclick="selectTaskOutcome('follow_up')">
+                        <i class="fas fa-clock"></i>
+                        <span>Follow Up</span>
                     </button>
-                    <button type="button" class="btn-cnp" onclick="selectTaskOutcome('cnp')" style="padding: 12px 24px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-                        <i class="fas fa-phone-slash" style="margin-right: 8px;"></i>CNP
+                    <button type="button" class="asm-outcome-btn asm-outcome-btn-amber" onclick="selectTaskOutcome('cnp')">
+                        <i class="fas fa-phone-slash"></i>
+                        <span>CNP</span>
                     </button>
-                    <button type="button" class="btn-reject" onclick="selectTaskOutcome('junk')" style="padding: 12px 24px; background: #dc2626; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
-                        <i class="fas fa-trash" style="margin-right: 8px;"></i>Junk
+                    <button type="button" class="asm-outcome-btn asm-outcome-btn-red asm-outcome-btn-full" onclick="selectTaskOutcome('junk')">
+                        <i class="fas fa-trash"></i>
+                        <span>Junk</span>
                     </button>
                 </div>
             </div>

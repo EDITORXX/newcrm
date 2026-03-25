@@ -683,6 +683,10 @@
             font-size: 24px;
         }
     }
+    .asm-hero-copy p,
+    .asm-action-row {
+        display: none;
+    }
 </style>
 @endpush
 
@@ -690,12 +694,6 @@
 <section class="asm-hero">
     <div class="asm-hero-copy">
         <h2>Good morning, <span>{{ auth()->user()->name }}</span></h2>
-        <p>Assistant sales manager dashboard ko cleaner daily workflow ke around organize kiya gaya hai, taaki pending calls, verifications aur team activity ek hi glance me clear dikhe.</p>
-        <div class="asm-action-row">
-            <a href="{{ route('sales-manager.tasks') }}" class="asm-action-btn primary"><i class="fas fa-phone-alt"></i>Open Tasks</a>
-            <a href="{{ route('sales-manager.meetings') }}" class="asm-action-btn"><i class="fas fa-handshake"></i>View Meetings</a>
-            <a href="{{ route('sales-manager.team') }}" class="asm-action-btn"><i class="fas fa-users"></i>Manage Team</a>
-        </div>
     </div>
     <div class="asm-focus-panel">
         <div>
