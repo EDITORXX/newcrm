@@ -419,13 +419,14 @@
             color: white !important;
         }
         
-        /* Icon background - make it lighter/transparent on royal green */
-        .stats-grid > div > div:last-child {
-            background: rgba(255, 255, 255, 0.2) !important;
+        /* Icon background - scope to icon chip only (avoid white overlay layer on card) */
+        .stats-grid > div .stat-icon {
+            background: rgba(255, 255, 255, 0.22) !important;
+            color: #ffffff !important;
         }
         
-        .stats-grid > div > div:last-child i {
-            color: white !important;
+        .stats-grid > div .stat-icon i {
+            color: #ffffff !important;
         }
     }
     
