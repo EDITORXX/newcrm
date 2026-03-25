@@ -607,11 +607,14 @@
             margin: 20px auto;
         }
         #managerLeadRequirementFormModal .modal-header {
-            margin: -20px -20px 20px -20px;
-            padding: 16px 20px;
+            margin: 0;
+            padding: 14px 16px;
         }
         #managerLeadRequirementFormModal .modal-header h3 {
-            font-size: 22px;
+            font-size: 24px;
+        }
+        #managerLeadRequirementFormModal .modal-body {
+            padding: 14px;
         }
     }
     .modal-header {
@@ -629,14 +632,21 @@
     }
     #managerLeadRequirementFormModal .modal-header {
         background: linear-gradient(135deg, #063A1C 0%, #205A44 100%);
-        margin: -30px -30px 24px -30px;
-        padding: 20px 30px;
+        margin: 0;
+        padding: 18px 20px;
         border-bottom: none;
         border-radius: 12px 12px 0 0;
     }
+    #managerLeadRequirementFormModal .modal-content {
+        padding: 0;
+        overflow: hidden;
+    }
+    #managerLeadRequirementFormModal .modal-body {
+        padding: 20px;
+    }
     #managerLeadRequirementFormModal .modal-header h3 {
         color: #ffffff;
-        font-size: 28px;
+        font-size: 34px;
     }
     #managerLeadRequirementFormModal .modal-header .close-btn {
         width: 44px;
