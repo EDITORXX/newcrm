@@ -164,6 +164,7 @@
         const isInterestedOutcomeFlow = context === 'task' && outcomeContext && outcomeContext.outcome === 'interested';
         const selectedAction = isInterestedOutcomeFlow ? 'interested' : getSelectedAction(formValues, context);
         const modalTitle = getModalTitleElement();
+        const showHeroSection = context === 'task';
 
         if (modalTitle) {
             modalTitle.textContent = 'Lead Form';
@@ -180,6 +181,7 @@
 
         container.innerHTML = `
             <div class="manager-lead-shell">
+                ${showHeroSection ? `
                 <div class="manager-lead-header">
                     <div class="manager-lead-header-copy">
                         <div class="manager-lead-breadcrumb">CRM › Leads › <span>Lead detail form</span></div>
@@ -194,6 +196,7 @@
                     ${renderProgressStep(2, 'Profiling', { done: false, active: true })}
                     ${renderProgressStep(3, 'Output', { done: false, active: !!selectedAction })}
                 </div>
+                ` : ''}
 
                 <form id="managerLeadRequirementForm" class="manager-lead-form" novalidate onsubmit="submitManagerLeadRequirementForm(event); return false;">
                     <input type="hidden" name="task_id" value="${typeof window.currentTaskId !== 'undefined' ? (window.currentTaskId || '') : ''}">
