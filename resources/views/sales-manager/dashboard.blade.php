@@ -63,9 +63,24 @@
         line-height: 1.1;
         font-family: 'Playfair Display', serif;
     }
+    .asm-dashboard-mobile-menu {
+        display: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid #d4ddd7;
+        background: #ffffff;
+        color: #0f2d22;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
     
     /* Responsive Styles */
     @media (max-width: 767px) {
+        .asm-dashboard-mobile-menu {
+            display: inline-flex;
+        }
         .chart-container {
             height: 250px;
             margin: 16px 0;
@@ -774,6 +789,9 @@
 @section('content')
 <section class="asm-hero">
     <div class="asm-hero-copy">
+        <button id="asmDashboardMenuButton" class="asm-dashboard-mobile-menu" type="button" aria-label="Open menu">
+            <i class="fas fa-bars"></i>
+        </button>
         <div class="asm-hero-kicker">Dashboard</div>
         <h2>Good morning, <span>{{ auth()->user()->name }}</span></h2>
         <div class="asm-focus-panel" style="margin-top: 22px;">
@@ -1161,6 +1179,18 @@
 <script>
     const API_BASE_URL = '{{ url("/api/sales-manager") }}';
     const API_TOKEN = '{{ $api_token ?? session("api_token") ?? "" }}';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const dashboardMenuBtn = document.getElementById('asmDashboardMenuButton');
+        if (!dashboardMenuBtn) return;
+
+        dashboardMenuBtn.addEventListener('click', function () {
+            const headerMenuBtn = document.getElementById('asmMobileMenuToggle');
+            if (headerMenuBtn) {
+                headerMenuBtn.click();
+            }
+        });
+    });
     
     // Store token in localStorage if available
     if (API_TOKEN) {
