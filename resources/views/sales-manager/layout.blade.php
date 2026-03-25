@@ -571,11 +571,11 @@
             }
             
             /* Remove any left margin from header or content sections */
-            .header,
-            .tasks-container,
-            .bg-white,
-            .header-top,
-            .header-actions {
+            body.asm-shell.asm-ui-classic .header,
+            body.asm-shell.asm-ui-classic .tasks-container,
+            body.asm-shell.asm-ui-classic .bg-white,
+            body.asm-shell.asm-ui-classic .header-top,
+            body.asm-shell.asm-ui-classic .header-actions {
                 margin-left: 0 !important;
                 padding-left: 12px !important;
             }
@@ -904,6 +904,68 @@
             .asm-user-chip {
                 display: none;
             }
+            body.asm-shell.asm-ui-modern #sidebar {
+                display: block !important;
+                position: fixed !important;
+                left: 0 !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                width: 232px !important;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease-in-out;
+                z-index: 1102;
+            }
+            body.asm-shell.asm-ui-modern #sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            body.asm-shell.asm-ui-modern #mobileFooterNav {
+                display: none !important;
+            }
+            body.asm-shell.asm-ui-modern #mainContent,
+            body.asm-shell.asm-ui-modern div#mainContent,
+            body.asm-shell.asm-ui-modern html body #mainContent {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding-bottom: 0 !important;
+            }
+            body.asm-shell.asm-ui-modern .sidebar-overlay {
+                display: none;
+            }
+            body.asm-shell.asm-ui-modern .sidebar-overlay.active {
+                display: block !important;
+                opacity: 1;
+                z-index: 1101;
+            }
+            body.asm-shell.asm-ui-modern.mobile-drawer-open {
+                overflow: hidden;
+            }
+            body.asm-shell.asm-ui-classic #sidebar {
+                display: none !important;
+            }
+            body.asm-shell.asm-ui-classic #mobileFooterNav {
+                display: flex !important;
+            }
+            body.asm-shell.asm-ui-classic #mainContent,
+            body.asm-shell.asm-ui-classic div#mainContent,
+            body.asm-shell.asm-ui-classic html body #mainContent {
+                padding-bottom: 70px !important;
+            }
+            .asm-mobile-menu-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                border: 1px solid #d4ddd7;
+                background: #ffffff;
+                color: #0f2d22;
+                flex-shrink: 0;
+                margin-bottom: 4px;
+            }
+            .asm-mobile-menu-btn i {
+                font-size: 14px;
+            }
         }
     </style>
     @stack('styles')
@@ -912,6 +974,26 @@
     <script>
         // Mobile detection and initial layout - run immediately to override inline styles
         (function() {
+            function resolveAsmMobileUiMode() {
+                const param = new URLSearchParams(window.location.search).get('asm_mobile_ui');
+                if (param === 'classic' || param === 'modern') {
+                    try { localStorage.setItem('asm_mobile_ui_mode', param); } catch (e) {}
+                    return param;
+                }
+                try {
+                    const saved = localStorage.getItem('asm_mobile_ui_mode');
+                    if (saved === 'classic' || saved === 'modern') return saved;
+                } catch (e) {}
+                return 'modern';
+            }
+
+            function applyAsmUiModeClass(mode) {
+                const body = document.body;
+                if (!body) return;
+                body.classList.remove('asm-ui-classic', 'asm-ui-modern');
+                body.classList.add(mode === 'classic' ? 'asm-ui-classic' : 'asm-ui-modern');
+            }
+
             function isDesktopSidebarCollapsed() {
                 try { return localStorage.getItem('asm_sidebar_collapsed') === '1'; } catch (e) { return false; }
             }
@@ -921,19 +1003,35 @@
                 const sidebar = document.getElementById('sidebar');
                 const mainContent = document.getElementById('mainContent');
                 const sidebarToggle = document.getElementById('sidebarToggle');
+                const mobileMenuToggle = document.getElementById('asmMobileMenuToggle');
+                const sidebarOverlay = document.getElementById('sidebarOverlay');
                 const collapsed = !isMobile && isDesktopSidebarCollapsed();
+                const uiMode = resolveAsmMobileUiMode();
+                applyAsmUiModeClass(uiMode);
                 
                 if (isMobile) {
-                    // Mobile: Hide sidebar and remove left margin from mainContent
+                    // Mobile: switch behavior by UI mode
                     document.body.classList.remove('sidebar-collapsed');
-                    if (sidebar) {
-                        sidebar.style.display = 'none';
-                        sidebar.style.width = '0';
-                    }
                     if (sidebarToggle) {
                         sidebarToggle.style.display = 'none';
                     }
-                    // Override inline style on mainContent using setProperty with important
+                    if (mobileMenuToggle) {
+                        mobileMenuToggle.style.display = uiMode === 'modern' ? 'inline-flex' : 'none';
+                    }
+                    if (uiMode === 'classic') {
+                        if (sidebar) {
+                            sidebar.classList.remove('mobile-open');
+                            sidebar.style.display = 'none';
+                            sidebar.style.width = '0';
+                        }
+                        if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                        document.body.classList.remove('mobile-drawer-open');
+                    } else {
+                        if (sidebar) {
+                            sidebar.style.display = 'block';
+                            sidebar.style.width = '232px';
+                        }
+                    }
                     if (mainContent) {
                         mainContent.style.setProperty('margin-left', '0', 'important');
                         mainContent.style.setProperty('width', '100%', 'important');
@@ -952,6 +1050,12 @@
                     if (sidebarToggle) {
                         sidebarToggle.style.display = 'inline-flex';
                     }
+                    if (mobileMenuToggle) {
+                        mobileMenuToggle.style.display = 'none';
+                    }
+                    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+                    document.body.classList.remove('mobile-drawer-open');
+                    if (sidebar) sidebar.classList.remove('mobile-open');
                     if (mainContent) {
                         mainContent.style.setProperty('margin-left', collapsed ? '78px' : '232px', 'important');
                         mainContent.style.setProperty('width', collapsed ? 'calc(100% - 78px)' : 'calc(100% - 232px)', 'important');
@@ -969,6 +1073,7 @@
             
             // Run on window load as well
             window.addEventListener('load', fixMobileLayout);
+            window.__asmFixMobileLayout = fixMobileLayout;
         })();
     </script>
     
@@ -1032,6 +1137,9 @@
             <!-- Header -->
             <div class="header">
                 <div class="header-top">
+                    <button id="asmMobileMenuToggle" class="asm-mobile-menu-btn" type="button" style="display:none;" aria-label="Open menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <h1 class="header-title-mobile asm-header-title" style="font-size: 24px; font-weight: 700; color: #063A1C;">
                         <span class="header-page-title-desktop title">@yield('page-title', 'Dashboard')</span>
                         <div class="header-user-info-mobile">
@@ -1348,16 +1456,47 @@
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
             const sidebarToggle = document.getElementById('sidebarToggle');
+            const mobileMenuToggle = document.getElementById('asmMobileMenuToggle');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const sidebarLinks = document.querySelectorAll('#sidebar .sidebar-link');
+
+            function getAsmMobileUiMode() {
+                if (document.body.classList.contains('asm-ui-classic')) return 'classic';
+                if (document.body.classList.contains('asm-ui-modern')) return 'modern';
+                return 'modern';
+            }
+
+            function closeMobileDrawer() {
+                if (!sidebar || !sidebarOverlay) return;
+                sidebar.classList.remove('mobile-open');
+                sidebarOverlay.classList.remove('active');
+                document.body.classList.remove('mobile-drawer-open');
+            }
+
+            function openMobileDrawer() {
+                if (!sidebar || !sidebarOverlay) return;
+                sidebar.classList.add('mobile-open');
+                sidebarOverlay.classList.add('active');
+                document.body.classList.add('mobile-drawer-open');
+            }
             
             function updateLayout() {
                 const isMobile = window.innerWidth <= 767;
                 const isCollapsed = !isMobile && document.body.classList.contains('sidebar-collapsed');
+                const uiMode = getAsmMobileUiMode();
                 
                 if (sidebar) {
                     if (isMobile) {
-                        // Mobile: Hide sidebar completely
-                        sidebar.style.display = 'none';
-                        sidebar.style.width = '0';
+                        if (uiMode === 'classic') {
+                            // Classic mobile: hide drawer/sidebar completely
+                            sidebar.style.display = 'none';
+                            sidebar.style.width = '0';
+                            closeMobileDrawer();
+                        } else {
+                            // Modern mobile: keep drawer available
+                            sidebar.style.display = 'block';
+                            sidebar.style.width = '232px';
+                        }
                     } else {
                         // Desktop: collapsible navigation
                         sidebar.classList.remove('sidebar-expanded', 'sidebar-hidden');
@@ -1367,6 +1506,9 @@
                 }
                 if (sidebarToggle) {
                     sidebarToggle.style.display = isMobile ? 'none' : 'inline-flex';
+                }
+                if (mobileMenuToggle) {
+                    mobileMenuToggle.style.display = isMobile && uiMode === 'modern' ? 'inline-flex' : 'none';
                 }
                 
                 if (mainContent) {
@@ -1378,6 +1520,7 @@
                         mainContent.style.setProperty('padding-right', '0', 'important');
                         mainContent.style.setProperty('left', '0', 'important');
                     } else {
+                        closeMobileDrawer();
                         mainContent.style.setProperty('margin-left', isCollapsed ? '78px' : '232px', 'important');
                         mainContent.style.setProperty('width', isCollapsed ? 'calc(100% - 78px)' : 'calc(100% - 232px)', 'important');
                     }
@@ -1395,6 +1538,29 @@
                     updateLayout();
                 });
             }
+
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', function() {
+                    const isMobile = window.innerWidth <= 767;
+                    const uiMode = getAsmMobileUiMode();
+                    if (!isMobile || uiMode !== 'modern') return;
+                    const isOpen = sidebar && sidebar.classList.contains('mobile-open');
+                    if (isOpen) closeMobileDrawer();
+                    else openMobileDrawer();
+                });
+            }
+
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', closeMobileDrawer);
+            }
+
+            sidebarLinks.forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 767 && getAsmMobileUiMode() === 'modern') {
+                        closeMobileDrawer();
+                    }
+                });
+            });
             
             // Initial setup
             updateLayout();

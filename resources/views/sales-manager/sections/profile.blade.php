@@ -5,12 +5,18 @@
 
 @push('styles')
 <style>
+    .profile-shell {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
     .profile-card {
-        background: white;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
         padding: 24px;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
+        border-radius: 16px;
+        border: 1px solid #dce8e1;
+        box-shadow: 0 8px 24px rgba(12, 41, 30, 0.08);
+        margin-bottom: 0;
     }
     .profile-header {
         display: flex;
@@ -147,9 +153,11 @@
         transition: all 0.3s;
     }
     @media (max-width: 768px) {
+        .profile-shell {
+            gap: 12px;
+        }
         .profile-card {
             padding: 16px;
-            margin-bottom: 16px;
         }
         
         .profile-header {
@@ -222,6 +230,10 @@
             grid-template-columns: 1fr !important;
             gap: 16px;
         }
+        .team-summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
     }
     
     .btn-primary {
@@ -257,6 +269,31 @@
         margin-bottom: 20px;
         display: flex;
         align-items: center;
+    }
+    .team-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .team-summary-card {
+        border-radius: 12px;
+        border: 1px solid #dce8e1;
+        background: #f5faf7;
+        padding: 12px;
+    }
+    .team-summary-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #527264;
+        margin-bottom: 6px;
+    }
+    .team-summary-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f3c2a;
+        line-height: 1;
     }
     .card-title i {
         margin-right: 10px;
@@ -403,6 +440,7 @@
 @endpush
 
 @section('content')
+<div class="profile-shell">
     <!-- Profile Header -->
     <div class="profile-card">
         <div class="edit-header">
@@ -481,6 +519,24 @@
             My Team
             <span class="stat-badge" id="teamStatsTotal">0 members</span>
         </div>
+        <div class="team-summary-grid">
+            <div class="team-summary-card">
+                <div class="team-summary-label">Total</div>
+                <div class="team-summary-value" id="teamSummaryTotal">0</div>
+            </div>
+            <div class="team-summary-card">
+                <div class="team-summary-label">Available</div>
+                <div class="team-summary-value" id="teamSummaryAvailable">0</div>
+            </div>
+            <div class="team-summary-card">
+                <div class="team-summary-label">Absent</div>
+                <div class="team-summary-value" id="teamSummaryAbsent">0</div>
+            </div>
+            <div class="team-summary-card">
+                <div class="team-summary-label">Today Prospects</div>
+                <div class="team-summary-value" id="teamSummaryToday">0</div>
+            </div>
+        </div>
         <div id="teamMembersContainer">
             <p style="text-align: center; color: #B3B5B4; padding: 20px;">Loading team members...</p>
         </div>
@@ -551,6 +607,7 @@
             </form>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -672,9 +729,22 @@
     function loadTeamMembers(teamMembers, teamStats) {
         const container = document.getElementById('teamMembersContainer');
         const statsTotal = document.getElementById('teamStatsTotal');
+        const summaryTotal = document.getElementById('teamSummaryTotal');
+        const summaryAvailable = document.getElementById('teamSummaryAvailable');
+        const summaryAbsent = document.getElementById('teamSummaryAbsent');
+        const summaryToday = document.getElementById('teamSummaryToday');
         
         if (teamStats) {
             statsTotal.textContent = `${teamStats.total_members} members (${teamStats.available_members} available)`;
+            if (summaryTotal) summaryTotal.textContent = teamStats.total_members || 0;
+            if (summaryAvailable) summaryAvailable.textContent = teamStats.available_members || 0;
+            if (summaryAbsent) summaryAbsent.textContent = Math.max((teamStats.total_members || 0) - (teamStats.available_members || 0), 0);
+            if (summaryToday) summaryToday.textContent = teamStats.today_prospects || 0;
+        } else {
+            if (summaryTotal) summaryTotal.textContent = 0;
+            if (summaryAvailable) summaryAvailable.textContent = 0;
+            if (summaryAbsent) summaryAbsent.textContent = 0;
+            if (summaryToday) summaryToday.textContent = 0;
         }
         
         if (!teamMembers || teamMembers.length === 0) {
@@ -977,4 +1047,3 @@
     })();
 </script>
 @endpush
-
