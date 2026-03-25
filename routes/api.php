@@ -244,6 +244,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/prospects/pending', [\App\Http\Controllers\Api\Crm\VerificationController::class, 'getPending']);
         Route::post('/prospects/{prospect}/verify', [\App\Http\Controllers\Api\Crm\VerificationController::class, 'verify']);
         Route::post('/prospects/{prospect}/reject', [\App\Http\Controllers\Api\Crm\VerificationController::class, 'reject']);
+
+        // Favorite leads
+        Route::get('/favorite-leads', [\App\Http\Controllers\Api\SalesManagerController::class, 'getFavoriteLeads']);
+        Route::post('/leads/{lead}/favorite', [\App\Http\Controllers\Api\SalesManagerController::class, 'addFavoriteLead']);
+        Route::delete('/leads/{lead}/favorite', [\App\Http\Controllers\Api\SalesManagerController::class, 'removeFavoriteLead']);
         
         // Tasks
         Route::get('/tasks', [\App\Http\Controllers\Api\SalesManagerController::class, 'getTasks']);

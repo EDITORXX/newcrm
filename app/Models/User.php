@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -61,6 +62,17 @@ class User extends Authenticatable
     public function assignedLeads(): HasMany
     {
         return $this->hasMany(LeadAssignment::class, 'assigned_to');
+    }
+
+    public function leadFavorites(): HasMany
+    {
+        return $this->hasMany(LeadFavorite::class);
+    }
+
+    public function favoriteLeads(): BelongsToMany
+    {
+        return $this->belongsToMany(Lead::class, 'lead_favorites')
+            ->withTimestamps();
     }
 
     public function siteVisits(): HasMany
@@ -353,4 +365,3 @@ class User extends Authenticatable
         return asset('storage/' . $this->profile_picture);
     }
 }
-

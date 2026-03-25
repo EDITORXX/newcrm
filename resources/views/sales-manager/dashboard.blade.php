@@ -52,6 +52,17 @@
         font-size: 12px;
         font-weight: 500;
     }
+    .header {
+        display: none;
+    }
+    .asm-hero-kicker {
+        margin: 0 0 22px;
+        font-size: 22px;
+        font-weight: 700;
+        color: #063A1C;
+        line-height: 1.1;
+        font-family: 'Playfair Display', serif;
+    }
     
     /* Responsive Styles */
     @media (max-width: 767px) {
@@ -550,6 +561,74 @@
         flex-direction: column;
         justify-content: space-between;
     }
+    .asm-hero-side {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        align-items: stretch;
+    }
+    .asm-favorites-panel {
+        background: linear-gradient(180deg, #fff 0%, #f5f7f6 100%);
+        border: 1px solid #d9e2dd;
+        border-radius: 20px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
+    .asm-favorites-panel .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #4b6358;
+        margin-bottom: 8px;
+    }
+    .asm-favorites-panel h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f2a1f;
+        margin-bottom: 10px;
+    }
+    .favorite-leads-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 4px;
+        overflow: hidden;
+    }
+    .favorite-lead-item {
+        border: 1px solid #e5ece8;
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #fff;
+    }
+    .favorite-lead-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: #163628;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .favorite-lead-remark {
+        font-size: 12px;
+        color: #5b6d63;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        word-break: break-word;
+    }
+    .favorite-leads-empty {
+        border: 1px dashed #ced9d3;
+        border-radius: 12px;
+        padding: 14px;
+        font-size: 13px;
+        color: #6b7f74;
+        background: #fbfdfc;
+    }
     .asm-focus-panel .eyebrow {
         font-size: 11px;
         letter-spacing: 0.12em;
@@ -669,9 +748,16 @@
             padding: 18px;
             border-radius: 18px;
         }
+        .asm-hero-side {
+            grid-template-columns: 1fr;
+        }
         .asm-hero-copy h2 {
             font-size: 22px;
             font-family: 'Outfit', sans-serif;
+        }
+        .asm-hero-kicker {
+            font-size: 18px;
+            margin-bottom: 16px;
         }
         .asm-stats-grid {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -693,18 +779,30 @@
 @section('content')
 <section class="asm-hero">
     <div class="asm-hero-copy">
+        <div class="asm-hero-kicker">Dashboard</div>
         <h2>Good morning, <span>{{ auth()->user()->name }}</span></h2>
     </div>
-    <div class="asm-focus-panel">
-        <div>
-            <div class="eyebrow">Today Focus</div>
-            <h3>Lead response, verification queue, and overdue follow-ups.</h3>
-            <p>Section order ab operational priority ke hisaab se hai, decorative clutter ke hisaab se nahi.</p>
+    <div class="asm-hero-side">
+        <div class="asm-focus-panel">
+            <div>
+                <div class="eyebrow">Today Focus</div>
+                <h3>Lead response, verification queue, and overdue follow-ups.</h3>
+                <p>Section order ab operational priority ke hisaab se hai, decorative clutter ke hisaab se nahi.</p>
+            </div>
+            <div class="asm-mini-metrics">
+                <div><strong id="pendingTasksHero">0</strong><span>Pending</span></div>
+                <div><strong id="overdueTasksHero">0</strong><span>Overdue</span></div>
+                <div><strong id="pendingVerificationsHero">0</strong><span>Verify</span></div>
+            </div>
         </div>
-        <div class="asm-mini-metrics">
-            <div><strong id="pendingTasksHero">0</strong><span>Pending</span></div>
-            <div><strong id="overdueTasksHero">0</strong><span>Overdue</span></div>
-            <div><strong id="pendingVerificationsHero">0</strong><span>Verify</span></div>
+        <div class="asm-favorites-panel">
+            <div>
+                <div class="eyebrow">Favorites</div>
+                <h3>Favorite Leads</h3>
+            </div>
+            <div id="favoriteLeadsList" class="favorite-leads-list">
+                <div class="favorite-leads-empty">No favorite leads yet</div>
+            </div>
         </div>
     </div>
 </section>
@@ -1208,6 +1306,7 @@
                 if (pendingTasksHero) pendingTasksHero.textContent = profile.team_stats.pending_tasks || 0;
                 if (overdueTasksHero) overdueTasksHero.textContent = profile.team_stats.overdue_tasks || 0;
                 if (pendingVerificationsHero) pendingVerificationsHero.textContent = profile.team_stats.pending_verifications || 0;
+                renderFavoriteLeads(profile.favorite_leads || []);
                 console.log('Team stats updated:', profile.team_stats);
             } else {
                 console.error('Profile API failed or no team_stats:', profile);
@@ -1269,6 +1368,38 @@
             console.error('Error loading dashboard data:', error);
             console.error('Error details:', error.message, error.stack);
         }
+    }
+
+    function renderFavoriteLeads(favoriteLeads) {
+        const container = document.getElementById('favoriteLeadsList');
+        if (!container) {
+            return;
+        }
+
+        if (!Array.isArray(favoriteLeads) || favoriteLeads.length === 0) {
+            container.innerHTML = '<div class="favorite-leads-empty">No favorite leads yet</div>';
+            return;
+        }
+
+        container.innerHTML = favoriteLeads.slice(0, 5).map(function(item) {
+            const leadId = Number(item.lead_id) || null;
+            const name = String(item.name || 'Unknown Lead')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            const remark = String(item.remark || 'No remark added')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            const href = leadId ? `{{ url('/leads') }}/${leadId}` : '#';
+
+            return `
+                <a href="${href}" class="favorite-lead-item">
+                    <div class="favorite-lead-name">${name}</div>
+                    <div class="favorite-lead-remark">${remark}</div>
+                </a>
+            `;
+        }).join('');
     }
 
     function loadIncentives(incentives) {

@@ -224,6 +224,11 @@ class Lead extends Model
         return $this->hasMany(CallLog::class);
     }
 
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(LeadFavorite::class);
+    }
+
     /**
      * Scope to get leads for a specific telecaller
      */

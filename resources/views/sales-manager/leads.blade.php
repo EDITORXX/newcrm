@@ -164,6 +164,34 @@
         box-sizing: border-box;
     }
 
+    .favorite-lead-btn {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #6b7280;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .lead-list-actions .favorite-lead-btn {
+        flex: 0 0 auto !important;
+    }
+
+    .favorite-lead-btn:hover {
+        border-color: #f59e0b;
+        color: #b45309;
+    }
+
+    .favorite-lead-btn.active {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #b45309;
+    }
+
     @media (max-width: 1024px) {
         #leadsGrid {
             grid-template-columns: repeat(2, 1fr);
@@ -591,6 +619,8 @@
     let teamMembers = [];
     let currentUser = null;
     let currentLeadView = 'cards';
+    let currentLeadPage = 1;
+    let favoriteLeadIds = new Set();
 
     // Get auth headers with Bearer token
     function getAuthHeaders() {
@@ -639,7 +669,100 @@
             .replace(/\b\w/g, (char) => char.toUpperCase());
     }
 
+    function isFavoriteLead(lead) {
+        return Boolean(lead && (lead.is_favorite || favoriteLeadIds.has(Number(lead.id))));
+    }
+
+    function createFavoriteLeadButton(leadId, isFavorite, extraClass = '') {
+        const activeClass = isFavorite ? 'active' : '';
+        const iconClass = isFavorite ? 'fas fa-star' : 'far fa-star';
+        const title = isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+        const className = ['favorite-lead-btn', activeClass, extraClass].filter(Boolean).join(' ');
+
+        return `
+            <button type="button"
+                class="${className}"
+                title="${title}"
+                data-favorite-lead-id="${leadId}"
+                data-favorite-state="${isFavorite ? '1' : '0'}"
+                onclick="toggleLeadFavorite(${leadId})">
+                <i class="${iconClass}"></i>
+            </button>
+        `;
+    }
+
+    function updateFavoriteButtonsState(leadId, isFavorite) {
+        const buttons = document.querySelectorAll(`[data-favorite-lead-id="${leadId}"]`);
+        buttons.forEach((button) => {
+            button.dataset.favoriteState = isFavorite ? '1' : '0';
+            button.classList.toggle('active', isFavorite);
+            button.title = isFavorite ? 'Remove from Favorites' : 'Add to Favorites';
+            const icon = button.querySelector('i');
+            if (icon) {
+                icon.className = isFavorite ? 'fas fa-star' : 'far fa-star';
+            }
+        });
+    }
+
+    async function refreshFavoriteLeadsFromApi() {
+        try {
+            const response = await fetch(`${SALES_MANAGER_API_URL}/favorite-leads`, {
+                headers: getAuthHeaders(),
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            const favorites = Array.isArray(data?.data) ? data.data : [];
+            favoriteLeadIds = new Set(favorites.map(item => Number(item.lead_id)).filter(Number.isFinite));
+        } catch (error) {
+            console.error('Error refreshing favorite leads:', error);
+        }
+    }
+
+    async function toggleLeadFavorite(leadId) {
+        const numericLeadId = Number(leadId);
+        const isFavorite = favoriteLeadIds.has(numericLeadId);
+        const method = isFavorite ? 'DELETE' : 'POST';
+
+        try {
+            const response = await fetch(`${SALES_MANAGER_API_URL}/leads/${numericLeadId}/favorite`, {
+                method,
+                headers: getAuthHeaders(),
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+            if (!response.ok || data.success === false) {
+                throw new Error(data.message || 'Failed to update favorite lead');
+            }
+
+            if (isFavorite) {
+                favoriteLeadIds.delete(numericLeadId);
+            } else {
+                favoriteLeadIds.add(numericLeadId);
+            }
+
+            allLeads = allLeads.map((lead) => {
+                if (Number(lead.id) === numericLeadId) {
+                    return { ...lead, is_favorite: !isFavorite };
+                }
+                return lead;
+            });
+
+            updateFavoriteButtonsState(numericLeadId, !isFavorite);
+        } catch (error) {
+            console.error('Error toggling favorite lead:', error);
+            alert('Failed to update favorite lead. Please try again.');
+        }
+    }
+
     function createLeadListRow(lead) {
+        const leadId = Number(lead.id);
+        const favorite = isFavoriteLead(lead);
         const assignedTo = lead.active_assignments && lead.active_assignments.length > 0
             ? lead.active_assignments[0].assigned_to.name
             : 'Unassigned';
@@ -674,6 +797,7 @@
                 </td>
                 <td>
                     <div class="lead-list-actions">
+                        ${createFavoriteLeadButton(leadId, favorite)}
                         <a href="/leads/${lead.id}" class="flex items-center justify-center bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white hover:from-[#205A44] hover:to-[#15803d] transition-all duration-200 shadow-md">
                             <i class="fas fa-eye mr-2"></i>View
                         </a>
@@ -700,6 +824,12 @@
                 console.log('Team members data:', data);
                 currentUser = data.user;
                 teamMembers = data.team_members || [];
+                const profileFavorites = Array.isArray(data.favorite_leads) ? data.favorite_leads : [];
+                favoriteLeadIds = new Set(
+                    profileFavorites
+                        .map(item => Number(item.lead_id))
+                        .filter(Number.isFinite)
+                );
                 
                 // Populate user filter dropdown
                 const userFilter = document.getElementById('userFilter');
@@ -745,6 +875,7 @@
 
     // Load leads
     async function loadLeads(page = 1) {
+        currentLeadPage = page;
         const loadingState = document.getElementById('loadingState');
         const emptyState = document.getElementById('emptyState');
         const leadsCards = document.getElementById('leadsCards');
@@ -791,10 +922,13 @@
             const data = await response.json();
 
             if (data.data && data.data.length > 0) {
-                allLeads = data.data;
+                allLeads = data.data.map((lead) => ({
+                    ...lead,
+                    is_favorite: favoriteLeadIds.has(Number(lead.id)),
+                }));
                 leadsGrid.innerHTML = '';
                 leadsListBody.innerHTML = '';
-                data.data.forEach(lead => {
+                allLeads.forEach(lead => {
                     const card = createLeadCard(lead);
                     leadsGrid.appendChild(card);
                     leadsListBody.insertAdjacentHTML('beforeend', createLeadListRow(lead));
@@ -822,6 +956,8 @@
         const card = document.createElement('div');
         card.className = 'bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-5';
         
+        const leadId = Number(lead.id);
+        const favorite = isFavoriteLead(lead);
         const statusBadge = getStatusBadge(lead.status);
         const assignedTo = lead.active_assignments && lead.active_assignments.length > 0 
             ? lead.active_assignments[0].assigned_to.name 
@@ -837,7 +973,8 @@
                 <div class="flex-1 min-w-0">
                     <h3 class="text-lg font-semibold text-gray-900 mb-1 truncate">${lead.name || 'N/A'}</h3>
                 </div>
-                <div class="flex-shrink-0">
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    ${createFavoriteLeadButton(leadId, favorite)}
                     ${statusBadge}
                 </div>
             </div>

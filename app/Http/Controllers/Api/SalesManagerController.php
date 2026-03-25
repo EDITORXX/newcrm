@@ -9,6 +9,7 @@ use App\Models\SalesManagerProfile;
 use App\Models\Prospect;
 use App\Models\Target;
 use App\Models\Lead;
+use App\Models\LeadFavorite;
 use App\Models\LeadFormField;
 use App\Models\LeadAssignment;
 use App\Models\Task;
@@ -23,6 +24,71 @@ use Carbon\Carbon;
 
 class SalesManagerController extends Controller
 {
+    private function resolveLeadRemarkForUi(Lead $lead): string
+    {
+        $formValues = $lead->relationLoaded('formFieldValues')
+            ? $lead->formFieldValues->pluck('field_value', 'field_key')->toArray()
+            : [];
+
+        $candidates = [
+            $lead->manager_remark ?? null,
+            $lead->remark ?? null,
+            $lead->notes ?? null,
+            $lead->requirements ?? null,
+            $formValues['manager_remark'] ?? null,
+            $formValues['remark'] ?? null,
+        ];
+
+        foreach ($candidates as $value) {
+            if (is_string($value) && trim($value) !== '') {
+                return trim($value);
+            }
+        }
+
+        return 'No remark added';
+    }
+
+    private function getFavoriteLeadPayload(User $user, int $limit = 5): array
+    {
+        $favorites = LeadFavorite::query()
+            ->where('user_id', $user->id)
+            ->with([
+                'lead' => function ($query) {
+                    $query->select([
+                        'id',
+                        'name',
+                        'phone',
+                        'status',
+                        'created_at',
+                        'updated_at',
+                        'notes',
+                        'requirements',
+                    ])->with('formFieldValues:lead_id,field_key,field_value');
+                },
+            ])
+            ->latest()
+            ->take(max(1, $limit))
+            ->get();
+
+        return $favorites
+            ->filter(fn ($favorite) => $favorite->lead !== null)
+            ->map(function ($favorite) {
+                $lead = $favorite->lead;
+
+                return [
+                    'lead_id' => $lead->id,
+                    'name' => $lead->name,
+                    'phone' => $lead->phone,
+                    'status' => $lead->status,
+                    'remark' => $this->resolveLeadRemarkForUi($lead),
+                    'is_favorite' => true,
+                    'favorited_at' => optional($favorite->created_at)->toIso8601String(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
     private function applySubordinateProspectVerificationScope($query, User $user, $teamMemberIds = null)
     {
         $teamMemberIds = $teamMemberIds instanceof \Illuminate\Support\Collection
@@ -285,6 +351,7 @@ class SalesManagerController extends Controller
             'pending_tasks' => $pendingTasksCount,
             'overdue_tasks' => $overdueTasksCount,
         ];
+        $favoriteLeads = $this->getFavoriteLeadPayload($user, 5);
 
         return response()->json([
             'user' => [
@@ -299,6 +366,8 @@ class SalesManagerController extends Controller
             ],
             'team_members' => $teamMembers,
             'team_stats' => $teamStats,
+            'favorite_leads' => $favoriteLeads,
+            'favorite_leads_count' => count($favoriteLeads),
             'activity_history' => $activityHistory->map(function ($log) {
                 return [
                     'action' => $log->action,
@@ -753,6 +822,86 @@ class SalesManagerController extends Controller
         return response()->json([
             ...$prospects->toArray(),
             'counts' => $counts
+        ]);
+    }
+
+    public function getFavoriteLeads(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->getFavoriteLeadPayload($user, 5),
+        ]);
+    }
+
+    public function addFavoriteLead(Request $request, Lead $lead)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        if (!$this->canAccessLead($user, $lead)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to favorite this lead.',
+            ], 403);
+        }
+
+        LeadFavorite::firstOrCreate([
+            'user_id' => $user->id,
+            'lead_id' => $lead->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead marked as favorite.',
+            'lead_id' => $lead->id,
+            'is_favorite' => true,
+            'favorites' => $this->getFavoriteLeadPayload($user, 5),
+        ]);
+    }
+
+    public function removeFavoriteLead(Request $request, Lead $lead)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        if (!$this->canAccessLead($user, $lead)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to update favorite for this lead.',
+            ], 403);
+        }
+
+        LeadFavorite::where('user_id', $user->id)
+            ->where('lead_id', $lead->id)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lead removed from favorites.',
+            'lead_id' => $lead->id,
+            'is_favorite' => false,
+            'favorites' => $this->getFavoriteLeadPayload($user, 5),
         ]);
     }
 
