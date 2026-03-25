@@ -911,6 +911,8 @@
                 top: 0 !important;
                 bottom: 0 !important;
                 width: 232px !important;
+                height: 100vh !important;
+                visibility: visible !important;
                 transform: translateX(-100%);
                 transition: transform 0.25s ease-in-out;
                 z-index: 1102;
@@ -1023,6 +1025,7 @@
                             sidebar.classList.remove('mobile-open');
                             sidebar.style.display = 'none';
                             sidebar.style.width = '0';
+                            sidebar.style.visibility = 'hidden';
                         }
                         if (sidebarOverlay) sidebarOverlay.classList.remove('active');
                         document.body.classList.remove('mobile-drawer-open');
@@ -1030,6 +1033,7 @@
                         if (sidebar) {
                             sidebar.style.display = 'block';
                             sidebar.style.width = '232px';
+                            sidebar.style.visibility = 'visible';
                         }
                     }
                     if (mainContent) {
@@ -1491,11 +1495,13 @@
                             // Classic mobile: hide drawer/sidebar completely
                             sidebar.style.display = 'none';
                             sidebar.style.width = '0';
+                            sidebar.style.visibility = 'hidden';
                             closeMobileDrawer();
                         } else {
                             // Modern mobile: keep drawer available
                             sidebar.style.display = 'block';
                             sidebar.style.width = '232px';
+                            sidebar.style.visibility = 'visible';
                         }
                     } else {
                         // Desktop: collapsible navigation
