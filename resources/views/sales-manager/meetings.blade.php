@@ -217,11 +217,11 @@
     .view-toggle-group {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         background: #fff;
-        padding: 6px;
-        border-radius: 14px;
-        box-shadow: 0 10px 24px rgba(16, 24, 20, 0.08);
+        padding: 4px;
+        border-radius: 12px;
+        box-shadow: 0 8px 18px rgba(16, 24, 20, 0.07);
         border: 1px solid #e4e0d7;
     }
     .asm-page-header {
@@ -243,13 +243,13 @@
         border: none;
         background: transparent;
         color: #6b7280;
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         font-weight: 700;
-        border-radius: 10px;
-        padding: 8px 12px;
+        border-radius: 9px;
+        padding: 7px 10px;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         cursor: pointer;
         transition: all 0.2s ease;
     }
@@ -356,11 +356,11 @@
             gap: 8px;
         }
         .view-toggle-group {
-            width: 100%;
-            justify-content: space-between;
+            width: auto;
+            justify-content: center;
+            margin: 0 auto;
         }
         .view-toggle-btn {
-            flex: 1;
             justify-content: center;
         }
         #meetingsContainer.list-view .meeting-card {

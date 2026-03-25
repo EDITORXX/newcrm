@@ -878,6 +878,9 @@
             font-size: 13px;
             font-weight: 500;
         }
+        .asm-mobile-nav-quick {
+            display: none;
+        }
         .asm-user-chip .avatar {
             width: 32px;
             height: 32px;
@@ -967,6 +970,10 @@
             }
             .asm-mobile-menu-btn i {
                 font-size: 14px;
+            }
+            .asm-mobile-nav-quick {
+                display: block;
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -1134,26 +1141,34 @@
     <!-- Main Content -->
     <div id="mainContent" class="main-content-wrapper" style="min-height: 100vh; background: #F7F6F3;">
         <div class="container">
-            <!-- Header -->
-            <div class="header">
-                <div class="header-top">
+            @if(request()->routeIs('sales-manager.dashboard'))
+                <!-- Header (dashboard only) -->
+                <div class="header">
+                    <div class="header-top">
+                        <button id="asmMobileMenuToggle" class="asm-mobile-menu-btn" type="button" style="display:none;" aria-label="Open menu">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h1 class="header-title-mobile asm-header-title" style="font-size: 24px; font-weight: 700; color: #063A1C;">
+                            <span class="header-page-title-desktop title">@yield('page-title', 'Dashboard')</span>
+                            <div class="header-user-info-mobile">
+                                <span class="header-user-name-mobile">{{ auth()->user()->name }}</span>
+                                <span class="header-user-role-mobile">{{ auth()->user()->getDisplayRoleName() ?? 'User' }}</span>
+                            </div>
+                        </h1>
+                    </div>
+                    <div class="header-actions">
+                        <div class="header-actions-row">
+                            <span class="asm-user-chip header-user-name-desktop"><span class="avatar">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>{{ auth()->user()->name }}</span>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="asm-mobile-nav-quick">
                     <button id="asmMobileMenuToggle" class="asm-mobile-menu-btn" type="button" style="display:none;" aria-label="Open menu">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1 class="header-title-mobile asm-header-title" style="font-size: 24px; font-weight: 700; color: #063A1C;">
-                        <span class="header-page-title-desktop title">@yield('page-title', 'Dashboard')</span>
-                        <div class="header-user-info-mobile">
-                            <span class="header-user-name-mobile">{{ auth()->user()->name }}</span>
-                            <span class="header-user-role-mobile">{{ auth()->user()->getDisplayRoleName() ?? 'User' }}</span>
-                        </div>
-                    </h1>
                 </div>
-                <div class="header-actions">
-                    <div class="header-actions-row">
-                        <span class="asm-user-chip header-user-name-desktop"><span class="avatar">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>{{ auth()->user()->name }}</span>
-                    </div>
-                </div>
-            </div>
+            @endif
 
             <!-- Content -->
             @yield('content')
