@@ -162,7 +162,7 @@ $noManagerRoles = ['admin', 'crm', 'hr_manager', 'finance_manager', 'sales_manag
 /* Manager filter rules per role */
 $managerRoleMap = [
     'senior_manager'          => ['sales_manager'],
-    'assistant_sales_manager' => ['senior_manager'],
+    'assistant_sales_manager' => ['sales_manager', 'senior_manager'],
     'sales_executive'         => ['assistant_sales_manager'],
 ];
 
@@ -341,7 +341,7 @@ const managerRoleMap = @json($managerRoleMap);
 
 const managerHints = {
     'senior_manager':          'Select the Sales Manager this person reports to.',
-    'assistant_sales_manager': 'Select the Senior Manager this person reports to.',
+    'assistant_sales_manager': 'Select the Sales Manager or Senior Manager this person reports to.',
     'sales_executive':         'Select the Assistant Sales Manager this person reports to.',
 };
 
