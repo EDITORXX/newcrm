@@ -72,6 +72,10 @@
         background: #fcfdfd;
     }
 
+    .lead-list-row {
+        cursor: pointer;
+    }
+
     .lead-list-name {
         color: #101828;
         font-weight: 700;
@@ -235,11 +239,58 @@
         }
 
         .leads-list-shell {
-            overflow-x: auto;
+            overflow-x: hidden;
+            border-radius: 1rem;
+            border-color: #dfe5e2;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
         }
 
         .leads-list-table {
-            min-width: 880px;
+            min-width: 100%;
+            table-layout: fixed;
+        }
+
+        .leads-list-table thead th {
+            background: #f6f8f7;
+            color: #475569;
+            font-size: 0.7rem;
+            padding: 0.78rem 0.7rem;
+        }
+
+        .leads-list-table thead th:nth-child(4),
+        .leads-list-table thead th:nth-child(5),
+        .leads-list-table thead th:nth-child(6),
+        .leads-list-table tbody td:nth-child(4),
+        .leads-list-table tbody td:nth-child(5),
+        .leads-list-table tbody td:nth-child(6) {
+            display: none;
+        }
+
+        .leads-list-table tbody td {
+            padding: 0.9rem 0.7rem;
+        }
+
+        .leads-list-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .leads-list-table tbody tr:active {
+            background: #f2f7f4;
+        }
+
+        .lead-list-name {
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+
+        .lead-list-sub {
+            font-size: 0.8rem;
+        }
+
+        .lead-remark-text {
+            font-size: 0.82rem;
+            -webkit-line-clamp: 3;
+            max-width: 100%;
         }
         
         /* Search and filter controls */
@@ -775,7 +826,7 @@
         const remark = getLeadRemark(lead);
 
         return `
-            <tr>
+            <tr class="lead-list-row" data-lead-url="/leads/${lead.id}">
                 <td>
                     <div class="lead-list-name">${escapeHtml(lead.name || 'N/A')}</div>
                     <div class="lead-list-sub"><i class="fas fa-phone mr-2 text-gray-400"></i>${escapeHtml(lead.phone || 'N/A')}</div>
@@ -798,11 +849,11 @@
                 </td>
                 <td>
                     <div class="lead-list-actions">
-                        ${createFavoriteLeadButton(leadId, favorite)}
-                        <a href="/leads/${lead.id}" class="flex items-center justify-center bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white hover:from-[#205A44] hover:to-[#15803d] transition-all duration-200 shadow-md">
+                        ${createFavoriteLeadButton(leadId, favorite, 'js-no-row-nav')}
+                        <a href="/leads/${lead.id}" class="js-no-row-nav flex items-center justify-center bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white hover:from-[#205A44] hover:to-[#15803d] transition-all duration-200 shadow-md">
                             <i class="fas fa-eye mr-2"></i>View
                         </a>
-                        <button type="button" onclick="viewShortDetails(${lead.id})" class="flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md">
+                        <button type="button" onclick="viewShortDetails(${lead.id})" class="js-no-row-nav flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md">
                             <i class="fas fa-info-circle mr-2"></i>Short
                         </button>
                     </div>
@@ -2007,6 +2058,22 @@
 
     // Load leads on page load
     document.addEventListener('DOMContentLoaded', function() {
+        const leadsListBody = document.getElementById('leadsListBody');
+        if (leadsListBody) {
+            leadsListBody.addEventListener('click', function (event) {
+                const ignoreTarget = event.target.closest('.js-no-row-nav');
+                if (ignoreTarget) return;
+
+                const row = event.target.closest('tr.lead-list-row[data-lead-url]');
+                if (!row) return;
+
+                const url = row.getAttribute('data-lead-url');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        }
+
         loadTeamMembers().then(() => {
             loadLeads();
         });
