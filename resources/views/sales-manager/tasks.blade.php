@@ -71,6 +71,211 @@
         color: white;
         border-color: #205A44;
     }
+    .tasks-container.asm-tasks-pro {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 14px 34px rgba(6, 58, 28, 0.08);
+        background: linear-gradient(180deg, #ffffff 0%, #fbfcfb 100%);
+    }
+    .tasks-container.asm-tasks-pro .filter-bar {
+        background: linear-gradient(135deg, #f8fcfa 0%, #edf6f2 100%);
+        border: 1px solid #d9e7df;
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 12px;
+    }
+    .tasks-container.asm-tasks-pro .task-filter-layout {
+        gap: 14px;
+    }
+    .tasks-container.asm-tasks-pro .task-filter-main {
+        gap: 10px;
+    }
+    .tasks-container.asm-tasks-pro .filter-btn {
+        border: 1px solid #d0d8d4;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: #0f3f2d;
+        background: #ffffff;
+    }
+    .tasks-container.asm-tasks-pro .filter-btn:hover {
+        background: #ffffff;
+        border-color: #205A44;
+        color: #205A44;
+        box-shadow: 0 4px 10px rgba(15, 63, 45, 0.1);
+    }
+    .tasks-container.asm-tasks-pro .filter-btn.active {
+        background: linear-gradient(135deg, #063A1C 0%, #205A44 100%);
+        border-color: #0b4b30;
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(6, 58, 28, 0.2);
+    }
+    .tasks-container.asm-tasks-pro .date-filter-select,
+    .tasks-container.asm-tasks-pro .task-filter-select {
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: #205A44;
+        min-height: 46px;
+        font-weight: 600;
+        color: #0f3f2d;
+        background-color: #fff;
+    }
+    .tasks-container.asm-tasks-pro .date-filter-select:focus,
+    .tasks-container.asm-tasks-pro .task-filter-select:focus {
+        box-shadow: 0 0 0 3px rgba(32, 90, 68, 0.14);
+    }
+    .tasks-container.asm-tasks-pro #customDatePicker {
+        border-radius: 12px;
+        border-width: 1px;
+        min-height: 44px;
+    }
+    .tasks-container.asm-tasks-pro .tasks-grid {
+        gap: 16px;
+        margin-top: 14px;
+    }
+    .tasks-container.asm-tasks-pro .task-card {
+        border-width: 1px;
+        border-color: #d9e5dd;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(6, 58, 28, 0.06);
+        padding: 16px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .tasks-container.asm-tasks-pro .task-card:hover {
+        border-color: #b8d0c4;
+        box-shadow: 0 8px 20px rgba(6, 58, 28, 0.12);
+        transform: translateY(-2px);
+    }
+    .tasks-container.asm-tasks-pro .task-card.overdue {
+        border-left: 4px solid #dc2626;
+        border-color: #fecaca;
+        background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);
+    }
+    .tasks-container.asm-tasks-pro .task-header {
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5ece8;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .tasks-container.asm-tasks-pro .task-head-main {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
+    }
+    .tasks-container.asm-tasks-pro .task-head-content {
+        min-width: 0;
+        flex: 1;
+    }
+    .tasks-container.asm-tasks-pro .task-name {
+        font-size: 17px;
+        color: #0b3d29;
+        line-height: 1.25;
+        margin-bottom: 6px;
+    }
+    .tasks-container.asm-tasks-pro .task-badge-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .tasks-container.asm-tasks-pro .task-info {
+        margin-bottom: 10px;
+    }
+    .tasks-container.asm-tasks-pro .task-info-row {
+        font-size: 13px;
+        color: #1f3f31;
+        margin-bottom: 6px;
+    }
+    .tasks-container.asm-tasks-pro .task-info-row i {
+        color: #205A44;
+        width: 14px;
+        margin-top: 2px;
+    }
+    .tasks-container.asm-tasks-pro .task-actions {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e5ece8;
+        gap: 8px;
+    }
+    .tasks-container.asm-tasks-pro .task-action-btn {
+        min-height: 40px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .tasks-container.asm-tasks-pro .btn-view-detail {
+        border: 1px solid #d1ddd6;
+        background: #f8faf9;
+        color: #0f3f2d;
+    }
+    .tasks-container.asm-tasks-pro .btn-view-detail:hover {
+        background: #eff5f1;
+        border-color: #bdd0c6;
+    }
+    .task-mini-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+    }
+    .task-mini-tag.meeting { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .task-mini-tag.visit { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+    .task-mini-tag.prospect { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+    .task-mini-tag.site-visit { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+    .task-mini-tag.followup { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .task-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+        background: #ecfdf5;
+        color: #065f46;
+    }
+    .task-chip.meeting { background: #dcfce7; color: #065f46; }
+    .task-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .task-chip-icon {
+        font-size: 10px;
+    }
+    @media (max-width: 768px) {
+        .tasks-container.asm-tasks-pro .filter-bar {
+            padding: 10px;
+            border-radius: 12px;
+        }
+        .tasks-container.asm-tasks-pro .task-filter-layout {
+            gap: 8px;
+        }
+        .tasks-container.asm-tasks-pro .task-actions {
+            flex-direction: column;
+        }
+        .tasks-container.asm-tasks-pro .task-action-btn {
+            width: 100%;
+        }
+        .tasks-container.asm-tasks-pro .task-name {
+            font-size: 15px;
+        }
+        .tasks-container.asm-tasks-pro .task-info-row {
+            align-items: flex-start;
+        }
+    }
     .btn-remove-overdue {
         padding: 10px 20px;
         border: 2px solid #ef4444;
@@ -926,7 +1131,7 @@
 @endpush
 
 @section('content')
-<div class="tasks-container">
+<div class="tasks-container {{ auth()->check() && auth()->user()->isAssistantSalesManager() ? 'asm-tasks-pro' : '' }}">
     <!-- Filter Bar -->
     <div class="filter-bar">
         <div class="task-filter-layout">
@@ -1191,6 +1396,7 @@
     // Use relative path to avoid APP_URL misconfig issues
     const API_BASE_URL = '/api/sales-manager';
     const API_TOKEN = '{{ $api_token ?? session("api_token") ?? "" }}';
+    const IS_ASSISTANT_SALES_MANAGER = @json(auth()->check() && auth()->user()->isAssistantSalesManager());
     window.managerLeadMeetingCreateUrl = '{{ route("sales-manager.meetings.create") }}';
     window.managerLeadSiteVisitCreateUrl = '{{ route("sales-manager.site-visits.create") }}';
     
@@ -1218,6 +1424,15 @@
         }
     } catch (e) {
         console.error('Failed to read task category from localStorage:', e);
+    }
+
+    if (IS_ASSISTANT_SALES_MANAGER) {
+        savedFilter = 'pending';
+        try {
+            localStorage.setItem('salesManagerTasksFilter', 'pending');
+        } catch (e) {
+            console.error('Failed to persist ASM default filter:', e);
+        }
     }
 
     let currentStatus = savedFilter;
@@ -1682,16 +1897,20 @@
             return `
                 <div id="task-card-${task.id}" class="task-card ${overdueClass}">
                     <div class="task-header">
-                        <div class="task-avatar">${initial}</div>
-                        <div>
-                            <h3 class="task-name">${leadName}</h3>
-                            ${isOverdue ? '<span class="overdue-badge">OVERDUE</span>' : ''}
-                            ${isPendingMeeting ? '<span class="meeting-tag" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; margin-left: 8px;">M</span>' : ''}
-                            ${isPendingVisit ? '<span class="visit-tag" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; margin-left: 8px;">V</span>' : ''}
-                            ${isProspectTask ? '<span class="prospect-tag" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; margin-left: 8px;">P</span>' : ''}
-                            ${isSiteVisitReminder ? '<span class="site-visit-tag" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; margin-left: 8px;">S</span>' : ''}
-                            ${isFollowUpTask ? '<span class="followup-tag" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; margin-left: 8px;">F</span>' : ''}
-                            <span class="status-badge ${statusClass}">${task.status.replace('_', ' ').toUpperCase()}</span>
+                        <div class="task-head-main">
+                            <div class="task-avatar">${initial}</div>
+                            <div class="task-head-content">
+                                <h3 class="task-name">${leadName}</h3>
+                                <div class="task-badge-row">
+                                    ${isOverdue ? '<span class="overdue-badge">OVERDUE</span>' : ''}
+                                    ${isPendingMeeting ? '<span class="task-mini-tag meeting">M</span>' : ''}
+                                    ${isPendingVisit ? '<span class="task-mini-tag visit">V</span>' : ''}
+                                    ${isProspectTask ? '<span class="task-mini-tag prospect">P</span>' : ''}
+                                    ${isSiteVisitReminder ? '<span class="task-mini-tag site-visit">S</span>' : ''}
+                                    ${isFollowUpTask ? '<span class="task-mini-tag followup">F</span>' : ''}
+                                    <span class="status-badge ${statusClass}">${task.status.replace('_', ' ').toUpperCase()}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="task-info">
@@ -1715,7 +1934,7 @@
                             <span style="line-height:1.5;">${followUpRemark}</span>
                         </div>
                         ` : ''}
-                        ${task.notes && task.notes.includes('Pre-meeting reminder') ? '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;"><span class="meeting-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-calendar-check" style="font-size: 10px;"></i> Meeting</span></div>' : ''}
+                        ${task.notes && task.notes.includes('Pre-meeting reminder') ? '<div class="task-chip-row"><span class="task-chip meeting"><i class="fas fa-calendar-check task-chip-icon"></i> Meeting</span></div>' : ''}
                     </div>
                     <div class="task-actions">
                         <button class="task-action-btn btn-call" onclick="handleManagerCallClick(${task.id}, '${leadPhone}', ${hasProspect})" title="Call">
