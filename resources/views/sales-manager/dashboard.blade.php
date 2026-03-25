@@ -1101,6 +1101,7 @@
 </div>
 
 <!-- Quick Actions (Hidden on Mobile) -->
+@if(!auth()->user()->isAssistantSalesManager())
 <div class="bg-white rounded-lg shadow p-6 quick-actions-section">
     <h2 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1114,6 +1115,7 @@
         </a>
     </div>
 </div>
+@endif
 
 <!-- Incentives Section -->
 <div class="bg-white rounded-lg shadow p-6 mb-6" id="incentivesSection">
