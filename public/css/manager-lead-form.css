@@ -385,26 +385,29 @@
 }
 
 .manager-lead-output-desc {
-    margin: 0 0 16px;
-    font-size: 13px;
+    margin: 0 0 18px;
+    font-size: 14px;
+    line-height: 1.7;
     color: #606961;
 }
 
 .manager-lead-output-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    gap: 14px;
 }
 
 .manager-lead-output-btn {
-    border: 1px solid #ddddd5;
+    border: 1px solid #ddd9d0;
     background: #fff;
-    border-radius: 16px;
-    padding: 18px 14px;
+    border-radius: 18px;
+    padding: 24px 16px;
+    min-height: 176px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    gap: 14px;
     text-align: center;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
@@ -425,29 +428,30 @@
 }
 
 .manager-lead-output-icon {
-    width: 42px;
-    height: 42px;
+    width: 54px;
+    height: 54px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 20px;
 }
 
 .manager-lead-output-copy {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
 }
 
 .manager-lead-output-label {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
 }
 
 .manager-lead-output-sub {
-    font-size: 12px;
-    color: #7b827b;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #8a8f88;
 }
 
 .manager-lead-output-meeting .manager-lead-output-icon { background: #e8f5f0; color: #0d7358; }
@@ -461,15 +465,32 @@
 .manager-lead-output-dead.is-active { border-color: #b33030; background: #fff6f6; }
 
 .manager-lead-followup-panel {
-    margin-top: 18px;
-    padding: 16px;
-    border-radius: 16px;
-    background: #f9fbfa;
-    border: 1px solid #e6ece7;
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fbfcfb 0%, #f6faf8 100%);
+    border: 1px solid #e3ebe5;
 }
 
 .manager-lead-followup-panel small {
     color: #6b726b;
+}
+
+.manager-lead-followup-top {
+    margin-bottom: 14px;
+}
+
+.manager-lead-followup-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1d3328;
+    margin-bottom: 4px;
+}
+
+.manager-lead-followup-copy {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #66736c;
 }
 
 .manager-lead-check {
@@ -480,6 +501,11 @@
     color: #33413a;
     font-size: 13px;
     font-weight: 600;
+}
+
+.manager-lead-check-primary {
+    margin-top: 0;
+    margin-bottom: 14px;
 }
 
 .manager-lead-footer,

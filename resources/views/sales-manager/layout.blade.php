@@ -1216,6 +1216,10 @@
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
+            <a href="{{ route('sales-manager.tasks') }}" class="sidebar-link {{ request()->routeIs('sales-manager.tasks*') && request('focus') !== 'followups' ? 'active' : '' }}" data-label="Tasks">
+                <i class="fas fa-tasks"></i>
+                <span>Tasks</span>
+            </a>
             <a href="{{ route('sales-manager.leads') }}" class="sidebar-link {{ request()->routeIs('sales-manager.leads') || (request()->routeIs('leads.show') && auth()->check() && (auth()->user()->isSalesManager() || auth()->user()->isAssistantSalesManager())) ? 'active' : '' }}" data-label="Leads">
                 <i class="fas fa-user-friends"></i>
                 <span>Leads</span>
@@ -1235,10 +1239,6 @@
             <a href="{{ route('sales-manager.site-visits') }}" class="sidebar-link {{ request()->routeIs('sales-manager.site-visits*') ? 'active' : '' }}" data-label="Site Visits">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Site Visits</span>
-            </a>
-            <a href="{{ route('sales-manager.tasks') }}" class="sidebar-link {{ request()->routeIs('sales-manager.tasks*') && request('focus') !== 'followups' ? 'active' : '' }}" data-label="Tasks">
-                <i class="fas fa-tasks"></i>
-                <span>Tasks</span>
             </a>
             <a href="{{ route('sales-manager.lead-downloads.index') }}" class="sidebar-link {{ request()->routeIs('sales-manager.lead-downloads.*') ? 'active' : '' }}" data-label="Download Leads">
                 <i class="fas fa-file-arrow-down"></i>

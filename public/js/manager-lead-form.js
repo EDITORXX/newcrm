@@ -387,20 +387,29 @@
                         <div class="manager-lead-section-head">
                             <div class="manager-lead-section-icon manager-lead-section-icon-green"><i class="fas fa-check"></i></div>
                             <div class="manager-lead-section-copy">
-                                <h3>Output</h3>
-                                <span>Section 3</span>
+                                <h3>Output - Select next action</h3>
+                                <span>Choose what happens next in the CRM journey</span>
                             </div>
+                            <div class="manager-lead-section-pill">Section 3</div>
                         </div>
                         <div class="manager-lead-section-body">
-                            <p class="manager-lead-output-desc">Choose what happens next with this lead. This decides the immediate CRM workflow.</p>
+                            <p class="manager-lead-output-desc">Choose what happens next with this lead. This action will determine the lead's journey in the CRM pipeline.</p>
                             <div class="manager-lead-output-grid">
-                                ${renderActionCard('meeting', '<i class="fas fa-calendar-alt"></i>', 'Meeting', 'Continue to schedule meeting', selectedAction === 'meeting', false)}
-                                ${renderActionCard('visit', '<i class="fas fa-location-dot"></i>', 'Visit', 'Continue to schedule site visit', selectedAction === 'visit', false)}
-                                ${renderActionCard('follow_up', '<i class="fas fa-clock"></i>', 'Follow up', 'Set reminder to call again', selectedAction === 'follow_up', false)}
-                                ${renderActionCard('dead', '<i class="fas fa-ban"></i>', 'Dead', context === 'task' ? 'Move to reject reason flow' : 'Unavailable on lead detail page', selectedAction === 'dead', deadDisabled)}
+                                ${renderActionCard('meeting', '<i class="fas fa-calendar-check"></i>', 'Meeting', 'Schedule a meeting', selectedAction === 'meeting', false)}
+                                ${renderActionCard('visit', '<i class="fas fa-location-dot"></i>', 'Visit', 'Schedule site visit', selectedAction === 'visit', false)}
+                                ${renderActionCard('follow_up', '<i class="fas fa-clock"></i>', 'Follow up', 'Set reminder to call', selectedAction === 'follow_up', false)}
+                                ${renderActionCard('dead', '<i class="fas fa-circle-xmark"></i>', 'Dead', context === 'task' ? 'Mark as closed' : 'Unavailable on lead detail page', selectedAction === 'dead', deadDisabled)}
                             </div>
 
                             <div id="manager_follow_up_panel" class="manager-lead-followup-panel" style="display:none;">
+                                <div class="manager-lead-followup-top">
+                                    <div class="manager-lead-followup-title">Follow Up Required</div>
+                                    <div class="manager-lead-followup-copy">Outcome section se hi next call schedule aur reminder controls manage karo.</div>
+                                </div>
+                                <label class="manager-lead-check manager-lead-check-primary">
+                                    <input type="checkbox" name="follow_up_required" id="manager_form_follow_up_required">
+                                    <span>Follow up required</span>
+                                </label>
                                 <div class="manager-lead-followup-row">
                                     <div class="manager-lead-field manager-lead-field-full">
                                         <label for="manager_form_follow_up_date">Follow up date & time <span class="req">*</span></label>
@@ -408,10 +417,6 @@
                                         <small>Select a future date and time for the next follow-up.</small>
                                     </div>
                                 </div>
-                                <label class="manager-lead-check">
-                                    <input type="checkbox" name="follow_up_required" id="manager_form_follow_up_required">
-                                    <span>Follow up required</span>
-                                </label>
                                 <label class="manager-lead-check" id="createTelecallerTaskContainer" style="display:none;">
                                     <input type="checkbox" name="create_telecaller_task" id="create_telecaller_task_checkbox">
                                     <span>Create calling task for Sales Executive also</span>
