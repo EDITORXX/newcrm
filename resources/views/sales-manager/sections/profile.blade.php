@@ -147,10 +147,6 @@
         flex-direction: column;
         gap: 4px;
     }
-    .profile-subline {
-        color: #6b7f75;
-        font-size: 14px;
-    }
     .profile-quick-stats {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -704,7 +700,6 @@
                     <div class="profile-info-copy">
                         <h2 id="profileName">Senior Manager</h2>
                         <p id="profileEmail">Loading...</p>
-                        <div class="profile-subline">Profile photo, contact details aur password yahin se manage karein.</div>
                     </div>
                 </div>
             </div>

@@ -667,15 +667,26 @@
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 14px;
         padding: 12px;
+        min-width: 0;
     }
     .asm-mini-metrics strong {
         display: block;
         font-size: 18px;
         margin-bottom: 4px;
+        line-height: 1.1;
+        word-break: break-word;
     }
     .asm-mini-metrics span {
         font-size: 11px;
         color: rgba(255,255,255,0.64);
+    }
+    .asm-mini-metric-mvf strong {
+        font-size: 16px;
+        white-space: nowrap;
+        letter-spacing: 0.02em;
+    }
+    .asm-mini-metric-mvf span {
+        line-height: 1.35;
     }
     .asm-stats-grid {
         gap: 14px !important;
@@ -801,7 +812,7 @@
             <div class="asm-mini-metrics">
                 <div><strong id="freshLeadsHero">0</strong><span>Fresh Leads</span></div>
                 <div><strong id="overdueTasksHero">0</strong><span>Overdue</span></div>
-                <div><strong id="todayMvfHero">M 0 | V 0 | F 0</strong><span>Today M/V/F</span></div>
+                <div class="asm-mini-metric-mvf"><strong id="todayMvfHero">0 / 0 / 0</strong><span>Meetings / Visits / Follow-ups</span></div>
             </div>
         </div>
     </div>
@@ -1322,7 +1333,7 @@
                 const todayFollowups = profile.team_stats.today_followups_count || 0;
                 if (freshLeadsHero) freshLeadsHero.textContent = profile.team_stats.fresh_leads_today || 0;
                 if (overdueTasksHero) overdueTasksHero.textContent = profile.team_stats.overdue_tasks || 0;
-                if (todayMvfHero) todayMvfHero.textContent = `M ${todayMeetings} | V ${todayVisits} | F ${todayFollowups}`;
+                if (todayMvfHero) todayMvfHero.textContent = `${todayMeetings} / ${todayVisits} / ${todayFollowups}`;
                 renderFavoriteLeads(profile.favorite_leads || []);
                 console.log('Team stats updated:', profile.team_stats);
             } else {
