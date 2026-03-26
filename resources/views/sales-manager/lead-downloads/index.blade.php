@@ -15,13 +15,14 @@
     .download-field.full { grid-column:1 / -1; }
     .download-field label, .download-checkbox-label { font-size:13px; font-weight:700; color:#0f2d22; }
     .download-field input, .download-field select { width:100%; border:1px solid #d4e0d8; border-radius:14px; padding:12px 14px; background:#fff; color:#173128; font-size:14px; }
-    .download-field select[multiple] { min-height:132px; }
     .download-segmented { display:flex; gap:10px; flex-wrap:wrap; }
     .download-segmented label { position:relative; cursor:pointer; }
     .download-segmented input { position:absolute; opacity:0; pointer-events:none; }
     .download-segmented span { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; border:1px solid #d3e2da; background:#f7faf8; color:#385146; font-size:13px; font-weight:600; transition:all .2s ease; }
     .download-segmented input:checked + span { background:#0f5132; border-color:#0f5132; color:#fff; box-shadow:0 10px 20px rgba(15,81,50,.18); }
     .download-checkbox-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:16px; border:1px solid #d4e0d8; border-radius:18px; background:#fbfdfc; }
+    .download-multi-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:16px; border:1px solid #d4e0d8; border-radius:18px; background:#fbfdfc; max-height:220px; overflow:auto; }
+    .download-helper { font-size:12px; color:#6b7b73; margin-top:4px; }
     .download-checkbox-item { display:flex; align-items:center; gap:10px; color:#324840; font-size:13px; }
     .download-checkbox-item input { width:16px; height:16px; }
     .download-preview { margin-top:20px; background:linear-gradient(135deg,#0e2d22 0%,#184837 100%); color:#fff; border-radius:22px; padding:20px; }
@@ -117,30 +118,42 @@
                 </div>
 
                 <div class="download-field full">
-                    <label for="status">Lead Status</label>
-                    <select id="status" name="status[]" multiple>
+                    <label>Lead Status</label>
+                    <div class="download-multi-grid">
                         @foreach($statuses as $status)
-                            <option value="{{ $status }}" @selected(collect(old('status', []))->contains($status))>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>
+                            <label class="download-checkbox-item">
+                                <input type="checkbox" name="status[]" value="{{ $status }}" @checked(collect(old('status', []))->contains($status))>
+                                <span>{{ ucfirst(str_replace('_', ' ', $status)) }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
+                    <div class="download-helper">Multiple statuses select kar sakte ho.</div>
                 </div>
 
                 <div class="download-field full">
-                    <label for="lead_type">Lead Type</label>
-                    <select id="lead_type" name="lead_type[]" multiple>
+                    <label>Lead Type</label>
+                    <div class="download-multi-grid">
                         @foreach($leadTypes as $key => $label)
-                            <option value="{{ $key }}" @selected(collect(old('lead_type', []))->contains($key))>{{ $label }}</option>
+                            <label class="download-checkbox-item">
+                                <input type="checkbox" name="lead_type[]" value="{{ $key }}" @checked(collect(old('lead_type', []))->contains($key))>
+                                <span>{{ $label }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
+                    <div class="download-helper">Ek se zyada lead type choose kar sakte ho.</div>
                 </div>
 
                 <div class="download-field full">
-                    <label for="interested_projects">Interested Projects</label>
-                    <select id="interested_projects" name="interested_projects[]" multiple>
+                    <label>Interested Projects</label>
+                    <div class="download-multi-grid">
                         @foreach($interestedProjects as $project)
-                            <option value="{{ $project->id }}" @selected(collect(old('interested_projects', []))->contains($project->id))>{{ $project->name }}</option>
+                            <label class="download-checkbox-item">
+                                <input type="checkbox" name="interested_projects[]" value="{{ $project->id }}" @checked(collect(old('interested_projects', []))->contains($project->id))>
+                                <span>{{ $project->name }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
+                    <div class="download-helper">Project filters me bhi multiple selection rahega.</div>
                 </div>
 
                 <div class="download-field full">
@@ -197,6 +210,8 @@
                     @if($requestItem->admin_note)<div class="request-note"><strong>Admin Note:</strong> {{ $requestItem->admin_note }}</div>@endif
                     @if($requestItem->isDownloadReady())
                         <div style="margin-top:14px;"><a href="{{ route('sales-manager.lead-downloads.download', $requestItem) }}" class="download-btn primary"><i class="fas fa-download"></i> Download File</a></div>
+                    @elseif($requestItem->status === \App\Models\LeadDownloadRequest::STATUS_APPROVED)
+                        <div class="request-note"><strong>Approved:</strong> Download file abhi ready nahi hai. Admin generation retry ya complete hone par button yahin dikhega.</div>
                     @elseif($requestItem->expires_at && $requestItem->expires_at->isPast())
                         <div class="request-note"><strong>Expired:</strong> Please raise a fresh request to generate a new file.</div>
                     @endif
@@ -232,9 +247,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function syncPreview() {
         const selectedFormat = form.querySelector('input[name="format"]:checked');
-        const statuses = Array.from(form.querySelectorAll('select[name="status[]"] option:checked')).map(option => option.textContent.trim());
-        const leadTypes = Array.from(form.querySelectorAll('select[name="lead_type[]"] option:checked')).map(option => option.textContent.trim());
-        const projects = Array.from(form.querySelectorAll('select[name="interested_projects[]"] option:checked')).map(option => option.textContent.trim());
+        const statuses = Array.from(form.querySelectorAll('input[name="status[]"]:checked')).map(option => option.parentElement.textContent.trim());
+        const leadTypes = Array.from(form.querySelectorAll('input[name="lead_type[]"]:checked')).map(option => option.parentElement.textContent.trim());
+        const projects = Array.from(form.querySelectorAll('input[name="interested_projects[]"]:checked')).map(option => option.parentElement.textContent.trim());
         const selectedFields = form.querySelectorAll('input[name="fields[]"]:checked').length;
         const activeFilters = [];
         previewFormat.textContent = selectedFormat ? selectedFormat.value.toUpperCase() : 'CSV';

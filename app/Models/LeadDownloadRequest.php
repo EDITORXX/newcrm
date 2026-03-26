@@ -72,7 +72,7 @@ class LeadDownloadRequest extends Model
 
     public function isDownloadReady(): bool
     {
-        return $this->status === self::STATUS_COMPLETED
+        return in_array($this->status, [self::STATUS_APPROVED, self::STATUS_COMPLETED], true)
             && !empty($this->file_path)
             && (!$this->expires_at || $this->expires_at->isFuture());
     }
