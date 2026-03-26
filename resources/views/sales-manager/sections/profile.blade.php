@@ -8,37 +8,60 @@
     .profile-shell {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 18px;
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+    .profile-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+        gap: 18px;
+        align-items: start;
+    }
+    .profile-main-stack,
+    .profile-side-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .profile-hero {
+        position: relative;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(32, 90, 68, 0.12), transparent 32%),
+            linear-gradient(135deg, #ffffff 0%, #f5faf7 54%, #eef6f1 100%);
     }
     .profile-card {
         background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
         padding: 24px;
-        border-radius: 16px;
+        border-radius: 20px;
         border: 1px solid #dce8e1;
-        box-shadow: 0 8px 24px rgba(12, 41, 30, 0.08);
+        box-shadow: 0 14px 40px rgba(12, 41, 30, 0.08);
         margin-bottom: 0;
     }
     .profile-header {
         display: flex;
         align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 24px;
-        border-bottom: 2px solid #f0f0f0;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 22px;
+        padding-bottom: 22px;
+        border-bottom: 1px solid #dce8e1;
     }
     .avatar {
-        width: 80px;
-        height: 80px;
+        width: 92px;
+        height: 92px;
         border-radius: 50%;
         background: linear-gradient(135deg, #205A44 0%, #063A1C 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 700;
-        margin-right: 20px;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 12px 28px rgba(32, 90, 68, 0.24);
     }
     .avatar img {
         width: 100%;
@@ -48,49 +71,115 @@
     }
     .avatar-upload {
         position: relative;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
     }
     .avatar-upload-btn {
         position: absolute;
-        bottom: 0;
-        right: 0;
+        bottom: 2px;
+        right: 2px;
         background: #205A44;
         color: white;
         border: 2px solid white;
         border-radius: 50%;
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         font-size: 14px;
+        box-shadow: 0 6px 16px rgba(32, 90, 68, 0.24);
     }
     .avatar-upload-btn:hover {
-        background: #5568d3;
+        background: #184634;
     }
     .avatar-upload input[type="file"] {
         display: none;
     }
+    .profile-identity {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        min-width: 0;
+        flex: 1;
+    }
     .image-preview {
         max-width: 200px;
         max-height: 200px;
-        border-radius: 8px;
-        margin-top: 10px;
+        border-radius: 16px;
+        margin-top: 12px;
         display: none;
+        border: 1px solid #dce8e1;
+        box-shadow: 0 10px 24px rgba(15, 60, 42, 0.08);
     }
     .image-preview.show {
         display: block;
     }
+    .profile-meta-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(32, 90, 68, 0.08);
+        color: #205A44;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+    }
     .profile-info h2 {
-        font-size: 24px;
+        font-size: 30px;
         font-weight: 700;
         color: #063A1C;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     .profile-info p {
-        color: #B3B5B4;
+        color: #527264;
+        font-size: 15px;
+        margin: 0;
+    }
+    .profile-info-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .profile-subline {
+        color: #6b7f75;
         font-size: 14px;
+    }
+    .profile-quick-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .quick-stat-card {
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid #dce8e1;
+        background: rgba(255, 255, 255, 0.84);
+    }
+    .quick-stat-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6b7f75;
+        margin-bottom: 8px;
+    }
+    .quick-stat-value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #0f3c2a;
+        line-height: 1;
+    }
+    .quick-stat-note {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #6b7f75;
     }
     .form-group {
         margin-bottom: 20px;
@@ -99,16 +188,18 @@
         display: block;
         margin-bottom: 8px;
         font-weight: 500;
-        color: #333;
-        font-size: 14px;
+        color: #294739;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
     .form-group input, .form-group select, .form-group textarea {
         width: 100%;
-        padding: 12px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: border-color 0.3s;
+        padding: 14px 16px;
+        border: 1px solid #cfe1d8;
+        border-radius: 14px;
+        font-size: 15px;
+        transition: border-color 0.2s, box-shadow 0.2s;
         background: #ffffff;
         color: #063A1C;
     }
@@ -116,10 +207,19 @@
         outline: none;
         border-color: #205A44;
         background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(32, 90, 68, 0.12);
     }
     .form-group input[readonly] {
         background: #f5f5f5;
         cursor: not-allowed;
+    }
+    .profile-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .profile-form-grid .form-group.full-width {
+        grid-column: 1 / -1;
     }
     .password-input-wrapper {
         position: relative;
@@ -144,34 +244,54 @@
         padding-right: 45px;
     }
     .btn {
-        padding: 12px 24px;
+        padding: 12px 20px;
         border: none;
-        border-radius: 8px;
+        border-radius: 14px;
         cursor: pointer;
-        font-size: 16px;
-        font-weight: 500;
-        transition: all 0.3s;
+        font-size: 14px;
+        font-weight: 700;
+        transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
     @media (max-width: 768px) {
         .profile-shell {
             gap: 12px;
         }
+        .profile-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .profile-main-stack,
+        .profile-side-stack {
+            gap: 12px;
+        }
         .profile-card {
             padding: 16px;
+            border-radius: 18px;
         }
         
         .profile-header {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
             text-align: center;
+            gap: 16px;
+        }
+        .profile-identity {
+            flex-direction: column;
+            text-align: center;
+            gap: 14px;
+        }
+        .profile-meta-kicker {
+            margin: 0 auto 10px;
         }
         
         .avatar {
-            width: 64px;
-            height: 64px;
-            font-size: 24px;
-            margin-right: 0;
-            margin-bottom: 12px;
+            width: 74px;
+            height: 74px;
+            font-size: 28px;
         }
         
         .profile-info {
@@ -180,7 +300,32 @@
         }
         
         .profile-info h2 {
-            font-size: 20px;
+            font-size: 24px;
+        }
+        .profile-quick-stats {
+            grid-template-columns: 1fr;
+        }
+        .profile-form-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .info-value {
+            text-align: left;
+        }
+        .logout-panel {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .team-member-card {
+            align-items: flex-start;
+        }
+        .team-member-meta {
+            width: 100%;
+            text-align: left;
         }
         
         .form-group {
@@ -198,6 +343,9 @@
             width: 100%;
             padding: 12px;
             font-size: 14px;
+        }
+        .save-button {
+            width: 100%;
         }
         
         .form-actions {
@@ -247,7 +395,7 @@
         background: linear-gradient(135deg, #15803d 0%, #166534 100%);
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        background: #5568d3;
+        background: #184634;
     }
     .btn-success {
         background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
@@ -264,11 +412,18 @@
     }
     .card-title {
         font-size: 18px;
-        font-weight: 600;
+        font-weight: 700;
         color: #063A1C;
         margin-bottom: 20px;
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .card-title-text {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
     }
     .team-summary-grid {
         display: grid;
@@ -301,20 +456,30 @@
     }
     .info-row {
         display: flex;
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid #eef3ef;
     }
     .info-row:last-child {
         border-bottom: none;
     }
     .info-label {
         width: 150px;
-        font-weight: 500;
-        color: #B3B5B4;
+        font-weight: 600;
+        color: #6b7f75;
     }
     .info-value {
         flex: 1;
         color: #063A1C;
+        text-align: right;
+        font-weight: 600;
+    }
+    .section-caption {
+        margin: -8px 0 18px;
+        color: #6b7f75;
+        font-size: 14px;
     }
     .activity-table {
         width: 100%;
@@ -360,26 +525,50 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 16px;
-        border-bottom: 2px solid #f0f0f0;
+        gap: 16px;
+        margin-bottom: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #dce8e1;
     }
     .edit-actions {
         display: flex;
         gap: 10px;
     }
+    .profile-section-title {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .profile-section-title h2 {
+        font-size: 28px;
+        font-weight: 800;
+        color: #063A1C;
+        margin: 0;
+    }
+    .profile-section-title p {
+        margin: 0;
+        color: #6b7f75;
+        font-size: 14px;
+    }
+    .save-button {
+        min-width: 170px;
+    }
     .team-member-card {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 16px;
         padding: 16px;
         border: 1px solid #e0e0e0;
-        border-radius: 8px;
+        border-radius: 16px;
         margin-bottom: 12px;
-        transition: all 0.3s;
+        transition: all 0.2s;
+        background: #fff;
     }
     .team-member-card:hover {
         border-color: #205A44;
-        box-shadow: 0 2px 8px rgba(32, 90, 68, 0.1);
+        box-shadow: 0 10px 24px rgba(32, 90, 68, 0.08);
+        transform: translateY(-1px);
     }
     .team-member-avatar {
         width: 48px;
@@ -403,6 +592,7 @@
     }
     .team-member-info {
         flex: 1;
+        min-width: 0;
     }
     .team-member-name {
         font-weight: 600;
@@ -419,6 +609,10 @@
         font-size: 12px;
         font-weight: 500;
     }
+    .team-member-meta {
+        text-align: right;
+        min-width: 120px;
+    }
     .status-available {
         background: #d1fae5;
         color: #065f46;
@@ -431,10 +625,49 @@
         display: inline-block;
         padding: 4px 8px;
         background: #f0f0f0;
-        border-radius: 6px;
+        border-radius: 999px;
         font-size: 12px;
         color: #666;
         margin-left: 8px;
+    }
+    .activity-table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e5efe8;
+        border-radius: 16px;
+    }
+    .empty-state {
+        text-align: center;
+        color: #6b7f75;
+        padding: 28px 16px;
+        border: 1px dashed #cfe1d8;
+        border-radius: 16px;
+        background: #f8fcfa;
+    }
+    .logout-panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 4px 0;
+    }
+    .logout-copy h3 {
+        margin: 0 0 6px;
+        font-size: 18px;
+        color: #063A1C;
+    }
+    .logout-copy p {
+        margin: 0;
+        color: #6b7f75;
+        font-size: 14px;
+    }
+    .btn-danger {
+        background: #b42318;
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(180, 35, 24, 0.16);
+    }
+    .btn-danger:hover {
+        background: #921d14;
+        transform: translateY(-1px);
     }
 </style>
 @endpush
@@ -442,29 +675,38 @@
 @section('content')
 <div class="profile-shell">
     <!-- Profile Header -->
-    <div class="profile-card">
+    <div class="profile-card profile-hero">
         <div class="edit-header">
-            <h2 style="font-size: 24px; font-weight: 700; color: #063A1C; margin: 0;">Profile</h2>
+            <div class="profile-section-title">
+                <h2>Profile</h2>
+                <p>Account details, team snapshot, password controls aur recent activity ek jagah.</p>
+            </div>
             <div class="edit-actions">
-                <button type="button" id="saveChangesBtn" class="btn btn-success" onclick="saveAllChanges()">
+                <button type="button" id="saveChangesBtn" class="btn btn-success save-button" onclick="saveAllChanges()">
                     <i class="fas fa-save"></i> Save Changes
                 </button>
             </div>
         </div>
         <div class="profile-header">
-            <div class="avatar-upload">
-                <div class="avatar" id="avatar">
-                    <span id="avatarInitial">S</span>
-                    <img id="avatarImage" src="" alt="Profile Picture" style="display: none;">
+            <div class="profile-identity">
+                <div class="avatar-upload">
+                    <div class="avatar" id="avatar">
+                        <span id="avatarInitial">S</span>
+                        <img id="avatarImage" src="" alt="Profile Picture" style="display: none;">
+                    </div>
+                    <label for="profilePictureInput" class="avatar-upload-btn" id="profilePictureLabel" title="Upload Profile Picture">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                    <input type="file" id="profilePictureInput" accept="image/jpeg,image/jpg,image/png">
                 </div>
-                <label for="profilePictureInput" class="avatar-upload-btn" id="profilePictureLabel" title="Upload Profile Picture">
-                    <i class="fas fa-camera"></i>
-                </label>
-                <input type="file" id="profilePictureInput" accept="image/jpeg,image/jpg,image/png">
-            </div>
-            <div class="profile-info">
-                <h2 id="profileName">Senior Manager</h2>
-                <p id="profileEmail">Loading...</p>
+                <div class="profile-info">
+                    <div class="profile-meta-kicker"><i class="fas fa-shield-alt"></i> ASM Account</div>
+                    <div class="profile-info-copy">
+                        <h2 id="profileName">Senior Manager</h2>
+                        <p id="profileEmail">Loading...</p>
+                        <div class="profile-subline">Profile photo, contact details aur password yahin se manage karein.</div>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="profilePictureAlert"></div>
@@ -475,79 +717,102 @@
                 <button type="button" class="btn" style="background: #6b7280; color: white; margin-left: 10px;" onclick="cancelPictureUpload()">Cancel</button>
             </div>
         </div>
-    </div>
-
-    <!-- Personal Information Card -->
-    <div class="profile-card" id="personalInfoCard">
-        <div class="card-title">
-            <i class="fas fa-user"></i>
-            Personal Information
-        </div>
-        <div id="personalInfoAlert"></div>
-        <form id="personalInfoForm">
-            <div class="form-group">
-                <label for="profileNameInput">Name *</label>
-                <input type="text" id="profileNameInput" name="name" required>
+        <div class="profile-quick-stats">
+            <div class="quick-stat-card">
+                <div class="quick-stat-label">Team Members</div>
+                <div class="quick-stat-value" id="profileHeroMembers">0</div>
+                <span class="quick-stat-note" id="profileHeroMembersNote">Members assigned</span>
             </div>
-            <div class="form-group">
-                <label for="profilePhoneInput">Phone</label>
-                <input type="text" id="profilePhoneInput" name="phone">
+            <div class="quick-stat-card">
+                <div class="quick-stat-label">Available Today</div>
+                <div class="quick-stat-value" id="profileHeroAvailable">0</div>
+                <span class="quick-stat-note">Currently reachable</span>
             </div>
-            <div class="form-group">
-                <label for="profileEmailInput">Email *</label>
-                <input type="email" id="profileEmailInput" name="email" required>
+            <div class="quick-stat-card">
+                <div class="quick-stat-label">Today Prospects</div>
+                <div class="quick-stat-value" id="profileHeroProspects">0</div>
+                <span class="quick-stat-note">Team output today</span>
             </div>
-            <div class="info-row">
-                <div class="info-label">Role</div>
-                <div class="info-value" id="profileRole">-</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Manager</div>
-                <div class="info-value" id="profileManager">-</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Joining Date</div>
-                <div class="info-value" id="profileJoinDate">-</div>
-            </div>
-        </form>
-    </div>
-
-    <!-- Team Members Card -->
-    <div class="profile-card">
-        <div class="card-title">
-            <i class="fas fa-users"></i>
-            My Team
-            <span class="stat-badge" id="teamStatsTotal">0 members</span>
-        </div>
-        <div class="team-summary-grid">
-            <div class="team-summary-card">
-                <div class="team-summary-label">Total</div>
-                <div class="team-summary-value" id="teamSummaryTotal">0</div>
-            </div>
-            <div class="team-summary-card">
-                <div class="team-summary-label">Available</div>
-                <div class="team-summary-value" id="teamSummaryAvailable">0</div>
-            </div>
-            <div class="team-summary-card">
-                <div class="team-summary-label">Absent</div>
-                <div class="team-summary-value" id="teamSummaryAbsent">0</div>
-            </div>
-            <div class="team-summary-card">
-                <div class="team-summary-label">Today Prospects</div>
-                <div class="team-summary-value" id="teamSummaryToday">0</div>
-            </div>
-        </div>
-        <div id="teamMembersContainer">
-            <p style="text-align: center; color: #B3B5B4; padding: 20px;">Loading team members...</p>
         </div>
     </div>
 
-    <!-- Password Change Card -->
-    <div class="profile-card" id="passwordCard">
-        <div class="card-title">
-            <i class="fas fa-lock"></i>
-            Change Password
+    <div class="profile-grid">
+        <div class="profile-main-stack">
+            <!-- Personal Information Card -->
+            <div class="profile-card" id="personalInfoCard">
+                <div class="card-title">
+                    <span class="card-title-text"><i class="fas fa-user"></i> Personal Information</span>
+                </div>
+                <div class="section-caption">Basic contact details aur reporting hierarchy yahan visible hai.</div>
+                <div id="personalInfoAlert"></div>
+                <form id="personalInfoForm">
+                    <div class="profile-form-grid">
+                        <div class="form-group">
+                            <label for="profileNameInput">Name *</label>
+                            <input type="text" id="profileNameInput" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profilePhoneInput">Phone</label>
+                            <input type="text" id="profilePhoneInput" name="phone">
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="profileEmailInput">Email *</label>
+                            <input type="email" id="profileEmailInput" name="email" required>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Role</div>
+                        <div class="info-value" id="profileRole">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Manager</div>
+                        <div class="info-value" id="profileManager">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Joining Date</div>
+                        <div class="info-value" id="profileJoinDate">-</div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Team Members Card -->
+            <div class="profile-card">
+                <div class="card-title">
+                    <span class="card-title-text"><i class="fas fa-users"></i> My Team</span>
+                    <span class="stat-badge" id="teamStatsTotal">0 members</span>
+                </div>
+                <div class="section-caption">Assigned members ki availability aur daily output yahan track hoti hai.</div>
+                <div class="team-summary-grid">
+                    <div class="team-summary-card">
+                        <div class="team-summary-label">Total</div>
+                        <div class="team-summary-value" id="teamSummaryTotal">0</div>
+                    </div>
+                    <div class="team-summary-card">
+                        <div class="team-summary-label">Available</div>
+                        <div class="team-summary-value" id="teamSummaryAvailable">0</div>
+                    </div>
+                    <div class="team-summary-card">
+                        <div class="team-summary-label">Absent</div>
+                        <div class="team-summary-value" id="teamSummaryAbsent">0</div>
+                    </div>
+                    <div class="team-summary-card">
+                        <div class="team-summary-label">Today Prospects</div>
+                        <div class="team-summary-value" id="teamSummaryToday">0</div>
+                    </div>
+                </div>
+                <div id="teamMembersContainer">
+                    <div class="empty-state">Loading team members...</div>
+                </div>
+            </div>
         </div>
+
+        <div class="profile-side-stack">
+            <!-- Password Change Card -->
+            <div class="profile-card" id="passwordCard">
+        <div class="card-title">
+            <span class="card-title-text"><i class="fas fa-lock"></i> Change Password</span>
+        </div>
+        <div class="section-caption">Password update ke liye current password aur naya secure password enter karein.</div>
         <div id="passwordAlert"></div>
         <form id="passwordForm">
             <div class="form-group">
@@ -567,7 +832,7 @@
                         <i class="fas fa-eye" id="newPasswordToggleIcon"></i>
                     </button>
                 </div>
-                <small style="color: #B3B5B4; font-size: 12px; margin-top: 4px; display: block;">Minimum 8 characters</small>
+                <small style="color: #6b7f75; font-size: 12px; margin-top: 6px; display: block;">Minimum 8 characters</small>
             </div>
             <div class="form-group">
                 <label for="confirmPassword">Confirm New Password *</label>
@@ -584,27 +849,32 @@
     <!-- Activity History Card -->
     <div class="profile-card">
         <div class="card-title">
-            <i class="fas fa-history"></i>
-            Recent Activity
+            <span class="card-title-text"><i class="fas fa-history"></i> Recent Activity</span>
         </div>
+        <div class="section-caption">Latest account actions aur access history ka quick log.</div>
         <div id="activityHistory">
-            <p style="text-align: center; color: #B3B5B4; padding: 20px;">Loading...</p>
+            <div class="empty-state">Loading...</div>
         </div>
     </div>
 
     <!-- Logout Card -->
     <div class="profile-card">
         <div class="card-title">
-            <i class="fas fa-sign-out-alt"></i>
-            Account Actions
+            <span class="card-title-text"><i class="fas fa-sign-out-alt"></i> Account Actions</span>
         </div>
-        <div style="padding: 20px 0;">
-            <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+        <div class="logout-panel">
+            <div class="logout-copy">
+                <h3>Logout</h3>
+                <p>Current device se session close karne ke liye logout use karein.</p>
+            </div>
+            <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
                 @csrf
-                <button type="submit" class="btn btn-danger" style="width: 100%; max-width: 300px;">
+                <button type="submit" class="btn btn-danger">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
             </form>
+        </div>
+    </div>
         </div>
     </div>
 </div>
@@ -733,6 +1003,10 @@
         const summaryAvailable = document.getElementById('teamSummaryAvailable');
         const summaryAbsent = document.getElementById('teamSummaryAbsent');
         const summaryToday = document.getElementById('teamSummaryToday');
+        const heroMembers = document.getElementById('profileHeroMembers');
+        const heroMembersNote = document.getElementById('profileHeroMembersNote');
+        const heroAvailable = document.getElementById('profileHeroAvailable');
+        const heroProspects = document.getElementById('profileHeroProspects');
         
         if (teamStats) {
             statsTotal.textContent = `${teamStats.total_members} members (${teamStats.available_members} available)`;
@@ -740,15 +1014,23 @@
             if (summaryAvailable) summaryAvailable.textContent = teamStats.available_members || 0;
             if (summaryAbsent) summaryAbsent.textContent = Math.max((teamStats.total_members || 0) - (teamStats.available_members || 0), 0);
             if (summaryToday) summaryToday.textContent = teamStats.today_prospects || 0;
+            if (heroMembers) heroMembers.textContent = teamStats.total_members || 0;
+            if (heroMembersNote) heroMembersNote.textContent = `${teamStats.available_members || 0} available right now`;
+            if (heroAvailable) heroAvailable.textContent = teamStats.available_members || 0;
+            if (heroProspects) heroProspects.textContent = teamStats.today_prospects || 0;
         } else {
             if (summaryTotal) summaryTotal.textContent = 0;
             if (summaryAvailable) summaryAvailable.textContent = 0;
             if (summaryAbsent) summaryAbsent.textContent = 0;
             if (summaryToday) summaryToday.textContent = 0;
+            if (heroMembers) heroMembers.textContent = 0;
+            if (heroMembersNote) heroMembersNote.textContent = 'Members assigned';
+            if (heroAvailable) heroAvailable.textContent = 0;
+            if (heroProspects) heroProspects.textContent = 0;
         }
         
         if (!teamMembers || teamMembers.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #B3B5B4; padding: 20px;">No team members found</p>';
+            container.innerHTML = '<div class="empty-state">No team members found</div>';
             return;
         }
 
@@ -764,7 +1046,7 @@
                     <div class="team-member-name">${member.name}</div>
                     <div class="team-member-role">${member.role} • ${member.email}</div>
                 </div>
-                <div style="text-align: right;">
+                <div class="team-member-meta">
                     <span class="team-member-status ${member.is_absent ? 'status-absent' : 'status-available'}">
                         ${member.is_absent ? 'Absent' : 'Available'}
                     </span>
@@ -781,29 +1063,31 @@
         const container = document.getElementById('activityHistory');
         
         if (!activities || activities.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #B3B5B4; padding: 20px;">No activity history found</p>';
+            container.innerHTML = '<div class="empty-state">No activity history found</div>';
             return;
         }
 
         const table = `
-            <table class="activity-table">
-                <thead>
-                    <tr>
-                        <th>Action</th>
-                        <th>IP Address</th>
-                        <th>Date & Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${activities.map(activity => `
+            <div class="activity-table-wrap">
+                <table class="activity-table">
+                    <thead>
                         <tr>
-                            <td>${activity.action}</td>
-                            <td>${activity.ip || 'N/A'}</td>
-                            <td>${new Date(activity.created_at).toLocaleString()}</td>
+                            <th>Action</th>
+                            <th>IP Address</th>
+                            <th>Date & Time</th>
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        ${activities.map(activity => `
+                            <tr>
+                                <td>${activity.action}</td>
+                                <td>${activity.ip || 'N/A'}</td>
+                                <td>${new Date(activity.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
         `;
         container.innerHTML = table;
     }
