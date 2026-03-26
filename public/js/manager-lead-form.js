@@ -377,8 +377,8 @@
                                     </select>
                                 </div>
                                 <div class="manager-lead-field manager-lead-field-full">
-                                    <label for="manager_form_manager_remark">Manager remark</label>
-                                    <textarea class="manager-lead-textarea" name="manager_remark" id="manager_form_manager_remark" rows="3" placeholder="Enter remarks or notes from manager...">${escapeHtml(formValues.manager_remark || '')}</textarea>
+                                    <label for="manager_form_manager_remark">Remark</label>
+                                    <textarea class="manager-lead-textarea" name="manager_remark" id="manager_form_manager_remark" rows="3" placeholder="Enter remarks or notes...">${escapeHtml(formValues.manager_remark || '')}</textarea>
                                 </div>
                             </div>
                         </div>

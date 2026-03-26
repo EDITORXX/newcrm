@@ -2903,7 +2903,7 @@
                     
                     <div style="margin-top: 16px;">
                         <label style="display: block; font-size: 14px; font-weight: 500; color: #333; margin-bottom: 6px;">
-                            <strong>Manager Remark</strong>
+                            <strong>Remark</strong>
                         </label>
                         <textarea name="manager_remark" id="manager_form_manager_remark" rows="3" placeholder="Enter remarks or notes..." style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;"></textarea>
                     </div>
@@ -4026,5 +4026,10 @@
     
     // Note: loadTasks() is called in DOMContentLoaded event listener above (line 1820)
 </script>
-<script src="/js/manager-lead-form.js"></script>
+<script src="{{ asset('js/manager-lead-form.js') }}?v={{ @filemtime(public_path('js/manager-lead-form.js')) ?: time() }}" onload="
+if (typeof window.renderManagerLeadForm === 'function') { renderManagerLeadForm = window.renderManagerLeadForm; }
+if (typeof window.submitManagerLeadRequirementForm === 'function') { submitManagerLeadRequirementForm = window.submitManagerLeadRequirementForm; }
+if (typeof window.handleManagerCategoryChange === 'function') { handleManagerCategoryChange = window.handleManagerCategoryChange; }
+if (typeof window.loadInterestedProjectsForManager === 'function') { loadInterestedProjectsForManager = window.loadInterestedProjectsForManager; }
+"></script>
 @endpush
