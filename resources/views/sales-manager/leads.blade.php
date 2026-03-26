@@ -876,12 +876,6 @@
                 console.log('Team members data:', data);
                 currentUser = data.user;
                 teamMembers = data.team_members || [];
-                const profileFavorites = Array.isArray(data.favorite_leads) ? data.favorite_leads : [];
-                favoriteLeadIds = new Set(
-                    profileFavorites
-                        .map(item => Number(item.lead_id))
-                        .filter(Number.isFinite)
-                );
                 
                 // Populate user filter dropdown
                 const userFilter = document.getElementById('userFilter');
@@ -915,6 +909,8 @@
                 } else {
                     console.error('User filter dropdown not found');
                 }
+
+                await refreshFavoriteLeadsFromApi();
             } else {
                 console.error('Failed to load team members. Status:', response.status);
                 const errorText = await response.text();

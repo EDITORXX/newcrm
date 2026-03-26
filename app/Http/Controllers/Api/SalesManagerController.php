@@ -51,9 +51,9 @@ class SalesManagerController extends Controller
         return 'No remark added';
     }
 
-    private function getFavoriteLeadPayload(User $user, int $limit = 5): array
+    private function getFavoriteLeadPayload(User $user, ?int $limit = 5): array
     {
-        $favorites = LeadFavorite::query()
+        $favoritesQuery = LeadFavorite::query()
             ->where('user_id', $user->id)
             ->with([
                 'lead' => function ($query) {
@@ -69,9 +69,13 @@ class SalesManagerController extends Controller
                     ])->with('formFieldValues:lead_id,field_key,field_value');
                 },
             ])
-            ->latest()
-            ->take(max(1, $limit))
-            ->get();
+            ->latest();
+
+        if ($limit !== null) {
+            $favoritesQuery->take(max(1, $limit));
+        }
+
+        $favorites = $favoritesQuery->get();
 
         return $favorites
             ->filter(fn ($favorite) => $favorite->lead !== null)
@@ -866,7 +870,7 @@ class SalesManagerController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $this->getFavoriteLeadPayload($user, 5),
+            'data' => $this->getFavoriteLeadPayload($user, null),
         ]);
     }
 
