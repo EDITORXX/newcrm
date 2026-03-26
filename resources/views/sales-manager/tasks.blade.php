@@ -2528,7 +2528,10 @@
             const result = await apiCall(`/tasks/${taskId}/lead-requirement-form`);
             
             if (result && result.success) {
-                renderManagerLeadForm(result);
+                const activeRenderer = typeof window.renderManagerLeadForm === 'function'
+                    ? window.renderManagerLeadForm
+                    : renderManagerLeadForm;
+                activeRenderer(result);
             } else {
                 showAlert('Failed to load form: ' + (result?.error || result?.message || 'Unknown error'), 'error');
                 closeManagerLeadRequirementFormModal();
