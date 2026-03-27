@@ -1,52 +1,43 @@
 # Real Estate CRM System
 
-A scalable, production-ready CRM system built with Laravel for real estate companies.
+A Laravel 10 + Vite CRM for real estate operations with role-based dashboards, lead management, automation, exports, notifications, mobile/API support, and admin deployment tooling.
 
-## Features
+## Stack
 
-- **Role-Based Access Control**: 5 distinct user roles (Admin, CRM, Sales Manager, Sales Executive, Telecaller)
-- **Real-Time Notifications**: WebSocket-based real-time updates
-- **RESTful APIs**: Mobile app ready with Laravel Sanctum authentication
-- **Clean Architecture**: MVC pattern with Event-Driven architecture
-- **Scalable Design**: Optimized for 100+ users, ready for 1000+
+- PHP 8.1+
+- Laravel 10
+- MySQL
+- Redis for queue/cache workloads
+- Vite for frontend assets
+- Pusher-compatible broadcasting
+- Firebase / Web Push integrations
 
-## Tech Stack
+## Quick Start
 
-- **Backend**: Laravel 10.x
-- **Database**: MySQL
-- **Real-Time**: Laravel WebSockets (Pusher)
-- **Queue**: Redis
-- **Authentication**: Laravel Sanctum
+1. Copy `.env.example` to `.env` and fill in real values.
+2. Install backend dependencies with `composer install`.
+3. Install frontend dependencies with `npm install`.
+4. Generate the app key with `php artisan key:generate`.
+5. Run migrations with `php artisan migrate`.
+6. Seed base data with `php artisan db:seed`.
+7. Build assets with `npm run build`.
+8. Start the app with `php artisan serve`.
 
-## Installation
+## Install Wizard
 
-1. Clone the repository
-2. Install dependencies: `composer install`
-3. Copy `.env.example` to `.env` and configure
-4. Generate app key: `php artisan key:generate`
-5. Run migrations: `php artisan migrate`
-6. Seed database: `php artisan db:seed`
-7. Install frontend dependencies: `npm install`
-8. Build assets: `npm run build`
-9. Start server: `php artisan serve`
+Fresh installs can also use the browser-based installer at `/install`. The installer writes `.env`, tests the database connection, runs migrations and seeders, and creates the first admin user.
 
-## User Roles
+## Deployment Handoff
 
-1. **ADMIN**: Full system access
-2. **CRM**: Operations management
-3. **SALES MANAGER**: Team lead management
-4. **SALES EXECUTIVE**: Lead management
-5. **TELECALLER**: Call management
+Use `DEPLOYMENT_HANDOFF.md` for the full migration and deployment checklist, including:
 
-## API Documentation
+- required services and secrets
+- queue/scheduler expectations
+- Firebase/Web Push credential handling
+- secondary remote publishing to `EDITORXX/newcrm`
+- server-side deployment notes
 
-All APIs are prefixed with `/api/v1/` and require Sanctum authentication.
+## Notes
 
-## Scaling Best Practices
-
-See `SCALING.md` for detailed scaling guidelines.
-
-## License
-
-MIT
-
+- Do not commit `.env`, Firebase credential files, runtime storage artifacts, `vendor/`, or `node_modules/`.
+- The admin deployment panel uses the repo's configured `origin` remote on the deployed server. If production should deploy from `newcrm`, the server clone must use `newcrm` as its `origin`.
