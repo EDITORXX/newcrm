@@ -16,6 +16,7 @@ use App\Models\Meeting;
 use App\Models\SiteVisit;
 use App\Models\FollowUp;
 use App\Models\Task;
+use App\Services\AsmCnpAutomationService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -27,6 +28,100 @@ use Carbon\Carbon;
 
 class SalesManagerController extends Controller
 {
+    private function defaultDashboardVisibility(): array
+    {
+        return [
+            'today_focus_panel' => true,
+            'today_focus_fresh_leads' => true,
+            'today_focus_overdue' => true,
+            'today_focus_meetings' => true,
+            'today_focus_site_visits' => true,
+            'today_focus_follow_ups' => true,
+            'favorites_panel' => true,
+            'stat_leads_received' => true,
+            'stat_todays_prospects' => true,
+            'stat_pending_verifications' => true,
+            'stat_overdue_tasks' => true,
+            'stat_team_members' => true,
+            'stat_pending_tasks' => true,
+            'stat_no_response_yet' => true,
+            'no_response_section' => true,
+            'team_call_stats_section' => true,
+            'manager_targets_section' => true,
+            'team_targets_section' => true,
+            'team_members_cards_section' => true,
+            'incentives_section' => true,
+        ];
+    }
+
+    private function normalizedDashboardVisibility(?array $preferences): array
+    {
+        $defaults = $this->defaultDashboardVisibility();
+        $saved = is_array($preferences['dashboard_visibility'] ?? null)
+            ? $preferences['dashboard_visibility']
+            : [];
+
+        $normalized = [];
+        foreach ($defaults as $key => $default) {
+            $normalized[$key] = array_key_exists($key, $saved)
+                ? filter_var($saved[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? (bool) $saved[$key]
+                : $default;
+        }
+
+        return $normalized;
+    }
+
+    private function resolveDashboardDateRange(Request $request): array
+    {
+        $today = Carbon::today();
+        $dateFilter = $request->get('date_filter', 'today');
+
+        switch ($dateFilter) {
+            case 'this_week':
+                $startDate = $today->copy()->startOfWeek();
+                $endDate = $today->copy()->endOfWeek();
+                break;
+            case 'this_month':
+                $startDate = $today->copy()->startOfMonth();
+                $endDate = $today->copy()->endOfMonth();
+                break;
+            case 'custom':
+                $start = $request->get('start_date');
+                $end = $request->get('end_date');
+                if (!$start || !$end) {
+                    $dateFilter = 'today';
+                    $startDate = $today->copy()->startOfDay();
+                    $endDate = $today->copy()->endOfDay();
+                    break;
+                }
+
+                $startDate = Carbon::parse($start)->startOfDay();
+                $endDate = Carbon::parse($end)->endOfDay();
+                if ($startDate->gt($endDate)) {
+                    [$startDate, $endDate] = [$endDate->copy()->startOfDay(), $startDate->copy()->endOfDay()];
+                }
+                break;
+            case 'today':
+            default:
+                $dateFilter = 'today';
+                $startDate = $today->copy()->startOfDay();
+                $endDate = $today->copy()->endOfDay();
+                break;
+        }
+
+        return [
+            'date_filter' => $dateFilter,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'target_month' => $endDate->copy()->startOfMonth(),
+        ];
+    }
+
+    private function asmCnpAutomation(): AsmCnpAutomationService
+    {
+        return app(AsmCnpAutomationService::class);
+    }
+
     private function resolveLeadRemarkForUi(Lead $lead): string
     {
         $formValues = $lead->relationLoaded('formFieldValues')
@@ -149,6 +244,9 @@ class SalesManagerController extends Controller
     {
         // Get user from request (works with Sanctum)
         $user = $request->user();
+        $dashboardRange = $this->resolveDashboardDateRange($request);
+        $startDate = $dashboardRange['start_date'];
+        $endDate = $dashboardRange['end_date'];
         
         if (!$user) {
             return response()->json([
@@ -179,10 +277,10 @@ class SalesManagerController extends Controller
             'bindings' => $teamMembersQuery->getBindings(),
         ]);
         
-        $teamMembers = $teamMembersQuery->get()->map(function($member) {
-                // Get today's stats for the team member
+        $teamMembers = $teamMembersQuery->get()->map(function($member) use ($startDate, $endDate) {
+                // Get filtered stats for the team member
                 $todayProspects = Prospect::where('telecaller_id', $member->id)
-                    ->whereDate('created_at', Carbon::today())
+                    ->whereBetween('created_at', [$startDate, $endDate])
                     ->count();
                 
                 $isAbsent = false;
@@ -230,7 +328,9 @@ class SalesManagerController extends Controller
             Prospect::query(),
             $user,
             $teamMemberIds
-        )->whereIn('verification_status', ['pending', 'pending_verification'])->count();
+        )->whereIn('verification_status', ['pending', 'pending_verification'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->count();
         
         // Log for debugging
         \Log::info('Senior Manager getProfile - Pending verifications', [
@@ -261,7 +361,23 @@ class SalesManagerController extends Controller
                          ->whereIn('verification_status', ['verified', 'approved']);
                 });
             }
-        })->distinct()->count();
+        })
+        ->where(function ($rangeQuery) use ($startDate, $endDate, $allUserIds, $teamMemberIds) {
+            $rangeQuery->whereHas('assignments', function ($assignmentRangeQuery) use ($allUserIds, $startDate, $endDate) {
+                $assignmentRangeQuery->whereIn('assigned_to', $allUserIds)
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+            });
+
+            if ($teamMemberIds->isNotEmpty()) {
+                $rangeQuery->orWhereHas('prospects', function ($prospectRangeQuery) use ($teamMemberIds, $startDate, $endDate) {
+                    $prospectRangeQuery->whereIn('telecaller_id', $teamMemberIds)
+                        ->whereIn('verification_status', ['verified', 'approved'])
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                });
+            }
+        })
+        ->distinct()
+        ->count();
         
         // Log for debugging
         \Log::info('Senior Manager Lead Count Debug', [
@@ -280,6 +396,7 @@ class SalesManagerController extends Controller
         $pendingTasksQuery = Task::where('assigned_to', $user->id)
             ->where('type', 'phone_call')
             ->whereIn('status', ['pending', 'in_progress'])
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->where(function($q) use ($tenMinutesAgo, $tenMinutesFromNow) {
                 // Include:
                 // 1. Overdue tasks (scheduled more than 10 minutes ago)
@@ -333,26 +450,27 @@ class SalesManagerController extends Controller
             ->where('type', 'phone_call')
             ->whereIn('status', ['pending', 'in_progress'])
             ->where('scheduled_at', '<', $tenMinutesAgo)
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->count();
 
         // Hero counters (ASM scope only: logged-in user)
         $freshLeadsTodayCount = LeadAssignment::where('assigned_to', $user->id)
-            ->whereDate('created_at', Carbon::today())
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->distinct()
             ->count('lead_id');
 
         $todayMeetingsCount = Meeting::where('assigned_to', $user->id)
-            ->whereDate('scheduled_at', Carbon::today())
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->where('status', 'scheduled')
             ->count();
 
         $todayVisitsCount = SiteVisit::where('assigned_to', $user->id)
-            ->whereDate('scheduled_at', Carbon::today())
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->where('status', 'scheduled')
             ->count();
 
         $todayFollowUpsCount = FollowUp::where('created_by', $user->id)
-            ->whereDate('scheduled_at', Carbon::today())
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
             ->where('status', 'scheduled')
             ->count();
 
@@ -400,6 +518,11 @@ class SalesManagerController extends Controller
             'team_stats' => $teamStats,
             'favorite_leads' => $favoriteLeads,
             'favorite_leads_count' => count($favoriteLeads),
+            'dashboard_filter' => [
+                'date_filter' => $dashboardRange['date_filter'],
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate->toDateString(),
+            ],
             'activity_history' => $activityHistory->map(function ($log) {
                 return [
                     'action' => $log->action,
@@ -407,6 +530,69 @@ class SalesManagerController extends Controller
                     'created_at' => $log->created_at->format('Y-m-d H:i:s'),
                 ];
             }),
+        ]);
+    }
+
+    public function getDashboardSettings(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->isAssistantSalesManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only Assistant Sales Managers can access dashboard settings.',
+            ], 403);
+        }
+
+        $profile = SalesManagerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            ['preferences' => []]
+        );
+
+        return response()->json([
+            'success' => true,
+            'dashboard_visibility' => $this->normalizedDashboardVisibility($profile->preferences),
+        ]);
+    }
+
+    public function updateDashboardSettings(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->isAssistantSalesManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only Assistant Sales Managers can update dashboard settings.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'dashboard_visibility' => ['required', 'array'],
+        ]);
+        $submitted = $validated['dashboard_visibility'];
+
+        $profile = SalesManagerProfile::firstOrCreate(['user_id' => $user->id], ['preferences' => []]);
+        $preferences = is_array($profile->preferences) ? $profile->preferences : [];
+        $saved = is_array($preferences['dashboard_visibility'] ?? null)
+            ? $preferences['dashboard_visibility']
+            : [];
+        $merged = array_merge($this->defaultDashboardVisibility(), $saved);
+
+        foreach (array_keys($this->defaultDashboardVisibility()) as $key) {
+            if (array_key_exists($key, $submitted)) {
+                $value = filter_var($submitted[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                $merged[$key] = $value === null ? (bool) $submitted[$key] : $value;
+            }
+        }
+
+        $preferences['dashboard_visibility'] = $merged;
+        $profile->preferences = $preferences;
+        $profile->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dashboard settings updated successfully.',
+            'dashboard_visibility' => $this->normalizedDashboardVisibility($profile->preferences),
         ]);
     }
 
@@ -815,6 +1001,10 @@ class SalesManagerController extends Controller
         // Filter by lead temperature/status
         if ($request->has('lead_status') && $request->lead_status && $request->lead_status !== 'all') {
             $query->where('lead_status', $request->lead_status);
+        }
+
+        if ($request->boolean('created_today')) {
+            $query->whereDate('created_at', today());
         }
         
         // Order by created_at descending (newest first)
@@ -1239,11 +1429,18 @@ class SalesManagerController extends Controller
                 $isMeetingTask = str_contains($taskText, 'meeting id') ||
                                  str_contains($taskText, 'pre-meeting') ||
                                  (str_contains($taskText, 'meeting') && !$isSiteVisitTask);
-                $isProspectTask = $hasProspect ||
-                                  str_contains($taskText, 'prospect verification') ||
-                                  str_contains($taskText, 'prospect');
+                // Treat a task as a prospect task only when the lead actually has a linked prospect
+                // awaiting/available for ASM verification. Title text alone should not hide a fresh calling task.
+                $isProspectTask = $hasProspect || $prospectData !== null;
+                $isFreshLeadTask = !$isFollowUpTask &&
+                                   !$isCloserTask &&
+                                   !$isSiteVisitTask &&
+                                   !$isMeetingTask &&
+                                   !$isProspectTask;
                 $taskCategory = 'other';
-                if ($isFollowUpTask) {
+                if ($isFreshLeadTask) {
+                    $taskCategory = 'fresh_lead';
+                } elseif ($isFollowUpTask) {
                     $taskCategory = 'follow_up';
                 } elseif ($isCloserTask) {
                     $taskCategory = 'closer';
@@ -1761,7 +1958,9 @@ class SalesManagerController extends Controller
 
         $outcome = $validated['outcome'];
 
-        if (in_array($outcome, ['follow_up', 'cnp'], true) && empty($validated['next_datetime'])) {
+        $isFreshLeadCnp = $outcome === 'cnp' && $this->asmCnpAutomation()->isFreshLeadTask($task);
+
+        if (($outcome === 'follow_up' || ($outcome === 'cnp' && !$isFreshLeadCnp)) && empty($validated['next_datetime'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
@@ -1805,9 +2004,12 @@ class SalesManagerController extends Controller
         }
 
         if ($outcome === 'cnp') {
-            $childRequest = Request::create('/', 'POST', [
-                'retry_at' => $validated['next_datetime'],
-            ]);
+            $payload = [];
+            if (!empty($validated['next_datetime'])) {
+                $payload['retry_at'] = $validated['next_datetime'];
+            }
+
+            $childRequest = Request::create('/', 'POST', $payload);
             $childRequest->setUserResolver(fn () => $user);
 
             $response = $this->markAsCNP($childRequest, $task);
@@ -1818,7 +2020,12 @@ class SalesManagerController extends Controller
             }
 
             $task->refresh();
-            $this->recordTaskOutcome($task, 'cnp', null, Carbon::parse($validated['next_datetime']));
+            $this->recordTaskOutcome(
+                $task,
+                'cnp',
+                null,
+                !empty($validated['next_datetime']) ? Carbon::parse($validated['next_datetime']) : null
+            );
 
             $body['outcome'] = 'cnp';
 
@@ -1858,6 +2065,7 @@ class SalesManagerController extends Controller
                 $this->deactivateLeadAssignments($lead);
                 $task->markAsCompleted();
                 $this->recordTaskOutcome($task, 'not_interested', $reason);
+                $this->asmCnpAutomation()->cancelLeadAutomation($lead, 'Lead marked as not interested.');
 
                 DB::commit();
 
@@ -1887,6 +2095,7 @@ class SalesManagerController extends Controller
                 $lead->next_followup_at = $nextAt;
                 $lead->notes = $this->appendNote($lead->notes, '[' . now()->format('Y-m-d H:i:s') . '] ASM outcome: Follow Up scheduled for ' . $nextAt->format('Y-m-d H:i:s'));
                 $lead->save();
+                $this->asmCnpAutomation()->cancelLeadAutomation($lead, 'Lead moved to follow-up flow.');
 
                 $prospect->update([
                     'verification_status' => 'pending_verification',
@@ -2196,6 +2405,19 @@ class SalesManagerController extends Controller
                         'verified_by' => null,
                         'rejection_reason' => null,
                     ]);
+
+                    // Keep the lead in the prospect pipeline when ASM selects follow-up after interested.
+                    if ($lead) {
+                        if (!$lead->canAutoUpdate()) {
+                            $lead->enableAutoUpdate();
+                        }
+                        $lead->updateStatusIfAllowed('verified_prospect');
+                        if ($lead->status !== 'verified_prospect') {
+                            $lead->status = 'verified_prospect';
+                            $lead->save();
+                        }
+                        $this->asmCnpAutomation()->cancelLeadAutomation($lead, 'Lead moved to interested follow-up pipeline.');
+                    }
                     
                     // Create follow-up calling task for the selected date and time
                     $followUpDate = \Carbon\Carbon::parse($validated['follow_up_date']); // Use provided datetime
@@ -2332,7 +2554,7 @@ class SalesManagerController extends Controller
                             'preferred_size' => $prospect->size,
                             'use_end_use' => $prospect->purpose === 'end_user' ? 'End User' : ($prospect->purpose === 'investment' ? '2nd Investments' : null),
                             'possession_status' => $prospect->possession,
-                            'source' => 'call',
+                            'source' => \App\Models\Lead::normalizeSource('call'),
                             'status' => 'verified_prospect',
                             'created_by' => $user->id,
                         ];
@@ -2473,6 +2695,7 @@ class SalesManagerController extends Controller
                         $prospect->verified_by = $user->id;
                         $prospect->save();
                     }
+                    $this->asmCnpAutomation()->cancelLeadAutomation($lead, 'Lead converted to verified prospect.');
                 }
                 
                 DB::commit();
@@ -2562,14 +2785,18 @@ class SalesManagerController extends Controller
                     'error' => 'Lead not found',
                 ], 404);
             }
-            
-            $prospect = $lead->prospects()->latest()->first();
-            
-            if (!$prospect) {
+
+            if ($this->asmCnpAutomation()->isFreshLeadTask($task)) {
+                $result = $this->asmCnpAutomation()->handleFreshLeadCnp($task, $user);
+
                 return response()->json([
-                    'success' => false,
-                    'error' => 'Prospect not found for this lead',
-                ], 404);
+                    'success' => true,
+                    'message' => $result['message'],
+                    'current_task' => $task->fresh(),
+                    'retry_task' => $result['retry_task'],
+                    'automation_state' => $result['state'],
+                    'auto_retry' => true,
+                ], 200);
             }
             
             DB::beginTransaction();
@@ -2586,6 +2813,7 @@ class SalesManagerController extends Controller
                 
                 // Mark task as completed
                 $task->markAsCompleted();
+                $this->asmCnpAutomation()->cancelLeadAutomation($lead, 'Lead prospect rejected.');
                 
                 // Send notification to telecaller when prospect is rejected
                 if ($prospect->telecaller_id) {
@@ -2707,15 +2935,6 @@ class SalesManagerController extends Controller
                 ], 404);
             }
             
-            $prospect = $lead->prospects()->latest()->first();
-            
-            if (!$prospect) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Prospect not found for this lead',
-                ], 404);
-            }
-            
             DB::beginTransaction();
             
             try {
@@ -2780,7 +2999,6 @@ class SalesManagerController extends Controller
                 \Log::info('Prospect marked as CNP - Retry task created', [
                     'current_task_id' => $task->id,
                     'new_retry_task_id' => $retryTask->id,
-                    'prospect_id' => $prospect->id,
                     'lead_id' => $lead->id,
                     'manager_id' => $user->id,
                     'retry_scheduled_at' => $retryScheduledAt->format('Y-m-d H:i:s'),

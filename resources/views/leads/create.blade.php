@@ -192,26 +192,18 @@
                     </div>
 
                     <div class="mt-6">
-                        <label for="source" class="block text-sm font-medium text-gray-700 mb-2">Source</label>
+                        <label for="source" class="block text-sm font-medium text-gray-700 mb-2">
+                            Source @if(auth()->user()->isCrm())<span class="text-red-500">*</span>@endif
+                        </label>
                         <select name="source" 
                                 id="source"
+                                {{ auth()->user()->isCrm() ? 'required' : '' }}
                                    class="w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#205A44] focus:border-[#205A44]">
-                            <option value="other" {{ old('source') == 'other' ? 'selected' : '' }}>Other</option>
-                            <option value="website" {{ old('source') == 'website' ? 'selected' : '' }}>Website</option>
-                            <option value="referral" {{ old('source') == 'referral' ? 'selected' : '' }}>Referral</option>
-                            <option value="walk_in" {{ old('source') == 'walk_in' ? 'selected' : '' }}>Walk In</option>
-                            <option value="call" {{ old('source') == 'call' ? 'selected' : '' }}>Call</option>
-                            <option value="social_media" {{ old('source') == 'social_media' ? 'selected' : '' }}>Social Media</option>
-                            <option value="custom" {{ old('source') == 'custom' ? 'selected' : '' }}>Custom</option>
+                            <option value="">-- Select Source --</option>
+                            @foreach(\App\Models\Lead::sourceOptions() as $value => $label)
+                                <option value="{{ $value }}" {{ old('source') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
                         </select>
-                        <div id="custom_source_input" class="mt-3" style="display: {{ old('source') == 'custom' ? 'block' : 'none' }};">
-                            <input type="text" 
-                                   name="custom_source" 
-                                   id="custom_source"
-                                   value="{{ old('custom_source') }}"
-                                   placeholder="Enter custom source"
-                                   class="w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#205A44] focus:border-[#205A44]">
-                        </div>
                     </div>
 
                     <div class="mt-6">
@@ -345,16 +337,6 @@
 
     <script>
         // Show/hide custom source input (only when element exists – non-CRM)
-        const sourceEl = document.getElementById('source');
-        if (sourceEl) {
-            sourceEl.addEventListener('change', function() {
-                const customInput = document.getElementById('custom_source_input');
-                if (customInput) {
-                    customInput.style.display = this.value === 'custom' ? 'block' : 'none';
-                }
-            });
-        }
-
         // Handle project selection (single click without Ctrl)
         function handleProjectSelection(event) {
             updateSelectedProjectsBox();
@@ -531,4 +513,3 @@
         }
     </script>
 @endsection
-

@@ -30,11 +30,11 @@ class IncentiveController extends Controller
     {
         $user = $request->user();
 
-        // Check if closing is verified by CRM
+        // Check if closing is verified by CRM/Admin
         if ($siteVisit->closing_verification_status !== 'verified') {
             return response()->json([
                 'success' => false,
-                'message' => 'Closing must be verified by CRM before requesting incentive.',
+                'message' => 'Closing must be verified before requesting incentive.',
             ], 422);
         }
 
@@ -43,6 +43,13 @@ class IncentiveController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Closer must be verified before requesting incentive.',
+            ], 422);
+        }
+
+        if (empty($siteVisit->kyc_documents)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'KYC must be submitted before requesting incentive.',
             ], 422);
         }
 
@@ -346,29 +353,119 @@ class IncentiveController extends Controller
     }
 
     /**
-     * CRM verifies incentive (DEPRECATED - CRM now only verifies closing, not incentives)
-     * Kept for backward compatibility
+     * CRM/Admin verifies incentive
      */
     public function verifyByCrm(Request $request, Incentive $incentive)
     {
-        // This method is deprecated - CRM now only verifies closing, not incentives
-        // Incentives are verified by Finance Manager after closing is verified
-        return response()->json([
-            'success' => false,
-            'message' => 'This endpoint is deprecated. CRM verifies closing, Finance Manager verifies incentives.',
-        ], 422);
+        $user = $request->user();
+
+        if (!$user->isCrm() && !$user->isAdmin()) {
+            return response()->json(['message' => 'Forbidden. Only CRM or Admin can verify incentives.'], 403);
+        }
+
+        if ($incentive->status !== 'pending_finance_manager') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incentive is not pending verification.',
+            ], 422);
+        }
+
+        try {
+            $incentive->status = 'verified';
+            $incentive->crm_verified_by = $user->id;
+            $incentive->crm_verified_at = now();
+            if ($user->isAdmin()) {
+                $incentive->finance_manager_verified_by = $user->id;
+                $incentive->finance_manager_verified_at = now();
+            }
+            $incentive->save();
+
+            if ($incentive->type === 'closer') {
+                $this->completeCloserTarget($incentive);
+            }
+
+            try {
+                $this->notificationService->notifyIncentiveApproved($incentive);
+            } catch (\Exception $e) {
+                Log::warning('Error sending incentive approval notification: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Incentive verified successfully.',
+                'data' => $incentive->fresh(['user', 'siteVisit', 'crmVerifiedBy', 'financeManagerVerifiedBy']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error verifying incentive by CRM/Admin: ' . $e->getMessage(), [
+                'incentive_id' => $incentive->id,
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to verify incentive.',
+            ], 500);
+        }
     }
 
     /**
-     * CRM rejects incentive (DEPRECATED)
+     * CRM/Admin rejects incentive
      */
     public function rejectByCrm(Request $request, Incentive $incentive)
     {
-        // This method is deprecated
-        return response()->json([
-            'success' => false,
-            'message' => 'This endpoint is deprecated. Finance Manager handles incentive rejections.',
-        ], 422);
+        $user = $request->user();
+
+        if (!$user->isCrm() && !$user->isAdmin()) {
+            return response()->json(['message' => 'Forbidden. Only CRM or Admin can reject incentives.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'reason' => 'required|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        if ($incentive->status !== 'pending_finance_manager') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incentive is not pending verification.',
+            ], 422);
+        }
+
+        try {
+            $incentive->status = 'rejected';
+            $incentive->rejected_by = $user->id;
+            $incentive->rejection_reason = $request->input('reason');
+            $incentive->save();
+
+            try {
+                $this->notificationService->notifyIncentiveRejected($incentive, $request->input('reason'));
+            } catch (\Exception $e) {
+                Log::warning('Error sending incentive rejection notification: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Incentive rejected successfully.',
+                'data' => $incentive->fresh(['user', 'siteVisit', 'rejectedBy']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error rejecting incentive by CRM/Admin: ' . $e->getMessage(), [
+                'incentive_id' => $incentive->id,
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject incentive.',
+            ], 500);
+        }
     }
 
     /**

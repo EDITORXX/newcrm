@@ -10,6 +10,7 @@ use App\Models\Prospect;
 use App\Models\Task;
 use App\Models\TelecallerTask;
 use App\Services\TelecallerTaskService;
+use App\Services\AsmCnpAutomationService;
 use App\Services\NotificationService;
 use App\Services\MeetingService;
 use App\Models\User;
@@ -25,11 +26,13 @@ class MeetingController extends Controller
 {
     protected $notificationService;
     protected $meetingService;
+    protected $asmCnpAutomationService;
 
-    public function __construct(NotificationService $notificationService, MeetingService $meetingService)
+    public function __construct(NotificationService $notificationService, MeetingService $meetingService, AsmCnpAutomationService $asmCnpAutomationService)
     {
         $this->notificationService = $notificationService;
         $this->meetingService = $meetingService;
+        $this->asmCnpAutomationService = $asmCnpAutomationService;
     }
     /**
      * List all meetings (accessible by Admin, CRM, Sales Head, Senior Manager)
@@ -279,6 +282,7 @@ class MeetingController extends Controller
             $lead = Lead::find($data['lead_id']);
             if ($lead) {
                 $lead->updateStatusIfAllowed('meeting_scheduled');
+                $this->asmCnpAutomationService->cancelLeadAutomation($lead, 'Lead moved to meeting flow.');
             }
         }
 
@@ -380,6 +384,7 @@ class MeetingController extends Controller
         ]);
 
         $lead->updateStatusIfAllowed('meeting_scheduled');
+        $this->asmCnpAutomationService->cancelLeadAutomation($lead, 'Lead moved to meeting flow.');
 
         // Telecaller bot notification (if this lead still has an active telecaller task/assignment)
         try {
@@ -774,15 +779,11 @@ class MeetingController extends Controller
     }
 
     /**
-     * Verify a meeting. Creator's senior verifies; if creator has no senior, CRM verifies. Admin cannot verify.
+     * Verify a meeting. Admin and CRM can verify any pending meeting; seniors keep existing access.
      */
     public function verify(Request $request, Meeting $meeting)
     {
         $user = $request->user();
-
-        if ($user->isAdmin()) {
-            return response()->json(['message' => 'Forbidden. Admin cannot verify meetings.'], 403);
-        }
 
         $meeting->load('creator');
         $creator = $meeting->creator;
@@ -790,17 +791,10 @@ class MeetingController extends Controller
             return response()->json(['message' => 'Meeting creator not found'], 404);
         }
 
-        $creatorHasNoSenior = $creator->manager_id === null;
-        if ($user->isCrm()) {
-            if (!$creatorHasNoSenior) {
-                return response()->json([
-                    'message' => 'Forbidden. CRM can only verify when creator has no senior. A senior must verify this meeting.',
-                ], 403);
-            }
-        } else {
+        if (!$user->isAdmin() && !$user->isCrm()) {
             if (!$user->isSeniorOf($creator)) {
                 return response()->json([
-                    'message' => 'Forbidden. Only a senior of the meeting creator (or CRM when creator has no senior) can verify this meeting.',
+                    'message' => 'Forbidden. Only Admin, CRM, or a senior of the meeting creator can verify this meeting.',
                 ], 403);
             }
         }
@@ -833,15 +827,11 @@ class MeetingController extends Controller
     }
 
     /**
-     * Reject a meeting. Creator's senior or CRM (when no senior) can reject. Admin cannot.
+     * Reject a meeting. Admin and CRM can reject any pending meeting; seniors keep existing access.
      */
     public function reject(Request $request, Meeting $meeting)
     {
         $user = $request->user();
-
-        if ($user->isAdmin()) {
-            return response()->json(['message' => 'Forbidden. Admin cannot reject meetings.'], 403);
-        }
 
         $meeting->load('creator');
         $creator = $meeting->creator;
@@ -849,17 +839,10 @@ class MeetingController extends Controller
             return response()->json(['message' => 'Meeting creator not found'], 404);
         }
 
-        $creatorHasNoSenior = $creator->manager_id === null;
-        if ($user->isCrm()) {
-            if (!$creatorHasNoSenior) {
-                return response()->json([
-                    'message' => 'Forbidden. CRM can only reject when creator has no senior. A senior must reject this meeting.',
-                ], 403);
-            }
-        } else {
+        if (!$user->isAdmin() && !$user->isCrm()) {
             if (!$user->isSeniorOf($creator)) {
                 return response()->json([
-                    'message' => 'Forbidden. Only a senior of the meeting creator (or CRM when creator has no senior) can reject this meeting.',
+                    'message' => 'Forbidden. Only Admin, CRM, or a senior of the meeting creator can reject this meeting.',
                 ], 403);
             }
         }

@@ -64,6 +64,10 @@ class MeetingService
             
             // Create meeting
             $meeting = Meeting::create($data);
+
+            if (!empty($lead)) {
+                $lead->updateStatusIfAllowed('meeting_scheduled');
+            }
             
             // Create pre-meeting reminder task if enabled
             if (!empty($data['reminder_enabled']) && !empty($data['scheduled_at'])) {

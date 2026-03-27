@@ -17,6 +17,7 @@ class LeadController extends Controller
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'source' => 'nullable|in:' . implode(',', array_keys(Lead::sourceOptions())),
             'notes' => 'nullable|string',
             'assigned_to' => 'required|exists:users,id',
         ]);
@@ -29,7 +30,7 @@ class LeadController extends Controller
                 'phone' => $validated['phone'],
                 'notes' => $validated['notes'] ?? null,
                 'created_by' => auth()->id(),
-                'source' => 'manual',
+                'source' => Lead::normalizeSource($validated['source'] ?? null),
             ]);
 
             // Create CRM assignment

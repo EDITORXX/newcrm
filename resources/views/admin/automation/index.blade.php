@@ -3,10 +3,18 @@
 @section('title', 'Lead Automation Rules')
 
 @section('header-actions')
-    <a href="{{ route('admin.automation.create') }}"
-       class="px-4 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d] transition-colors duration-200 text-sm font-medium">
-        <i class="fas fa-plus mr-1.5"></i> New Rule
-    </a>
+    <div class="flex items-center gap-3">
+        @if($asmCnpAvailable ?? false)
+            <a href="{{ route('admin.automation.cnp.index') }}"
+               class="px-4 py-2 bg-white border border-[#205A44]/20 text-[#063A1C] rounded-lg hover:bg-green-50 transition-colors duration-200 text-sm font-medium">
+                <i class="fas fa-robot mr-1.5"></i> ASM CNP Automation
+            </a>
+        @endif
+        <a href="{{ route('admin.automation.create') }}"
+           class="px-4 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d] transition-colors duration-200 text-sm font-medium">
+            <i class="fas fa-plus mr-1.5"></i> New Rule
+        </a>
+    </div>
 @endsection
 
 @section('content')
@@ -61,6 +69,7 @@
     .rule-avatar.mcube    { background: linear-gradient(135deg,#7c3aed,#5b21b6); }
     .rule-avatar.all      { background: linear-gradient(135deg,#16a34a,#15803d,#166534); }
     .rule-avatar.other    { background: linear-gradient(135deg,#0891b2,#0e7490); }
+    .rule-avatar.cnp      { background: linear-gradient(135deg,#063A1C,#205A44,#15803d); }
 
     .rule-card-body { flex: 1; margin-bottom: 0.875rem; }
 
@@ -113,6 +122,16 @@
     .btn-edit:hover  { background: linear-gradient(to right, #1d4ed8, #1e40af); }
     .btn-delete { background: linear-gradient(to right, #dc2626, #b91c1c); }
     .btn-delete:hover { background: linear-gradient(to right, #b91c1c, #991b1b); }
+    .btn-manage { background: linear-gradient(to right, #0369a1, #0284c7); }
+    .btn-manage:hover { background: linear-gradient(to right, #075985, #0369a1); }
+    .empty-auto-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.10);
+        border: 1px solid #e5e7eb;
+        padding: 2rem;
+        text-align: center;
+    }
 
     @media (max-width: 767px) {
         .rule-card { padding: 1rem; min-height: auto; }
@@ -127,22 +146,77 @@
         </div>
     @endif
 
-    @if($rules->isEmpty())
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-green-50 flex items-center justify-center">
-                <i class="fas fa-magic text-2xl text-[#205A44]"></i>
-            </div>
-            <h5 class="text-lg font-semibold text-gray-900 mb-2">Koi automation rule nahi hai</h5>
-            <p class="text-sm text-gray-500 mb-5">Facebook, Pabbly, MCube ya kisi bhi source ke leads ke liye<br>auto-assignment rule banao.</p>
-            <a href="{{ route('admin.automation.create') }}"
-               class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d] transition-colors duration-200 text-sm font-medium shadow-md">
-                <i class="fas fa-plus"></i> Pehla Rule Banao
-            </a>
+    @if(!($asmCnpAvailable ?? false))
+        <div class="mb-4 bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-lg">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            ASM CNP Automation card hidden hai kyunki uski database tables abhi create nahi hui hain. Run `php artisan migrate`.
         </div>
+    @endif
 
-    @else
-        <div class="auto-grid mb-6">
-            @foreach($rules as $rule)
+    <div class="auto-grid mb-6">
+        @if(($asmCnpAvailable ?? false) && $asmCnpConfig)
+            <div class="rule-card {{ !($asmCnpConfig->is_enabled && $asmCnpConfig->is_active) ? 'inactive' : '' }}">
+                <div class="rule-card-header">
+                    <div class="rule-avatar cnp">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-base font-semibold text-gray-900 truncate">ASM CNP Automation</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            @if($asmCnpConfig->is_enabled && $asmCnpConfig->is_active)
+                                <span class="inline-flex items-center gap-1 text-green-600 font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Active
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-gray-400 font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block"></span> Disabled
+                                </span>
+                            @endif
+                        </p>
+                    </div>
+                </div>
+
+                <div class="rule-card-body">
+                    <div class="rule-meta-item">
+                        <i class="fas fa-clock"></i>
+                        Retry Delay: {{ $asmCnpConfig->retry_delay_minutes }} min
+                    </div>
+                    <div class="rule-meta-item">
+                        <i class="fas fa-hourglass-half"></i>
+                        Transfer Threshold: {{ $asmCnpConfig->transfer_threshold_hours }} hr
+                    </div>
+                    <div class="rule-meta-item">
+                        <i class="fas fa-phone-slash"></i>
+                        Max CNP: {{ $asmCnpConfig->max_cnp_attempts }}
+                    </div>
+                    <div class="rule-meta-item">
+                        <i class="fas fa-random"></i>
+                        Routing: {{ \Illuminate\Support\Str::of($asmCnpConfig->fallback_routing)->replace('_', ' ')->title() }}
+                    </div>
+                    <div class="rule-meta-item">
+                        <i class="fas fa-users"></i>
+                        Pool: {{ $asmCnpConfig->pool_users_count }} users
+                    </div>
+                    @if($asmCnpConfig->overrides_count)
+                    <div class="rule-meta-item">
+                        <i class="fas fa-route"></i>
+                        Overrides: {{ $asmCnpConfig->overrides_count }}
+                    </div>
+                    @endif
+                </div>
+
+                <div class="rule-card-footer">
+                    <a href="{{ route('admin.automation.cnp.index') }}" class="btn-action btn-edit">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                    <a href="{{ route('admin.automation.cnp.index') }}" class="btn-action btn-manage">
+                        <i class="fas fa-sliders-h"></i> Manage
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        @forelse($rules as $rule)
             @php
                 $sourceClass = match($rule->source) {
                     'facebook_lead_ads' => 'facebook',
@@ -258,9 +332,22 @@
                 </div>
 
             </div>
-            @endforeach
-        </div>
-    @endif
+        @empty
+            @if(!$asmCnpConfig)
+                <div class="empty-auto-card">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-green-50 flex items-center justify-center">
+                        <i class="fas fa-magic text-2xl text-[#205A44]"></i>
+                    </div>
+                    <h5 class="text-lg font-semibold text-gray-900 mb-2">Koi automation rule nahi hai</h5>
+                    <p class="text-sm text-gray-500 mb-5">Facebook, Pabbly, MCube ya kisi bhi source ke leads ke liye<br>auto-assignment rule banao.</p>
+                    <a href="{{ route('admin.automation.create') }}"
+                       class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d] transition-colors duration-200 text-sm font-medium shadow-md">
+                        <i class="fas fa-plus"></i> Pehla Rule Banao
+                    </a>
+                </div>
+            @endif
+        @endforelse
+    </div>
 
 <form id="deleteForm" method="POST" style="display:none;">
     @csrf @method('DELETE')

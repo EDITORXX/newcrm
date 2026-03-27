@@ -100,7 +100,7 @@ class PabblyWebhookController extends Controller
                 'name' => $name,
                 'phone' => $phone,
                 'email' => $email,
-                'source' => 'pabbly',
+                'source' => Lead::normalizeSource('pabbly'),
                 'status' => 'new',
                 'created_by' => 1, // System user or default admin - adjust as needed
             ];

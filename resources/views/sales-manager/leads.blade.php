@@ -168,6 +168,15 @@
         box-sizing: border-box;
     }
 
+    .lead-mobile-shell,
+    .lead-mobile-meta,
+    .lead-mobile-remark,
+    .lead-mobile-top,
+    .lead-mobile-status-wrap,
+    .lead-mobile-view-btn {
+        display: none;
+    }
+
     .favorite-lead-btn {
         border: 1px solid #d1d5db;
         background: #ffffff;
@@ -243,6 +252,9 @@
             border-radius: 1rem;
             border-color: #dfe5e2;
             box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            background: transparent;
+            border: 0;
+            box-shadow: none;
         }
 
         .leads-list-table {
@@ -251,10 +263,7 @@
         }
 
         .leads-list-table thead th {
-            background: #f6f8f7;
-            color: #475569;
-            font-size: 0.7rem;
-            padding: 0.78rem 0.7rem;
+            display: none;
         }
 
         .leads-list-table thead th:nth-child(4),
@@ -266,31 +275,118 @@
             display: none;
         }
 
+        .leads-list-table tbody,
+        .leads-list-table tbody tr,
         .leads-list-table tbody td {
-            padding: 0.9rem 0.7rem;
+            display: block;
+            width: 100%;
+        }
+
+        .leads-list-table tbody td {
+            padding: 0;
+            border: 0;
         }
 
         .leads-list-table tbody tr {
             transition: background-color 0.2s ease;
+            margin-bottom: 0.95rem;
+            border: 1px solid #dde7e1;
+            border-radius: 1rem;
+            background: #ffffff;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
         }
 
         .leads-list-table tbody tr:active {
             background: #f2f7f4;
         }
 
-        .lead-list-name {
-            font-size: 0.95rem;
+        .lead-list-name,
+        .lead-list-sub,
+        .lead-remark-text,
+        .lead-list-actions {
+            display: none;
+        }
+
+        .lead-mobile-shell {
+            display: block;
+            padding: 0.95rem 1rem 0.9rem;
+        }
+
+        .lead-mobile-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.7rem;
+        }
+
+        .lead-mobile-name {
+            color: #0f172a;
+            font-size: 0.98rem;
             line-height: 1.3;
+            font-weight: 800;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
-        .lead-list-sub {
-            font-size: 0.8rem;
+        .lead-mobile-status-wrap {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            min-width: 72px;
+            flex-shrink: 0;
         }
 
-        .lead-remark-text {
+        .lead-mobile-status-wrap .lead-mobile-status {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+        .lead-mobile-meta {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .lead-mobile-meta-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            color: #475467;
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .lead-mobile-meta-line i {
+            width: 14px;
+            color: #98a2b3;
+            margin-top: 0.15rem;
+            flex-shrink: 0;
+        }
+
+        .lead-mobile-meta-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .lead-mobile-remark {
+            display: block;
+            margin-top: 0.78rem;
+            padding-top: 0.72rem;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .lead-mobile-remark-text {
+            color: #334155;
             font-size: 0.82rem;
-            -webkit-line-clamp: 3;
-            max-width: 100%;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
         
         /* Search and filter controls */
@@ -453,15 +549,8 @@
                 <i class="fas fa-plus mr-1"></i>Lead
             </button>
         </div>
-        <div class="lead-view-toggle">
-            <button type="button" id="leadCardsViewBtn" class="active" onclick="setLeadView('cards')">
-                <i class="fas fa-th-large mr-2"></i>Cards
-            </button>
-            <button type="button" id="leadListViewBtn" onclick="setLeadView('list')">
-                <i class="fas fa-list-ul mr-2"></i>List
-            </button>
-        </div>
     </div>
+    <div id="leadFilterNotice" class="mb-4 px-4 py-3 rounded-lg border border-green-200 bg-green-50 text-sm text-green-800" style="display: none;"></div>
 
     <!-- Loading State -->
     <div id="loadingState" class="text-center py-12">
@@ -662,6 +751,8 @@
     const API_BASE_URL = '{{ url("/api") }}';
     const SALES_MANAGER_API_URL = '{{ url("/api/sales-manager") }}';
     const API_TOKEN = '{{ $api_token }}';
+    const ASM_SECTION_VIEW_PREFERENCES = @json($sectionViewPreferences ?? []);
+    const ASM_SECTION_VIEW_SAVE_URL = @json(route('sales-manager.settings.update'));
     const LOGGED_IN_USER_NAME = '{{ auth()->user()->name }}';
     const LOGGED_IN_USER_ID = {{ auth()->user()->id }};
     const MANAGER_NAME = @if(auth()->user()->manager_id && auth()->user()->manager) '{{ auth()->user()->manager->name }}' @else '{{ auth()->user()->name }}' @endif;
@@ -670,9 +761,13 @@
     let currentLeadId = null;
     let teamMembers = [];
     let currentUser = null;
-    let currentLeadView = 'cards';
+    let currentLeadView = window.innerWidth <= 768 ? 'list' : 'cards';
     let currentLeadPage = 1;
     let favoriteLeadIds = new Set();
+    const leadPageParams = new URLSearchParams(window.location.search);
+    const leadPageFlags = {
+        freshToday: leadPageParams.get('fresh_today') === '1',
+    };
 
     // Get auth headers with Bearer token
     function getAuthHeaders() {
@@ -692,12 +787,66 @@
             .replace(/'/g, '&#039;');
     }
 
-    function setLeadView(view) {
+    function getAsmPreferredView(sectionKey, fallbackView) {
+        const preferred = ASM_SECTION_VIEW_PREFERENCES?.[sectionKey];
+        return preferred === 'list' || preferred === 'card' ? preferred : fallbackView;
+    }
+
+    async function persistAsmSectionViewPreference(sectionKey, view) {
+        try {
+            ASM_SECTION_VIEW_PREFERENCES[sectionKey] = view;
+            await fetch(ASM_SECTION_VIEW_SAVE_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    section_view_preferences: {
+                        [sectionKey]: view
+                    }
+                })
+            });
+        } catch (error) {
+            console.error('Failed to persist section view preference:', error);
+        }
+    }
+
+    function setLeadView(view, shouldPersist = true) {
         currentLeadView = view === 'list' ? 'list' : 'cards';
         document.getElementById('leadCardsViewBtn')?.classList.toggle('active', currentLeadView === 'cards');
         document.getElementById('leadListViewBtn')?.classList.toggle('active', currentLeadView === 'list');
         document.getElementById('leadsCards').style.display = currentLeadView === 'cards' && allLeads.length ? 'block' : 'none';
         document.getElementById('leadsList').style.display = currentLeadView === 'list' && allLeads.length ? 'block' : 'none';
+        if (shouldPersist) {
+            persistAsmSectionViewPreference('leads', currentLeadView);
+        }
+    }
+
+    function applyLeadQueryFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const userFilter = document.getElementById('userFilter');
+        const notice = document.getElementById('leadFilterNotice');
+
+        const search = leadPageParams.get('search');
+        const status = leadPageParams.get('status');
+        const assignedTo = leadPageParams.get('assigned_to');
+
+        if (searchInput && search) searchInput.value = search;
+        if (statusFilter && status) statusFilter.value = status;
+        if (userFilter && assignedTo) userFilter.value = assignedTo;
+
+        if (notice) {
+            if (leadPageFlags.freshToday) {
+                notice.textContent = 'Showing fresh leads assigned to you today.';
+                notice.style.display = 'block';
+            } else {
+                notice.style.display = 'none';
+            }
+        }
     }
 
     function getLeadRemark(lead) {
@@ -815,9 +964,10 @@
     function createLeadListRow(lead) {
         const leadId = Number(lead.id);
         const favorite = isFavoriteLead(lead);
-        const assignedTo = lead.active_assignments && lead.active_assignments.length > 0
-            ? lead.active_assignments[0].assigned_to.name
-            : 'Unassigned';
+        const firstAssignment = Array.isArray(lead.active_assignments) && lead.active_assignments.length > 0
+            ? lead.active_assignments[0]
+            : null;
+        const assignedTo = firstAssignment?.assigned_to?.name || 'Unassigned';
         const createdAt = new Date(lead.created_at).toLocaleDateString('en-IN', {
             day: '2-digit',
             month: 'short',
@@ -831,6 +981,25 @@
                     <div class="lead-list-name">${escapeHtml(lead.name || 'N/A')}</div>
                     <div class="lead-list-sub"><i class="fas fa-phone mr-2 text-gray-400"></i>${escapeHtml(lead.phone || 'N/A')}</div>
                     ${lead.email ? `<div class="lead-list-sub"><i class="fas fa-envelope mr-2 text-gray-400"></i>${escapeHtml(lead.email)}</div>` : ''}
+                    <div class="lead-mobile-shell">
+                        <div class="lead-mobile-top">
+                            <div class="min-w-0 flex-1">
+                                <div class="lead-mobile-name">${escapeHtml(lead.name || 'N/A')}</div>
+                            </div>
+                            <div class="lead-mobile-status-wrap">
+                                <div class="lead-mobile-status">${getStatusBadge(lead.status)}</div>
+                            </div>
+                        </div>
+                        <div class="lead-mobile-meta">
+                            <div class="lead-mobile-meta-line">
+                                <i class="fas fa-phone"></i>
+                                <span class="lead-mobile-meta-text">${escapeHtml(lead.phone || 'N/A')}</span>
+                            </div>
+                        </div>
+                        <div class="lead-mobile-remark">
+                            <div class="lead-mobile-remark-text" title="${escapeHtml(remark)}">${escapeHtml(remark)}</div>
+                        </div>
+                    </div>
                 </td>
                 <td>
                     <div class="mb-2">${getStatusBadge(lead.status)}</div>
@@ -958,6 +1127,10 @@
                 params.append('assigned_to', assignedTo);
             }
 
+            if (leadPageFlags.freshToday) {
+                params.append('fresh_today', '1');
+            }
+
             const response = await fetch(`${API_BASE_URL}/leads?${params}`, {
                 headers: getAuthHeaders(),
                 credentials: 'same-origin',
@@ -984,7 +1157,7 @@
                 
                 renderPagination(data);
                 emptyState.style.display = 'none';
-                setLeadView(currentLeadView);
+                setLeadView(currentLeadView, false);
             } else {
                 allLeads = [];
                 leadsCards.style.display = 'none';
@@ -2054,6 +2227,7 @@
 
     // Load leads on page load
     document.addEventListener('DOMContentLoaded', function() {
+        currentLeadView = getAsmPreferredView('leads', currentLeadView);
         const leadsListBody = document.getElementById('leadsListBody');
         if (leadsListBody) {
             leadsListBody.addEventListener('click', function (event) {
@@ -2071,6 +2245,7 @@
         }
 
         loadTeamMembers().then(() => {
+            applyLeadQueryFilters();
             loadLeads();
         });
     });

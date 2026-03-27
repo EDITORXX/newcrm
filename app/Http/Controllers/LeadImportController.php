@@ -448,6 +448,10 @@ class LeadImportController extends Controller
     {
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt|max:10240',
+            'stage_filter_mode' => 'nullable|in:include,exclude',
+            'selected_stages' => 'nullable|array',
+            'selected_stages.*' => 'nullable|string|max:255',
+            'import_mode' => 'nullable|in:all,demo',
         ]);
 
         try {
@@ -465,16 +469,30 @@ class LeadImportController extends Controller
             Storage::putFileAs('public', $file, $fileName);
 
             // Import leads
-            $batch = $this->importService->importFromCsv(
+            $result = $this->importService->importFromCsv(
                 $leads,
-                $request->user()->id
+                $request->user()->id,
+                null,
+                [
+                    'stage_filter_mode' => $request->input('stage_filter_mode', 'include'),
+                    'selected_stages' => $request->input('selected_stages', []),
+                    'import_mode' => $request->input('import_mode', 'all'),
+                ]
             );
 
+            $batch = $result['batch'];
             $batch->update(['file_name' => $fileName]);
+
+            $successPrefix = ($request->input('import_mode') === 'demo')
+                ? 'Demo import completed.'
+                : 'Import completed.';
 
             return redirect()
                 ->route('lead-import.index')
-                ->with('success', "Successfully imported {$batch->imported_leads} leads. {$batch->failed_leads} failed.");
+                ->with(
+                    'success',
+                    "{$successPrefix} Imported {$batch->imported_leads} leads, skipped {$result['skipped_by_filter']} by stage filter, skipped {$result['skipped_duplicates']} duplicates, {$batch->failed_leads} failed."
+                );
 
         } catch (\Exception $e) {
             return back()->withErrors(['csv_file' => $e->getMessage()]);
@@ -492,12 +510,17 @@ class LeadImportController extends Controller
 
         try {
             $file = $request->file('csv_file');
-            $leads = $this->importService->parseCsvFile($file);
+            $analysis = $this->importService->analyzeCsvFile($file);
+            $leads = $analysis['leads'];
 
             return response()->json([
                 'success' => true,
                 'total' => count($leads),
                 'preview' => array_slice($leads, 0, 10), // First 10 rows
+                'stage_summary' => $analysis['stage_summary'] ?? [],
+                'has_stage_column' => $analysis['has_stage_column'] ?? false,
+                'detected_columns' => $analysis['detected_columns'] ?? [],
+                'duplicate_phones_in_file' => $analysis['duplicate_phones_in_file'] ?? [],
             ]);
         } catch (\Exception $e) {
             return response()->json([

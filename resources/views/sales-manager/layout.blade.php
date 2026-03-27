@@ -1240,6 +1240,10 @@
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Site Visits</span>
             </a>
+            <a href="{{ route('sales-manager.closed') }}" class="sidebar-link {{ request()->routeIs('sales-manager.closed') ? 'active' : '' }}" data-label="Closed">
+                <i class="fas fa-circle-check"></i>
+                <span>Closed</span>
+            </a>
             <a href="{{ route('sales-manager.lead-downloads.index') }}" class="sidebar-link {{ request()->routeIs('sales-manager.lead-downloads.*') ? 'active' : '' }}" data-label="Download Leads">
                 <i class="fas fa-file-arrow-down"></i>
                 <span>Download Leads</span>
@@ -1248,6 +1252,12 @@
                 <i class="fas fa-user"></i>
                 <span>Profile</span>
             </a>
+            @if(auth()->user()->isAssistantSalesManager())
+            <a href="{{ route('sales-manager.settings') }}" class="sidebar-link {{ request()->routeIs('sales-manager.settings') ? 'active' : '' }}" data-label="Settings">
+                <i class="fas fa-sliders-h"></i>
+                <span>Settings</span>
+            </a>
+            @endif
         </nav>
     </aside>
 
@@ -1258,9 +1268,6 @@
                 <!-- Header (dashboard only) -->
                 <div class="header">
                     <div class="header-top">
-                        <button id="asmMobileMenuToggle" class="asm-mobile-menu-btn" type="button" style="display:none;" aria-label="Open menu">
-                            <i class="fas fa-bars"></i>
-                        </button>
                         <h1 class="header-title-mobile asm-header-title" style="font-size: 24px; font-weight: 700; color: #063A1C;">
                             <span class="header-page-title-desktop title">@yield('page-title', 'Dashboard')</span>
                             <div class="header-user-info-mobile">
@@ -1276,11 +1283,7 @@
                     </div>
                 </div>
             @else
-                <div class="asm-mobile-nav-quick">
-                    <button id="asmMobileMenuToggle" class="asm-mobile-menu-btn" type="button" style="display:none;" aria-label="Open menu">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                </div>
+                <div class="asm-mobile-nav-quick"></div>
             @endif
 
             <!-- Content -->
@@ -1306,7 +1309,7 @@
             <i class="fas fa-phone-volume"></i>
             <span>Follow</span>
         </a>
-        <button type="button" id="asmMoreMenuTrigger" class="footer-nav-link more-trigger {{ request()->routeIs('sales-manager.meetings*') || request()->routeIs('sales-manager.site-visits*') || (request()->routeIs('sales-manager.tasks*') && request('focus') !== 'followups') || request()->routeIs('sales-manager.profile') || request()->routeIs('sales-manager.lead-downloads.*') ? 'active' : '' }}" aria-expanded="false" aria-controls="asmMoreMenu">
+        <button type="button" id="asmMoreMenuTrigger" class="footer-nav-link more-trigger {{ request()->routeIs('sales-manager.meetings*') || request()->routeIs('sales-manager.site-visits*') || request()->routeIs('sales-manager.closed') || (request()->routeIs('sales-manager.tasks*') && request('focus') !== 'followups') || request()->routeIs('sales-manager.profile') || request()->routeIs('sales-manager.settings') || request()->routeIs('sales-manager.lead-downloads.*') ? 'active' : '' }}" aria-expanded="false" aria-controls="asmMoreMenu">
             <i class="fas fa-ellipsis-h"></i>
             <span>More</span>
         </button>
@@ -1329,18 +1332,28 @@
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Visits</span>
             </a>
-            <a href="{{ route('sales-manager.tasks') }}" class="asm-more-link {{ request()->routeIs('sales-manager.tasks*') && request('focus') !== 'followups' ? 'active' : '' }}" data-nav-order="6" data-nav-key="tasks">
+            <a href="{{ route('sales-manager.closed') }}" class="asm-more-link {{ request()->routeIs('sales-manager.closed') ? 'active' : '' }}" data-nav-order="6" data-nav-key="closed">
+                <i class="fas fa-circle-check"></i>
+                <span>Closed</span>
+            </a>
+            <a href="{{ route('sales-manager.tasks') }}" class="asm-more-link {{ request()->routeIs('sales-manager.tasks*') && request('focus') !== 'followups' ? 'active' : '' }}" data-nav-order="7" data-nav-key="tasks">
                 <i class="fas fa-tasks"></i>
                 <span>Tasks</span>
             </a>
-            <a href="{{ route('sales-manager.lead-downloads.index') }}" class="asm-more-link {{ request()->routeIs('sales-manager.lead-downloads.*') ? 'active' : '' }}" data-nav-order="7" data-nav-key="lead-downloads">
+            <a href="{{ route('sales-manager.lead-downloads.index') }}" class="asm-more-link {{ request()->routeIs('sales-manager.lead-downloads.*') ? 'active' : '' }}" data-nav-order="8" data-nav-key="lead-downloads">
                 <i class="fas fa-file-arrow-down"></i>
                 <span>Download</span>
             </a>
-            <a href="{{ route('sales-manager.profile') }}" class="asm-more-link {{ request()->routeIs('sales-manager.profile') ? 'active' : '' }}" data-nav-order="8" data-nav-key="profile">
+            <a href="{{ route('sales-manager.profile') }}" class="asm-more-link {{ request()->routeIs('sales-manager.profile') ? 'active' : '' }}" data-nav-order="9" data-nav-key="profile">
                 <i class="fas fa-user"></i>
                 <span>Profile</span>
             </a>
+            @if(auth()->user()->isAssistantSalesManager())
+            <a href="{{ route('sales-manager.settings') }}" class="asm-more-link {{ request()->routeIs('sales-manager.settings') ? 'active' : '' }}" data-nav-order="10" data-nav-key="settings">
+                <i class="fas fa-sliders-h"></i>
+                <span>Settings</span>
+            </a>
+            @endif
         </div>
     </div>
 
@@ -1561,11 +1574,13 @@
         }
     })();
     </script>
+    @if($asmChatbotEnabled ?? true)
     <!-- Chatbot Assistant Widget -->
     @include('components.chatbot-widget')
     
     <!-- Chatbot Assistant Script -->
     <script src="{{ asset('js/chatbot-assistant.js') }}"></script>
+    @endif
     
     <!-- Live Clock Functionality -->
     <script>
@@ -2133,42 +2148,234 @@
         </div>
     </div>
 
+    <style>
+        .complete-meeting-modal-card {
+            display: flex;
+            flex-direction: column;
+            width: min(760px, 92vw);
+            max-height: min(88vh, 920px);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+            border: 1px solid #dce9e2;
+            box-shadow: 0 24px 48px rgba(6, 58, 28, 0.14);
+        }
+        .complete-meeting-modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 24px 28px 18px;
+            background: linear-gradient(135deg, #f5fbf7 0%, #eef7f2 100%);
+            border-bottom: 1px solid #dce9e2;
+        }
+        .complete-meeting-modal-head h3 {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+            color: #0b3d29;
+        }
+        .complete-meeting-modal-head p {
+            margin: 8px 0 0;
+            color: #5e7669;
+            font-size: 14px;
+        }
+        .complete-meeting-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: #e6f4ea;
+            color: #0f6d3c;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .complete-meeting-modal-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 24px 28px 12px;
+        }
+        .complete-meeting-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ffd4d4;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #fff5f5 0%, #fffafa 100%);
+        }
+        .complete-meeting-alert i {
+            font-size: 20px;
+            color: #dc2626;
+            margin-top: 2px;
+        }
+        .complete-meeting-alert strong,
+        .complete-meeting-alert span {
+            display: block;
+        }
+        .complete-meeting-alert strong {
+            color: #b42318;
+            margin-bottom: 3px;
+        }
+        .complete-meeting-alert span {
+            color: #7a5c5c;
+            font-size: 13px;
+        }
+        .complete-meeting-upload {
+            padding: 18px;
+            margin-bottom: 20px;
+            border: 1px solid #dce9e2;
+            border-radius: 18px;
+            background: #f9fcfa;
+        }
+        .complete-meeting-upload label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #103c2b;
+        }
+        .complete-meeting-upload input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px dashed #9fc2b0;
+            border-radius: 14px;
+            background: #fff;
+        }
+        .complete-meeting-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .complete-meeting-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(220px, 0.52fr);
+            gap: 18px;
+        }
+        .complete-meeting-field {
+            margin-bottom: 0;
+        }
+        .complete-meeting-field-wide {
+            grid-column: 1 / -1;
+        }
+        .complete-meeting-field label {
+            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #103c2b;
+        }
+        .complete-meeting-field textarea,
+        .complete-meeting-field select {
+            width: 100%;
+            border: 1px solid #d6e1db;
+            border-radius: 14px;
+            padding: 14px 15px;
+            color: #183c2c;
+            background: #fff;
+        }
+        .complete-meeting-field textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        .complete-meeting-field textarea:focus,
+        .complete-meeting-field select:focus,
+        .complete-meeting-upload input[type="file"]:focus {
+            outline: none;
+            border-color: #205A44;
+            box-shadow: 0 0 0 3px rgba(32, 90, 68, 0.12);
+        }
+        .complete-meeting-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 18px 28px 24px;
+            border-top: 1px solid #e4ede8;
+            background: #ffffff;
+        }
+        .complete-meeting-actions .btn {
+            min-width: 120px;
+            min-height: 46px;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+        @media (max-width: 768px) {
+            .complete-meeting-modal-head,
+            .complete-meeting-modal-body,
+            .complete-meeting-actions {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+            .complete-meeting-modal-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .complete-meeting-grid {
+                grid-template-columns: 1fr;
+            }
+            .complete-meeting-actions {
+                flex-direction: column-reverse;
+            }
+            .complete-meeting-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+
     <!-- Complete Meeting Modal -->
     <div id="completeMeetingModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 20px;">Complete Meeting</h3>
-            <p style="color: #ef4444; margin-bottom: 16px;"><strong>Proof photos are required to complete the meeting.</strong></p>
-            
-            <div class="form-group">
-                <label>Proof Photos <span style="color: #ef4444;">*</span></label>
-                <input type="file" id="proofPhotosInput" multiple accept="image/*" onchange="handleProofPhotosChange(event)" required>
-                <div id="proofPhotosPreview" style="display: flex; flex-wrap: wrap; margin-top: 10px;"></div>
-                <small style="color: #6b7280;">Upload at least one photo as proof. Max 5MB per image.</small>
+        <div class="modal-content complete-meeting-modal-card" style="max-width: 760px; padding: 0; overflow: hidden;">
+            <div class="complete-meeting-modal-head">
+                <div>
+                    <h3>Complete Meeting</h3>
+                    <p>Upload proof and record the outcome before submitting.</p>
+                </div>
+                <span class="complete-meeting-badge">Required</span>
             </div>
 
-            <div class="form-group">
-                <label>Feedback</label>
-                <textarea id="meetingFeedback" rows="3" placeholder="Meeting feedback..."></textarea>
+            <div class="complete-meeting-modal-body">
+                <div class="complete-meeting-alert">
+                    <i class="fas fa-camera"></i>
+                    <div>
+                        <strong>Proof photos are mandatory.</strong>
+                        <span>Add at least one clear meeting proof photo. Max 5MB per image.</span>
+                    </div>
+                </div>
+
+                <div class="complete-meeting-upload">
+                    <label for="proofPhotosInput">Proof Photos <span class="req">*</span></label>
+                    <input type="file" id="proofPhotosInput" multiple accept="image/*" onchange="handleProofPhotosChange(event)" required>
+                    <div id="proofPhotosPreview" class="complete-meeting-preview"></div>
+                </div>
+
+                <div class="complete-meeting-grid">
+                    <div class="form-group complete-meeting-field complete-meeting-field-wide">
+                        <label for="meetingFeedback">Feedback</label>
+                        <textarea id="meetingFeedback" rows="4" placeholder="Summarize discussion, interest level, and next steps..."></textarea>
+                    </div>
+
+                    <div class="form-group complete-meeting-field">
+                        <label for="meetingRating">Rating</label>
+                        <select id="meetingRating">
+                            <option value="">Select rating</option>
+                            <option value="1">1 - Poor</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="3">3 - Good</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group complete-meeting-field complete-meeting-field-wide">
+                        <label for="meetingNotes">Notes</label>
+                        <textarea id="meetingNotes" rows="4" placeholder="Add internal notes, objections, or follow-up context..."></textarea>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Rating</label>
-                <select id="meetingRating">
-                    <option value="">Select rating</option>
-                    <option value="1">1 - Poor</option>
-                    <option value="2">2 - Fair</option>
-                    <option value="3">3 - Good</option>
-                    <option value="4">4 - Very Good</option>
-                    <option value="5">5 - Excellent</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Notes</label>
-                <textarea id="meetingNotes" rows="3" placeholder="Additional notes..."></textarea>
-            </div>
-
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <div class="complete-meeting-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeCompleteMeetingModal()">Cancel</button>
                 <button type="button" class="btn btn-success" onclick="submitCompleteMeeting()">Submit</button>
             </div>

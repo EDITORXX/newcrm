@@ -281,19 +281,7 @@
         'junk'                 => 'Junk',
         'on_hold'              => 'On Hold',
     ];
-    $sourceLabels = [
-        'website'          => 'Website',
-        'referral'         => 'Referral',
-        'walk_in'          => 'Walk In',
-        'call'             => 'Call',
-        'social_media'     => 'Social',
-        'google_sheets'    => 'Google Sheets',
-        'csv'              => 'CSV',
-        'pabbly'           => 'Pabbly',
-        'facebook_lead_ads'=> 'Facebook',
-        'mcube'            => 'MCube',
-        'other'            => 'Other',
-    ];
+    $sourceLabels = \App\Models\Lead::sourceOptions();
     $avatarColors = ['#063A1C','#205A44','#065f46','#1d4ed8','#7c3aed','#be185d','#c2410c','#b45309'];
 @endphp
 
@@ -417,7 +405,7 @@
         $bgColor = $avatarColors[crc32($lead->name ?? '') % count($avatarColors)];
         $statusClass = 's-' . ($lead->status ?? 'new');
         $statusLabel = $statusLabels[$lead->status ?? 'new'] ?? ucfirst($lead->status ?? 'new');
-        $sourceLabel = $sourceLabels[$lead->source ?? 'other'] ?? ucfirst($lead->source ?? 'other');
+        $sourceLabel = $lead->source_label;
         $assignedName = $lead->assignedUser->name ?? $lead->assignments->first()?->assignedTo?->name ?? null;
     @endphp
     <div class="lc-card" data-id="{{ $lead->id }}">
@@ -517,7 +505,7 @@
                 $bgColor = $avatarColors[crc32($lead->name ?? '') % count($avatarColors)];
                 $statusClass = 's-' . ($lead->status ?? 'new');
                 $statusLabel = $statusLabels[$lead->status ?? 'new'] ?? ucfirst($lead->status ?? 'new');
-                $sourceLabel = $sourceLabels[$lead->source ?? 'other'] ?? ucfirst($lead->source ?? 'other');
+                $sourceLabel = $lead->source_label;
                 $assignedName = $lead->assignedUser->name ?? $lead->assignments->first()?->assignedTo?->name ?? null;
             @endphp
             <tr>

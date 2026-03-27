@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AsmCnpAutomationConfig;
 use App\Models\FbForm;
 use App\Models\GoogleSheetsConfig;
 use App\Models\Role;
@@ -10,6 +11,7 @@ use App\Models\SourceAutomationRule;
 use App\Models\SourceAutomationRuleUser;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class AutomationController extends Controller
 {
@@ -19,7 +21,19 @@ class AutomationController extends Controller
             ->latest()
             ->get();
 
-        return view('admin.automation.index', compact('rules'));
+        $asmCnpAvailable =
+            Schema::hasTable('asm_cnp_automation_configs') &&
+            Schema::hasTable('asm_cnp_automation_pool_users') &&
+            Schema::hasTable('asm_cnp_automation_user_overrides');
+
+        $asmCnpConfig = null;
+        if ($asmCnpAvailable) {
+            $asmCnpConfig = AsmCnpAutomationConfig::query()
+                ->withCount(['poolUsers', 'overrides'])
+                ->first();
+        }
+
+        return view('admin.automation.index', compact('rules', 'asmCnpConfig', 'asmCnpAvailable'));
     }
 
     public function create()

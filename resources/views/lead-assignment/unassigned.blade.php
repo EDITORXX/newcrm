@@ -24,9 +24,9 @@
                 </select>
                 <select name="source" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     <option value="">All Sources</option>
-                    <option value="website" {{ request('source') === 'website' ? 'selected' : '' }}>Website</option>
-                    <option value="referral" {{ request('source') === 'referral' ? 'selected' : '' }}>Referral</option>
-                    <option value="walk_in" {{ request('source') === 'walk_in' ? 'selected' : '' }}>Walk In</option>
+                    @foreach(\App\Models\Lead::sourceOptions() as $value => $label)
+                        <option value="{{ $value }}" {{ request('source') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
                 </select>
                 <button type="submit" class="px-4 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d]">Filter</button>
             </form>
@@ -89,7 +89,7 @@
                                     {{ ucfirst($lead->status) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst(str_replace('_', ' ', $lead->source ?? 'N/A')) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $lead->source_label }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex gap-3">
                                     <button type="button" data-lead-id="{{ $lead->id }}" class="js-assign-lead text-indigo-600 hover:text-indigo-900">Assign</button>
@@ -260,4 +260,3 @@
     </script>
     @endpush
 @endsection
-

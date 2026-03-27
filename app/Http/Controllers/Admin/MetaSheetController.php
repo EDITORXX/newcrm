@@ -898,7 +898,7 @@ class MetaSheetController extends Controller
 
                 if ($leadIds->isNotEmpty()) {
                     $leads = Lead::whereIn('id', $leadIds)
-                        ->where('source', 'google_sheets')
+                        ->where('source', \App\Models\Lead::normalizeSource('google_sheets'))
                         ->where('created_by', $config->created_by)
                         ->where('created_at', '>=', $config->created_at)
                         ->get();

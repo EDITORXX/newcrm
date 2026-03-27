@@ -134,7 +134,7 @@ class FetchFacebookLeadDetailsJob implements ShouldQueue
                 'pincode'     => $mapped['pincode']      ?? null,
                 'requirements'=> $mapped['requirements'] ?? null,
                 'notes'       => $mapped['notes']        ?? $notes,
-                'source'      => 'facebook_lead_ads',
+                'source'      => \App\Models\Lead::normalizeSource('facebook_lead_ads'),
                 'status'      => 'new',
                 'created_by'  => $createdBy,
             ]);

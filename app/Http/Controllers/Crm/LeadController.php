@@ -39,6 +39,7 @@ class LeadController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'source' => 'required|in:' . implode(',', array_keys(Lead::sourceOptions())),
             'assigned_to' => 'nullable|exists:users,id',
         ]);
 
@@ -46,7 +47,7 @@ class LeadController extends Controller
         try {
             $validated['created_by'] = $request->user()->id;
             $validated['status'] = 'new';
-            $validated['source'] = 'crm_manual'; // Mark as manually created by CRM
+            $validated['source'] = Lead::normalizeSource($validated['source']);
 
             $lead = Lead::create([
                 'name' => $validated['name'],
@@ -152,4 +153,3 @@ class LeadController extends Controller
         }
     }
 }
-

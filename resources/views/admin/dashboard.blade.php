@@ -6,6 +6,10 @@
 
 @section('header-actions')
 <div style="display:flex;gap:10px;align-items:center;">
+    <a href="{{ route('admin.verifications') }}"
+        style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none;">
+        <i class="fas fa-check-circle"></i> Verifications
+    </a>
     <div class="dropdown" style="position:relative;">
         <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'"
             style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,#063A1C,#205A44);color:#fff;border:none;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;">
@@ -1723,4 +1727,3 @@ tr:hover td { background: #fafafa; }
     @endif
 </script>
 @endpush
-

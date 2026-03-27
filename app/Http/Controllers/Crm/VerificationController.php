@@ -17,7 +17,10 @@ class VerificationController extends Controller
         $user = auth()->user();
         // Create API token for authenticated requests
         $token = $user->createToken('crm-verification-token')->plainTextToken;
-        
-        return view('crm.verifications', ['api_token' => $token]);
+
+        return view('crm.verifications', [
+            'api_token' => $token,
+            'verification_panel_role' => $user->isAdmin() ? 'Admin' : 'CRM',
+        ]);
     }
 }

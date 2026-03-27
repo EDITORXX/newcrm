@@ -14,6 +14,35 @@ class Lead extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const SOURCE_OPTIONS = [
+        'meta' => 'Meta',
+        'ivr' => 'Ivr',
+        'sheet' => 'Sheet',
+        'website' => 'Website',
+        'google' => 'Google',
+        '99acres' => '99acres',
+        'housing' => 'Housing',
+        'reference' => 'Reference',
+        'other' => 'Other',
+    ];
+
+    public const LEGACY_SOURCE_MAP = [
+        'facebook_lead_ads' => 'meta',
+        'pabbly' => 'meta',
+        'social_media' => 'meta',
+        'google_sheets' => 'sheet',
+        'csv' => 'sheet',
+        'mcube' => 'ivr',
+        'call' => 'ivr',
+        'referral' => 'reference',
+        'website' => 'website',
+        'walk_in' => 'other',
+        'crm_manual' => 'other',
+        'manual' => 'other',
+        'other' => 'other',
+        '' => 'other',
+    ];
+
     protected $fillable = [
         'name',
         'email',
@@ -76,6 +105,39 @@ class Lead extends Model
         'form_filled_by_executive' => 'boolean',
         'form_filled_by_manager' => 'boolean',
     ];
+
+    public static function sourceOptions(): array
+    {
+        return self::SOURCE_OPTIONS;
+    }
+
+    public static function normalizeSource(?string $source): string
+    {
+        $value = trim((string) $source);
+        if ($value === '') {
+            return 'other';
+        }
+
+        $normalized = strtolower($value);
+
+        if (array_key_exists($normalized, self::SOURCE_OPTIONS)) {
+            return $normalized;
+        }
+
+        return self::LEGACY_SOURCE_MAP[$normalized] ?? 'other';
+    }
+
+    public static function displaySourceLabel(?string $source): string
+    {
+        $normalized = self::normalizeSource($source);
+
+        return self::SOURCE_OPTIONS[$normalized] ?? 'Other';
+    }
+
+    public function getSourceLabelAttribute(): string
+    {
+        return self::displaySourceLabel($this->source);
+    }
 
     public function creator(): BelongsTo
     {

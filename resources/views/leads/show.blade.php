@@ -1,5 +1,323 @@
 @php
     $user = auth()->user();
+    $fieldConfig = function ($form, string $key, array $defaults = []) {
+        $field = $form?->fields?->firstWhere('field_key', $key);
+
+        return [
+            'label' => $field?->label ?? ($defaults['label'] ?? ''),
+            'placeholder' => $field?->placeholder ?? ($defaults['placeholder'] ?? ''),
+            'help_text' => $field?->help_text ?? ($defaults['help_text'] ?? ''),
+            'required' => $field ? (bool) $field->required : ($defaults['required'] ?? false),
+            'options' => ($field && is_array($field->options) && count($field->options))
+                ? $field->options
+                : ($defaults['options'] ?? []),
+            'default_value' => $field?->default_value ?? ($defaults['default_value'] ?? ''),
+        ];
+    };
+
+    $leadNameField = $fieldConfig($leadDetailRequirementsForm ?? null, 'name', [
+        'label' => 'Customer name',
+        'placeholder' => 'Enter lead name',
+        'required' => true,
+    ]);
+    $leadPhoneField = $fieldConfig($leadDetailRequirementsForm ?? null, 'phone', [
+        'label' => 'Phone',
+        'placeholder' => 'Enter phone number',
+        'required' => true,
+    ]);
+    $leadCategoryField = $fieldConfig($leadDetailRequirementsForm ?? null, 'category', [
+        'label' => 'Category',
+        'required' => true,
+        'options' => ['Residential', 'Commercial', 'Both', 'N.A'],
+    ]);
+    $leadLocationField = $fieldConfig($leadDetailRequirementsForm ?? null, 'preferred_location', [
+        'label' => 'Location',
+        'required' => true,
+        'options' => ['Inside City', 'Sitapur Road', 'Hardoi Road', 'Faizabad Road', 'Sultanpur Road', 'Shaheed Path', 'Raebareily Road', 'Kanpur Road', 'Outer Ring Road', 'Bijnor Road', 'Deva Road', 'Sushant Golf City', 'Vrindavan Yojana', 'N.A'],
+    ]);
+    $leadBudgetField = $fieldConfig($leadDetailRequirementsForm ?? null, 'budget', [
+        'label' => 'Budget',
+        'required' => true,
+        'options' => ['Below 50 Lacs', '50-75 Lacs', '75 Lacs-1 Cr', 'Above 1 Cr', 'Above 2 Cr', 'N.A'],
+    ]);
+    $leadTypeField = $fieldConfig($leadDetailRequirementsForm ?? null, 'type', [
+        'label' => 'Type',
+        'required' => true,
+        'placeholder' => 'Select type',
+    ]);
+    $leadPurposeField = $fieldConfig($leadDetailRequirementsForm ?? null, 'purpose', [
+        'label' => 'Purpose',
+        'required' => true,
+        'options' => ['End Use', 'Short Term Investment', 'Long Term Investment', 'Rental Income', 'Investment + End Use', 'N.A'],
+    ]);
+    $leadPossessionField = $fieldConfig($leadDetailRequirementsForm ?? null, 'possession', [
+        'label' => 'Possession',
+        'required' => true,
+        'options' => ['Under Construction', 'Ready To Move', 'Pre Launch', 'Both', 'N.A'],
+    ]);
+    $leadStatusField = $fieldConfig($leadDetailRequirementsForm ?? null, 'lead_status', [
+        'label' => 'Status',
+        'required' => true,
+        'options' => ['hot', 'warm', 'cold', 'junk'],
+    ]);
+    $leadQualityField = $fieldConfig($leadDetailRequirementsForm ?? null, 'lead_quality', [
+        'label' => 'Lead quality',
+        'required' => true,
+        'options' => ['1', '2', '3', '4', '5'],
+    ]);
+    $leadProjectsField = $fieldConfig($leadDetailRequirementsForm ?? null, 'interested_projects', [
+        'label' => 'Interested projects',
+        'placeholder' => 'Type a project and press Enter',
+        'required' => true,
+    ]);
+    $leadCustomerJobField = $fieldConfig($leadDetailRequirementsForm ?? null, 'customer_job', [
+        'label' => 'Customer job',
+        'placeholder' => 'Enter job / occupation',
+    ]);
+    $leadIndustryField = $fieldConfig($leadDetailRequirementsForm ?? null, 'industry_sector', [
+        'label' => 'Industry / sector',
+        'options' => ['IT', 'Education', 'Healthcare', 'Business', 'FMCG', 'Government', 'Other'],
+    ]);
+    $leadBuyingFrequencyField = $fieldConfig($leadDetailRequirementsForm ?? null, 'buying_frequency', [
+        'label' => 'Buying frequency',
+        'options' => ['Regular', 'Occasional', 'First-time'],
+    ]);
+    $leadLivingCityField = $fieldConfig($leadDetailRequirementsForm ?? null, 'living_city', [
+        'label' => 'Living city',
+        'placeholder' => 'Enter living city',
+    ]);
+    $leadCityTypeField = $fieldConfig($leadDetailRequirementsForm ?? null, 'city_type', [
+        'label' => 'City type',
+        'options' => ['Metro', 'Tier 1', 'Tier 2', 'Tier 3', 'Local Resident'],
+    ]);
+    $leadRemarkField = $fieldConfig($leadDetailRequirementsForm ?? null, 'manager_remark', [
+        'label' => 'Remark',
+        'placeholder' => 'Enter remarks or notes...',
+    ]);
+
+    $leadDetailRequirementsFormConfig = [
+        'name' => [
+            'label' => $leadNameField['label'],
+            'placeholder' => $leadNameField['placeholder'],
+            'required' => $leadNameField['required'],
+        ],
+        'phone' => [
+            'label' => $leadPhoneField['label'],
+            'placeholder' => $leadPhoneField['placeholder'],
+            'required' => $leadPhoneField['required'],
+        ],
+        'category' => [
+            'label' => $leadCategoryField['label'],
+            'required' => $leadCategoryField['required'],
+            'options' => $leadCategoryField['options'],
+        ],
+        'preferred_location' => [
+            'label' => $leadLocationField['label'],
+            'required' => $leadLocationField['required'],
+            'options' => $leadLocationField['options'],
+        ],
+        'budget' => [
+            'label' => $leadBudgetField['label'],
+            'required' => $leadBudgetField['required'],
+            'options' => $leadBudgetField['options'],
+        ],
+        'type' => [
+            'label' => $leadTypeField['label'],
+            'required' => $leadTypeField['required'],
+            'placeholder' => $leadTypeField['placeholder'],
+        ],
+        'purpose' => [
+            'label' => $leadPurposeField['label'],
+            'required' => $leadPurposeField['required'],
+            'options' => $leadPurposeField['options'],
+        ],
+        'possession' => [
+            'label' => $leadPossessionField['label'],
+            'required' => $leadPossessionField['required'],
+            'options' => $leadPossessionField['options'],
+        ],
+        'lead_status' => [
+            'label' => $leadStatusField['label'],
+            'required' => $leadStatusField['required'],
+            'options' => $leadStatusField['options'],
+        ],
+        'lead_quality' => [
+            'label' => $leadQualityField['label'],
+            'required' => $leadQualityField['required'],
+            'options' => $leadQualityField['options'],
+        ],
+        'interested_projects' => [
+            'label' => $leadProjectsField['label'],
+            'placeholder' => $leadProjectsField['placeholder'],
+            'required' => $leadProjectsField['required'],
+        ],
+        'customer_job' => [
+            'label' => $leadCustomerJobField['label'],
+            'placeholder' => $leadCustomerJobField['placeholder'],
+        ],
+        'industry_sector' => [
+            'label' => $leadIndustryField['label'],
+            'options' => $leadIndustryField['options'],
+        ],
+        'buying_frequency' => [
+            'label' => $leadBuyingFrequencyField['label'],
+            'options' => $leadBuyingFrequencyField['options'],
+        ],
+        'living_city' => [
+            'label' => $leadLivingCityField['label'],
+            'placeholder' => $leadLivingCityField['placeholder'],
+        ],
+        'city_type' => [
+            'label' => $leadCityTypeField['label'],
+            'options' => $leadCityTypeField['options'],
+        ],
+        'manager_remark' => [
+            'label' => $leadRemarkField['label'],
+            'placeholder' => $leadRemarkField['placeholder'],
+        ],
+        'type_option_groups' => [
+            'Residential' => ['Plots & Villas', 'Apartments', 'Studio', 'Farmhouse', 'N.A'],
+            'Commercial' => ['Retail Shops', 'Office Space', 'Studio', 'N.A'],
+            'Both' => ['Plots & Villas', 'Apartments', 'Retail Shops', 'Office Space', 'Studio', 'Farmhouse', 'Agricultural', 'Others', 'N.A'],
+            'N.A' => ['N.A'],
+        ],
+    ];
+
+    $followUpRequiredField = $fieldConfig($leadDetailFollowUpForm ?? null, 'followup_required', ['label' => 'Follow up required']);
+    $followUpDateField = $fieldConfig($leadDetailFollowUpForm ?? null, 'scheduled_at', [
+        'label' => 'Follow up date & time',
+        'required' => true,
+        'help_text' => 'Select a future date and time for the next follow-up.',
+    ]);
+    $followUpNotesField = $fieldConfig($leadDetailFollowUpForm ?? null, 'notes', [
+        'label' => 'Remark',
+        'placeholder' => 'Add follow-up note, context, or callback instruction...',
+    ]);
+
+    $visitDateField = $fieldConfig($leadDetailSiteVisitForm ?? null, 'visit_date', ['label' => 'Visit date', 'required' => true]);
+    $visitTimeField = $fieldConfig($leadDetailSiteVisitForm ?? null, 'visit_time', ['label' => 'Visit time', 'required' => true]);
+    $visitTypeField = $fieldConfig($leadDetailSiteVisitForm ?? null, 'visit_type', [
+        'label' => 'Visit type',
+        'options' => ['Site visit', 'Office visit'],
+    ]);
+    $visitProjectField = $fieldConfig($leadDetailSiteVisitForm ?? null, 'project_name', [
+        'label' => 'Project to visit',
+        'placeholder' => 'Enter project name',
+    ]);
+    $visitLocationField = $fieldConfig($leadDetailSiteVisitForm ?? null, 'visit_location', [
+        'label' => 'Visit location',
+        'placeholder' => 'Project site address or landmark',
+    ]);
+    $visitNotesField = $fieldConfig($leadDetailSiteVisitForm ?? null, 'visit_notes', [
+        'label' => 'Remark',
+        'placeholder' => 'Add visit note or instruction...',
+    ]);
+    $visitReminderField = $fieldConfig($leadDetailSiteVisitForm ?? null, 'visit_reminder', ['label' => 'Remind me before visit']);
+
+    $meetingTypeField = $fieldConfig($leadDetailMeetingForm ?? null, 'meeting_type', [
+        'label' => 'Meeting type',
+        'required' => true,
+        'options' => ['Initial Meeting', 'Follow-up Meeting', 'Negotiation Meeting', 'Closing Meeting'],
+    ]);
+    $meetingDateField = $fieldConfig($leadDetailMeetingForm ?? null, 'meeting_date', ['label' => 'Scheduled date', 'required' => true]);
+    $meetingTimeField = $fieldConfig($leadDetailMeetingForm ?? null, 'meeting_time', ['label' => 'Scheduled time', 'required' => true]);
+    $meetingModeField = $fieldConfig($leadDetailMeetingForm ?? null, 'meeting_mode', [
+        'label' => 'Meeting mode',
+        'required' => true,
+        'options' => ['Online', 'Offline'],
+    ]);
+    $meetingLinkField = $fieldConfig($leadDetailMeetingForm ?? null, 'meeting_link', [
+        'label' => 'Meeting link',
+        'placeholder' => 'https://meet.google.com/...',
+    ]);
+    $meetingLocationField = $fieldConfig($leadDetailMeetingForm ?? null, 'location', [
+        'label' => 'Location',
+        'placeholder' => 'Office address, project site, etc.',
+    ]);
+    $meetingNotesField = $fieldConfig($leadDetailMeetingForm ?? null, 'meeting_notes', [
+        'label' => 'Remark',
+        'placeholder' => 'Any notes about this meeting...',
+    ]);
+    $meetingReminderField = $fieldConfig($leadDetailMeetingForm ?? null, 'reminder_enabled', ['label' => 'Remind me before meeting']);
+
+    $leadDetailOutputFormConfig = [
+        'follow_up' => [
+            'required_label' => $followUpRequiredField['label'],
+            'date' => [
+                'label' => $followUpDateField['label'],
+                'required' => $followUpDateField['required'],
+                'help_text' => $followUpDateField['help_text'],
+            ],
+            'notes' => [
+                'label' => $followUpNotesField['label'],
+                'placeholder' => $followUpNotesField['placeholder'],
+            ],
+        ],
+        'meeting' => [
+            'type' => [
+                'label' => $meetingTypeField['label'],
+                'required' => $meetingTypeField['required'],
+                'options' => $meetingTypeField['options'],
+            ],
+            'date' => [
+                'label' => $meetingDateField['label'],
+                'required' => $meetingDateField['required'],
+            ],
+            'time' => [
+                'label' => $meetingTimeField['label'],
+                'required' => $meetingTimeField['required'],
+            ],
+            'mode' => [
+                'label' => $meetingModeField['label'],
+                'required' => $meetingModeField['required'],
+                'options' => $meetingModeField['options'],
+            ],
+            'link' => [
+                'label' => $meetingLinkField['label'],
+                'placeholder' => $meetingLinkField['placeholder'],
+            ],
+            'location' => [
+                'label' => $meetingLocationField['label'],
+                'placeholder' => $meetingLocationField['placeholder'],
+            ],
+            'notes' => [
+                'label' => $meetingNotesField['label'],
+                'placeholder' => $meetingNotesField['placeholder'],
+            ],
+            'reminder' => [
+                'label' => $meetingReminderField['label'],
+            ],
+        ],
+        'visit' => [
+            'date' => [
+                'label' => $visitDateField['label'],
+                'required' => $visitDateField['required'],
+            ],
+            'time' => [
+                'label' => $visitTimeField['label'],
+                'required' => $visitTimeField['required'],
+            ],
+            'type' => [
+                'label' => $visitTypeField['label'],
+                'options' => $visitTypeField['options'],
+            ],
+            'project' => [
+                'label' => $visitProjectField['label'],
+                'placeholder' => $visitProjectField['placeholder'],
+            ],
+            'location' => [
+                'label' => $visitLocationField['label'],
+                'placeholder' => $visitLocationField['placeholder'],
+            ],
+            'notes' => [
+                'label' => $visitNotesField['label'],
+                'placeholder' => $visitNotesField['placeholder'],
+            ],
+            'reminder' => [
+                'label' => $visitReminderField['label'],
+            ],
+        ],
+    ];
 @endphp
 @extends($layout ?? 'layouts.app')
 
@@ -168,12 +486,26 @@
                     </div>
                     @endif
                     
-                    @if($lead->source)
                     <div class="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-50 border border-slate-200/70">
                         <p class="text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-500 mb-1.5 sm:mb-2">Source</p>
-                        <p class="text-sm sm:text-base font-semibold text-slate-900 break-words">{{ ucfirst(str_replace('_', ' ', $lead->source)) }}</p>
+                        @if($user && ($user->isAdmin() || $user->isCrm()))
+                            <form method="POST" action="{{ route('leads.update', $lead->id) }}" class="space-y-3">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="source_inline_update" value="1">
+                                <select name="source" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 focus:border-[#205A44] focus:ring-2 focus:ring-[#205A44]">
+                                    @foreach(\App\Models\Lead::sourceOptions() as $value => $label)
+                                        <option value="{{ $value }}" {{ \App\Models\Lead::normalizeSource($lead->source) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="inline-flex items-center rounded-lg bg-gradient-to-r from-[#063A1C] to-[#205A44] px-3 py-2 text-xs font-semibold text-white">
+                                    Save Source
+                                </button>
+                            </form>
+                        @else
+                            <p class="text-sm sm:text-base font-semibold text-slate-900 break-words">{{ $lead->source_label }}</p>
+                        @endif
                     </div>
-                    @endif
                     
                     @if($lead->budget)
                     <div class="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-slate-50 border border-slate-200/70">
@@ -289,14 +621,16 @@
                             $sourceInfo['sheet_name'] = $sheetAssignment->sheetConfig->sheet_name;
                             $sourceInfo['sheet_id'] = $sheetAssignment->sheetConfig->sheet_id;
                             $sourceInfo['row_number'] = $sheetAssignment->sheet_row_number;
-                        } elseif ($lead->source === 'google_sheets') {
-                            $sourceInfo['type'] = 'Google Sheets';
-                        } elseif ($lead->source === 'pabbly') {
-                            $sourceInfo['type'] = 'Meta/Facebook (via Pabbly)';
-                        } elseif ($lead->source === 'csv') {
-                            $sourceInfo['type'] = 'CSV Import';
+                        } elseif (in_array($lead->source, ['google_sheets', 'sheet'], true)) {
+                            $sourceInfo['type'] = 'Sheet';
+                        } elseif (in_array($lead->source, ['pabbly', 'facebook_lead_ads', 'social_media', 'meta'], true)) {
+                            $sourceInfo['type'] = 'Meta';
+                        } elseif (in_array($lead->source, ['csv'], true)) {
+                            $sourceInfo['type'] = 'Sheet';
+                        } elseif (in_array($lead->source, ['mcube', 'call', 'ivr'], true)) {
+                            $sourceInfo['type'] = 'Ivr';
                         } else {
-                            $sourceInfo['type'] = ucfirst(str_replace('_', ' ', $lead->source ?? 'Other'));
+                            $sourceInfo['type'] = \App\Models\Lead::displaySourceLabel($lead->source);
                         }
                         
                         // Get form field values for source tracking (excluding sheet_name and sheet_id as per user request)
@@ -467,7 +801,11 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">Activity Timeline</h2>
                 
-                @if($timeline->count() > 0)
+                @php
+                    $timelineItems = collect($timeline);
+                @endphp
+
+                @if($timelineItems->count() > 0)
                     <div class="relative">
                         <!-- Timeline Line -->
                         <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
@@ -477,7 +815,7 @@
                                 $currentDate = null;
                             @endphp
                             
-                            @foreach($timeline as $activity)
+                            @foreach($timelineItems as $activity)
                                 @php
                                     $activityDate = $activity['timestamp']->format('Y-m-d');
                                     $showDateHeader = $currentDate !== $activityDate;
@@ -630,39 +968,41 @@
 </div>
 
 <!-- Follow-up Modal -->
-<div id="followupModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Schedule Follow-up</h3>
-                <button onclick="closeFollowupModal()" class="text-gray-400 hover:text-gray-600">
+<div id="followupModal" class="fixed inset-0 bg-black/40 hidden overflow-y-auto h-full w-full z-50">
+    <div class="min-h-full flex items-center justify-center p-4">
+        <div class="w-full max-w-5xl rounded-[28px] bg-white shadow-2xl overflow-hidden border border-slate-200">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900">Follow Up</h3>
+                <button onclick="closeFollowupModal()" class="text-slate-400 hover:text-slate-600 text-xl">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="followupForm" onsubmit="submitFollowup(event)">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Type *</label>
-                        <select name="type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <option value="call">Call</option>
-                            <option value="email">Email</option>
-                            <option value="meeting">Meeting</option>
-                            <option value="site_visit">Site Visit</option>
-                            <option value="other">Other</option>
-                        </select>
+            <form id="followupForm" onsubmit="submitFollowup(event)" class="p-6 md:p-8">
+                <div class="rounded-[24px] border border-emerald-100 bg-gradient-to-br from-white to-slate-50 p-5 md:p-7">
+                    <div class="mb-5">
+                        <h4 class="text-xl font-bold text-slate-900">Follow Up Required</h4>
+                        <p class="mt-1 text-sm text-slate-600">Outcome section se hi next call schedule aur reminder controls manage karo.</p>
+                    </div>
+                    <label class="inline-flex items-center gap-3 text-sm font-semibold text-slate-900 mb-5">
+                        <input type="checkbox" id="followup_required" checked class="h-4 w-4 rounded border-slate-300 text-red-500 focus:ring-red-400">
+                        <span>{{ $followUpRequiredField['label'] }}</span>
+                    </label>
+                    <input type="hidden" name="type" value="call">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $followUpDateField['label'] }} @if($followUpDateField['required'])<span class="text-red-500">*</span>@endif</label>
+                        <input type="datetime-local" name="scheduled_at" @if($followUpDateField['required']) required @endif class="w-full rounded-2xl border border-emerald-400 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                        @if($followUpDateField['help_text'])
+                            <small class="mt-2 block text-sm text-slate-500">{{ $followUpDateField['help_text'] }}</small>
+                        @endif
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled Date & Time *</label>
-                        <input type="datetime-local" name="scheduled_at" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes *</label>
-                        <textarea name="notes" rows="4" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $followUpNotesField['label'] }}</label>
+                        <textarea name="notes" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="{{ $followUpNotesField['placeholder'] }}"></textarea>
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" onclick="closeFollowupModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Schedule</button>
+                    <button type="button" onclick="closeFollowupModal()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white">Save Follow Up</button>
                 </div>
             </form>
         </div>
@@ -670,41 +1010,63 @@
 </div>
 
 <!-- Site Visit Modal -->
-<div id="siteVisitModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
-        <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Schedule Site Visit</h3>
-                <button onclick="closeSiteVisitModal()" class="text-gray-400 hover:text-gray-600">
+<div id="siteVisitModal" class="fixed inset-0 bg-black/40 hidden overflow-y-auto h-full w-full z-50">
+    <div class="min-h-full flex items-center justify-center p-4">
+        <div class="w-full max-w-6xl rounded-[28px] bg-white shadow-2xl overflow-hidden border border-slate-200">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900">Site Visit</h3>
+                <button onclick="closeSiteVisitModal()" class="text-slate-400 hover:text-slate-600 text-xl">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="siteVisitForm" onsubmit="submitSiteVisit(event)">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled Date & Time *</label>
-                        <input type="datetime-local" name="scheduled_at" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <form id="siteVisitForm" onsubmit="submitSiteVisit(event)" class="p-6 md:p-8">
+                <div class="rounded-[24px] border border-sky-100 bg-gradient-to-br from-slate-50 to-sky-50 p-5 md:p-7">
+                    <div class="mb-5">
+                        <h4 class="text-xl font-bold text-slate-900">Visit Planning</h4>
+                        <p class="mt-1 text-sm text-slate-600">Visit select karte hi yahin se date, time, project aur basic visit details set karo.</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                        <div id="siteVisitProjectTagsContainer" class="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg min-h-[42px] bg-white">
-                            <!-- Tags will be dynamically added here -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $visitDateField['label'] }} @if($visitDateField['required'])<span class="text-red-500">*</span>@endif</label>
+                            <input type="date" name="visit_date" @if($visitDateField['required']) required @endif class="w-full rounded-2xl border border-emerald-400 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                         </div>
-                        <input type="text" 
-                               id="siteVisitProjectInput" 
-                               placeholder="Type project name and press Enter"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 mt-2">
-                        <input type="hidden" name="project" id="siteVisitProjectHidden">
-                        <small class="text-xs text-gray-500 mt-1 block">Press Enter to add project</small>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $visitTimeField['label'] }} @if($visitTimeField['required'])<span class="text-red-500">*</span>@endif</label>
+                            <input type="time" name="visit_time" @if($visitTimeField['required']) required @endif class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $visitTypeField['label'] }}</label>
+                            <select name="visit_type" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                                @foreach($visitTypeField['options'] as $option)
+                                    @php
+                                        $optionValue = \Illuminate\Support\Str::of($option)->lower()->replace([' ', '-'], '_')->value();
+                                    @endphp
+                                    <option value="{{ $optionValue }}">{{ $option }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $visitProjectField['label'] }}</label>
+                            <input type="text" id="siteVisitProjectInput" name="project_name" placeholder="{{ $visitProjectField['placeholder'] }}" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                            <input type="hidden" name="project" id="siteVisitProjectHidden">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $visitLocationField['label'] }}</label>
+                            <input type="text" name="visit_location" placeholder="{{ $visitLocationField['placeholder'] }}" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $visitNotesField['label'] }}</label>
+                            <textarea name="visit_notes" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" placeholder="{{ $visitNotesField['placeholder'] }}"></textarea>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Visit Notes</label>
-                        <textarea name="visit_notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
-                    </div>
+                    <label class="mt-4 inline-flex items-center gap-3 text-sm font-semibold text-slate-900">
+                        <input type="checkbox" name="visit_reminder" checked class="h-4 w-4 rounded border-slate-300 text-red-500 focus:ring-red-400">
+                        <span>{{ $visitReminderField['label'] }}</span>
+                    </label>
                 </div>
                 <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" onclick="closeSiteVisitModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#052814] hover:to-[#1a4936] transition-all duration-200">Schedule</button>
+                    <button type="button" onclick="closeSiteVisitModal()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white">Save Visit</button>
                 </div>
             </form>
         </div>
@@ -790,119 +1152,73 @@
 </div>
 @endif
 
-<!-- Simplified Meeting Modal -->
-<div id="meetingModal" class="fixed inset-0 bg-black bg-opacity-60 hidden h-full w-full z-50 flex items-center justify-center" style="backdrop-filter: blur(3px);">
-    <div class="w-full max-w-2xl mx-3 sm:mx-0">
-        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <!-- Header with gradient -->
-            <div class="bg-gradient-to-r from-green-800 to-green-600 px-6 py-5 rounded-t-2xl w-full">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-calendar-check text-white text-lg"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-white">Schedule Meeting</h3>
-                    </div>
-                    <button onclick="closeMeetingModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
+<!-- Meeting Modal -->
+<div id="meetingModal" class="fixed inset-0 bg-black/40 hidden overflow-y-auto h-full w-full z-50">
+    <div class="min-h-full flex items-center justify-center p-4">
+        <div class="w-full max-w-6xl rounded-[28px] bg-white shadow-2xl overflow-hidden border border-slate-200">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-slate-200">
+                <h3 class="text-xl font-bold text-slate-900">Meeting</h3>
+                <button onclick="closeMeetingModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-
-            <!-- Form Body -->
-            <form id="meetingForm" onsubmit="submitMeeting(event)" class="flex flex-col flex-1 min-h-0">
-                <div class="px-6 py-5 overflow-y-auto flex-1">
-                    <div class="space-y-4">
-                        <!-- Meeting Type -->
-                        <div class="form-group">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-tag text-green-600 mr-1"></i> Meeting Type
-                            </label>
-                            <select id="meeting_sequence" name="meeting_sequence" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white transition">
-                                <option value="1">🎯 Fresh Meeting (1st)</option>
-                                <option value="2">🔄 2nd Meeting</option>
-                                <option value="3">⭐ 3rd Meeting</option>
+            <form id="meetingForm" onsubmit="submitMeeting(event)" class="p-6 md:p-8">
+                <div class="rounded-[24px] border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 md:p-7">
+                    <div class="mb-5">
+                        <h4 class="text-xl font-bold text-emerald-800">Meeting Planning</h4>
+                        <p class="mt-1 text-sm text-slate-600">Meeting select karte hi yahin se type, date, time aur mode set karo.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $meetingTypeField['label'] }} @if($meetingTypeField['required'])<span class="text-red-500">*</span>@endif</label>
+                            <select id="meeting_type" name="meeting_type" @if($meetingTypeField['required']) required @endif class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                                <option value="">Select meeting type</option>
+                                @foreach($meetingTypeField['options'] as $option)
+                                    <option value="{{ $option }}">{{ $option }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" id="meeting_sequence" name="meeting_sequence" value="1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $meetingDateField['label'] }} @if($meetingDateField['required'])<span class="text-red-500">*</span>@endif</label>
+                            <input type="date" name="meeting_date" id="meeting_date" @if($meetingDateField['required']) required @endif class="w-full rounded-2xl border border-emerald-400 px-4 py-3 text-base text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $meetingTimeField['label'] }} @if($meetingTimeField['required'])<span class="text-red-500">*</span>@endif</label>
+                            <input type="time" name="meeting_time" id="meeting_time" @if($meetingTimeField['required']) required @endif class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $meetingModeField['label'] }} @if($meetingModeField['required'])<span class="text-red-500">*</span>@endif</label>
+                            <select name="meeting_mode" id="meeting_mode" @if($meetingModeField['required']) required @endif class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100" onchange="toggleMeetingModeFields()">
+                                @foreach($meetingModeField['options'] as $option)
+                                    @php
+                                        $optionValue = strtolower($option) === 'offline' ? 'offline' : 'online';
+                                    @endphp
+                                    <option value="{{ $optionValue }}">{{ $option }}</option>
+                                @endforeach
                             </select>
                         </div>
-
-                        <!-- Date & Time -->
-                        <div class="form-group">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-clock text-green-600 mr-1"></i> Scheduled Date & Time
-                            </label>
-                            <input type="datetime-local" name="scheduled_at" id="scheduled_at" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                        <div id="meetingLinkField" class="md:col-span-2 hidden">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $meetingLinkField['label'] }}</label>
+                            <input type="url" name="meeting_link" placeholder="{{ $meetingLinkField['placeholder'] }}" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                         </div>
-
-                        <!-- Meeting Mode -->
-                        <div class="form-group">
-                            <label class="block text-sm font-semibold text-gray-700 mb-3">
-                                <i class="fas fa-video text-green-600 mr-1"></i> Meeting Mode
-                            </label>
-                            <div class="flex gap-3">
-                                <label class="flex-1 cursor-pointer">
-                                    <input type="radio" name="meeting_mode" value="online" class="hidden peer" onchange="toggleMeetingModeFields()">
-                                    <div class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-200 rounded-xl peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 transition hover:border-gray-300">
-                                        <i class="fas fa-video"></i>
-                                        <span class="font-medium">Online</span>
-                                    </div>
-                                </label>
-                                <label class="flex-1 cursor-pointer">
-                                    <input type="radio" name="meeting_mode" value="offline" checked class="hidden peer" onchange="toggleMeetingModeFields()">
-                                    <div class="flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-200 rounded-xl peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-700 transition hover:border-gray-300">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <span class="font-medium">Offline</span>
-                                    </div>
-                                </label>
-                            </div>
+                        <div id="meetingLocationField" class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $meetingLocationField['label'] }}</label>
+                            <input type="text" name="location" id="location_input" placeholder="{{ $meetingLocationField['placeholder'] }}" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100">
                         </div>
-
-                        <!-- Conditional: Online = Link -->
-                        <div id="onlineFields" style="display:none;" class="form-group">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-link text-green-600 mr-1"></i> Meeting Link (Optional)
-                            </label>
-                            <input type="url" name="meeting_link" placeholder="https://meet.google.com/..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                        </div>
-
-                        <!-- Conditional: Offline = Location -->
-                        <div id="offlineFields" class="form-group">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-map-marker-alt text-green-600 mr-1"></i> Location
-                            </label>
-                            <input type="text" name="location" id="location_input" placeholder="Office address, project site, etc." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
-                        </div>
-
-                        <!-- Remember Me Checkbox -->
-                        <div class="form-group bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border-2 border-green-100">
-                            <label class="flex items-start cursor-pointer group">
-                                <input type="checkbox" name="reminder_enabled" checked class="mt-1 mr-3 w-5 h-5 text-green-600 rounded border-2 border-green-300 focus:ring-green-500">
-                                <div>
-                                    <span class="text-sm font-semibold text-green-900 group-hover:text-green-700 transition">
-                                        <i class="fas fa-bell text-green-600 mr-1"></i> Remind me before meeting
-                                    </span>
-                                    <p class="text-xs text-green-700 mt-1">Get a calling task 5 minutes before the meeting time</p>
-                                </div>
-                            </label>
-                        </div>
-
-                        <!-- Meeting Notes -->
-                        <div class="form-group">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-sticky-note text-green-600 mr-1"></i> Meeting Notes (Optional)
-                            </label>
-                            <textarea name="meeting_notes" rows="3" placeholder="Add any additional notes or agenda..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-none"></textarea>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">{{ $meetingNotesField['label'] }}</label>
+                            <textarea name="meeting_notes" rows="4" placeholder="{{ $meetingNotesField['placeholder'] }}" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 resize-none"></textarea>
                         </div>
                     </div>
+                    <label class="mt-4 inline-flex items-center gap-3 text-sm font-semibold text-slate-900">
+                        <input type="checkbox" name="reminder_enabled" checked class="h-4 w-4 rounded border-slate-300 text-red-500 focus:ring-red-400">
+                        <span>{{ $meetingReminderField['label'] }}</span>
+                    </label>
                 </div>
-
-                <!-- Footer with buttons -->
-                <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex gap-3 shrink-0">
-                    <button type="button" onclick="closeMeetingModal()" class="flex-1 h-12 bg-white border-2 border-green-700 rounded-lg text-green-800 hover:bg-green-50 font-semibold transition-all shadow-sm flex items-center justify-center">
-                        <i class="fas fa-times mr-2"></i>Cancel
-                    </button>
-                    <button type="submit" class="flex-1 h-12 bg-gradient-to-r from-green-700 to-green-600 text-white rounded-lg hover:from-green-800 hover:to-green-700 font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center">
-                        <i class="fas fa-calendar-check mr-2"></i>Schedule Meeting
-                    </button>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeMeetingModal()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white">Save Meeting</button>
                 </div>
             </form>
         </div>
@@ -932,6 +1248,8 @@
 let _lrLeadId = null;
 window.managerLeadMeetingCreateUrl = '{{ route("sales-manager.meetings.create") }}';
 window.managerLeadSiteVisitCreateUrl = '{{ route("sales-manager.site-visits.create") }}';
+window.leadDetailRequirementsFormConfig = @json($leadDetailRequirementsFormConfig);
+window.leadDetailOutputFormConfig = @json($leadDetailOutputFormConfig);
 const LEAD_DETAIL_API_TOKEN = document.querySelector('meta[name="api-token"]')?.content || @json(session('api_token') ?? '');
 
 if (LEAD_DETAIL_API_TOKEN) {
@@ -991,14 +1309,29 @@ window.closeLeadRequirementsModal = function() {
 window.submitLeadRequirementsFromShow = async function() {
     if (!_lrLeadId) return;
     const btn = document.getElementById('leadReqSubmitBtn');
-    btn.disabled = true; btn.textContent = 'Saving...';
+    const defaultButtonText = btn ? btn.textContent : 'Save requirements';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+    }
 
     const payload = window.buildLeadRequirementsPayload
         ? window.buildLeadRequirementsPayload()
         : null;
+    const validationError = !payload || !payload.customer_name || !payload.phone
+        ? 'Please complete the lead requirements form'
+        : '';
 
-    if (!payload || !payload.customer_name || !payload.phone) {
-        btn.disabled = false; btn.textContent = 'Save Requirements';
+    if (validationError) {
+        if (window.showAlert) {
+            window.showAlert(validationError, 'warning');
+        } else {
+            alert(validationError);
+        }
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = defaultButtonText;
+        }
         return;
     }
 
@@ -1011,67 +1344,27 @@ window.submitLeadRequirementsFromShow = async function() {
         const data = await res.json();
         if (!data.success) throw new Error(data.message || 'Save failed');
 
-        const redirectUrl = ['meeting', 'visit'].includes(payload.output_action) && window.collectManagerLeadPayload
-            ? (function () {
-                const raw = window.collectManagerLeadPayload();
-                const baseUrl = payload.output_action === 'meeting'
-                    ? window.managerLeadMeetingCreateUrl
-                    : window.managerLeadSiteVisitCreateUrl;
-                if (!baseUrl) return '';
-                const firstProject = raw.interested_projects.find(item => typeof item === 'object' ? item.name : true);
-                const firstProjectLabel = typeof firstProject === 'object'
-                    ? firstProject.name
-                    : document.querySelector('#project-tags-grid .project-tag.selected .project-tag-text')?.textContent || '';
-                const budgetMap = {
-                    'Below 50 Lacs': 'Under 50 Lac',
-                    '50-75 Lacs': '50 Lac – 1 Cr',
-                    '75 Lacs-1 Cr': '50 Lac – 1 Cr',
-                    'Above 1 Cr': '1 Cr – 2 Cr',
-                    'Above 2 Cr': '2 Cr – 3 Cr',
-                    'N.A': 'Under 50 Lac'
-                };
-                const propertyMap = {
-                    'Plots & Villas': 'Plot/Villa',
-                    'Apartments': 'Flat',
-                    'Retail Shops': 'Commercial',
-                    'Office Space': 'Commercial',
-                    'Studio': 'Flat',
-                    'Farmhouse': 'Plot/Villa',
-                    'Agricultural': 'Plot/Villa',
-                    'Others': 'Just Exploring',
-                    'N.A': 'Just Exploring'
-                };
-                const params = new URLSearchParams();
-                if (raw.lead_id) params.set('lead_id', raw.lead_id);
-                if (raw.prospect_id) params.set('prospect_id', raw.prospect_id);
-                params.set('prefill_name', raw.name);
-                params.set('prefill_phone', raw.phone);
-                if (firstProjectLabel) params.set('prefill_project', firstProjectLabel);
-                if (raw.budget) params.set('prefill_budget', budgetMap[raw.budget] || raw.budget);
-                if (raw.type) params.set('prefill_property_type', propertyMap[raw.type] || 'Just Exploring');
-                params.set('prefill_lead_type', payload.output_action === 'meeting' ? 'Prospect' : 'Meeting');
-                if (raw.manager_remark) params.set('prefill_notes', raw.manager_remark);
-                params.set('prefill_date', new Date().toISOString().split('T')[0]);
-                return `${baseUrl}?${params.toString()}`;
-            })()
-            : '';
-
         closeLeadRequirementsModal();
-        const t = document.createElement('div');
-        t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#205A44;color:white;padding:12px 20px;border-radius:8px;z-index:99999;font-size:14px';
-        t.textContent = 'Requirements saved successfully!';
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-        if (redirectUrl) {
-            setTimeout(() => {
-                window.location.href = redirectUrl;
-            }, 400);
+        if (window.showAlert) {
+            window.showAlert('Requirements saved successfully!', 'success', 3000);
+        } else {
+            const t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#205A44;color:white;padding:12px 20px;border-radius:8px;z-index:99999;font-size:14px';
+            t.textContent = 'Requirements saved successfully!';
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
         }
+        setTimeout(() => {
+            window.location.reload();
+        }, 350);
     } catch(e) {
         document.getElementById('managerLeadFormContainer').insertAdjacentHTML('afterbegin',
             '<p style="color:red;margin-bottom:12px">' + e.message + '</p>');
     } finally {
-        btn.disabled = false; btn.textContent = 'Save Requirements';
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = defaultButtonText;
+        }
     }
 };
 
@@ -1435,11 +1728,12 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
 
     function openFollowupModal() {
         document.getElementById('followupModal').classList.remove('hidden');
-        // Set default scheduled time to tomorrow same time
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
         document.querySelector('#followupForm input[name="scheduled_at"]').value = tomorrow.toISOString().slice(0, 16);
+        const checkbox = document.getElementById('followup_required');
+        if (checkbox) checkbox.checked = true;
     }
 
     function closeFollowupModal() {
@@ -1449,116 +1743,36 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
 
     function openSiteVisitModal() {
         document.getElementById('siteVisitModal').classList.remove('hidden');
-        // Set default scheduled time to tomorrow same time
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
-        // Initialize project tags
-        initializeSiteVisitProjectTags();
-        document.querySelector('#siteVisitForm input[name="scheduled_at"]').value = tomorrow.toISOString().slice(0, 16);
+        const dateInput = document.querySelector('#siteVisitForm input[name="visit_date"]');
+        const timeInput = document.querySelector('#siteVisitForm input[name="visit_time"]');
+        const projectInput = document.querySelector('#siteVisitForm input[name="project_name"]');
+        if (dateInput) dateInput.value = tomorrow.toISOString().slice(0, 10);
+        if (timeInput) timeInput.value = tomorrow.toISOString().slice(11, 16);
+        if (projectInput) {
+            projectInput.value = (LEAD_INTERESTED_PROJECTS && LEAD_INTERESTED_PROJECTS[0]) ? LEAD_INTERESTED_PROJECTS[0] : '';
+        }
+        updateSiteVisitProjectHiddenInput();
     }
 
     function closeSiteVisitModal() {
         document.getElementById('siteVisitModal').classList.add('hidden');
         document.getElementById('siteVisitForm').reset();
-        // Clear project tags
-        const container = document.getElementById('siteVisitProjectTagsContainer');
-        if (container) {
-            container.innerHTML = '';
-        }
         const hiddenInput = document.getElementById('siteVisitProjectHidden');
         if (hiddenInput) {
             hiddenInput.value = '';
         }
     }
 
-    // Initialize project tags with lead's interested projects
-    function initializeSiteVisitProjectTags() {
-        const container = document.getElementById('siteVisitProjectTagsContainer');
-        const hiddenInput = document.getElementById('siteVisitProjectHidden');
-        
-        if (!container || !hiddenInput) return;
-        
-        // Clear existing tags
-        container.innerHTML = '';
-        
-        // Add lead's interested projects as tags
-        if (LEAD_INTERESTED_PROJECTS && Array.isArray(LEAD_INTERESTED_PROJECTS)) {
-            LEAD_INTERESTED_PROJECTS.forEach(projectName => {
-                if (projectName && projectName.trim()) {
-                    addSiteVisitProjectTag(projectName.trim());
-                }
-            });
-        }
-        
-        // Add Enter key handler to input
-        const input = document.getElementById('siteVisitProjectInput');
-        if (input) {
-            // Remove any existing event listeners by cloning the input
-            const newInput = input.cloneNode(true);
-            input.parentNode.replaceChild(newInput, input);
-            
-            newInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const value = this.value.trim();
-                    if (value) {
-                        addSiteVisitProjectTag(value);
-                        this.value = '';
-                    }
-                }
-            });
-        }
-    }
-
-    // Add a project tag
-    function addSiteVisitProjectTag(tagName) {
-        const container = document.getElementById('siteVisitProjectTagsContainer');
-        const hiddenInput = document.getElementById('siteVisitProjectHidden');
-        
-        if (!container || !hiddenInput) return;
-        
-        // Check if tag already exists
-        const existingTags = Array.from(container.querySelectorAll('.site-visit-project-tag-text'));
-        const tagExists = existingTags.some(tag => tag.textContent.trim() === tagName.trim());
-        
-        if (tagExists) {
-            return; // Don't add duplicate
-        }
-        
-        // Create tag element
-        const tagElement = document.createElement('span');
-        tagElement.className = 'site-visit-project-tag';
-        tagElement.innerHTML = `
-            <span class="site-visit-project-tag-text">${escapeHtml(tagName)}</span>
-            <span class="site-visit-project-tag-remove" onclick="removeSiteVisitProjectTag(this)">×</span>
-        `;
-        
-        container.appendChild(tagElement);
-        
-        // Update hidden input with comma-separated values
-        updateSiteVisitProjectHiddenInput();
-    }
-
-    // Remove a project tag
-    function removeSiteVisitProjectTag(element) {
-        const tagElement = element.closest('.site-visit-project-tag');
-        if (tagElement) {
-            tagElement.remove();
-            updateSiteVisitProjectHiddenInput();
-        }
-    }
-
-    // Update hidden input with comma-separated project names
     function updateSiteVisitProjectHiddenInput() {
-        const container = document.getElementById('siteVisitProjectTagsContainer');
+        const projectInput = document.getElementById('siteVisitProjectInput');
         const hiddenInput = document.getElementById('siteVisitProjectHidden');
-        
-        if (!container || !hiddenInput) return;
-        
-        const tags = Array.from(container.querySelectorAll('.site-visit-project-tag-text'));
-        const projectNames = tags.map(tag => tag.textContent.trim()).filter(name => name);
-        hiddenInput.value = projectNames.join(', ');
+
+        if (!hiddenInput) return;
+
+        hiddenInput.value = projectInput ? projectInput.value.trim() : '';
     }
 
     // Escape HTML to prevent XSS
@@ -1570,14 +1784,20 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
 
     async function openMeetingModal() {
         document.getElementById('meetingModal').classList.remove('hidden');
-        
-        // Set default scheduled time to tomorrow same time
+
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
-        document.querySelector('#meetingForm input[name="scheduled_at"]').value = tomorrow.toISOString().slice(0, 16);
-        
-        // Fetch meeting history to auto-suggest sequence
+        const dateInput = document.getElementById('meeting_date');
+        const timeInput = document.getElementById('meeting_time');
+        if (dateInput) dateInput.value = tomorrow.toISOString().slice(0, 10);
+        if (timeInput) timeInput.value = tomorrow.toISOString().slice(11, 16);
+        const typeInput = document.getElementById('meeting_type');
+        if (typeInput && !typeInput.value) typeInput.value = 'Initial Meeting';
+        const modeInput = document.getElementById('meeting_mode');
+        if (modeInput && !modeInput.value) modeInput.value = 'online';
+        toggleMeetingModeFields();
+
         try {
             const response = await fetch(`${window.API_BASE_URL}/sales-manager/leads/${LEAD_ID}/meeting-history`, {
                 headers: {
@@ -1585,7 +1805,7 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
                     'Accept': 'application/json',
                 }
             });
-            
+
             if (response.ok) {
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
@@ -1597,7 +1817,6 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
             }
         } catch (error) {
             console.error('Failed to load meeting history:', error);
-            // Default to 1 if fetch fails
             document.getElementById('meeting_sequence').value = 1;
         }
     }
@@ -1605,33 +1824,35 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
     function closeMeetingModal() {
         document.getElementById('meetingModal').classList.add('hidden');
         document.getElementById('meetingForm').reset();
-        toggleMeetingModeFields(); // Reset to default (offline)
+        const modeInput = document.getElementById('meeting_mode');
+        if (modeInput) modeInput.value = 'online';
+        toggleMeetingModeFields();
     }
 
     function toggleMeetingModeFields() {
-        const mode = document.querySelector('input[name="meeting_mode"]:checked').value;
-        const onlineFields = document.getElementById('onlineFields');
-        const offlineFields = document.getElementById('offlineFields');
+        const mode = document.getElementById('meeting_mode')?.value || 'online';
+        const onlineFields = document.getElementById('meetingLinkField');
+        const offlineFields = document.getElementById('meetingLocationField');
         const locationInput = document.getElementById('location_input');
-        const meetingLinkInput = document.querySelector('input[name="meeting_link"]');
-        
+        const meetingLinkInput = document.querySelector('#meetingForm input[name="meeting_link"]');
+
         if (mode === 'online') {
-            onlineFields.style.display = 'block';
-            offlineFields.style.display = 'none';
-            locationInput.removeAttribute('required');
+            if (onlineFields) onlineFields.classList.remove('hidden');
+            if (offlineFields) offlineFields.classList.add('hidden');
+            if (locationInput) locationInput.removeAttribute('required');
             if (meetingLinkInput) {
-                meetingLinkInput.removeAttribute('required');
+                meetingLinkInput.setAttribute('required', 'required');
             }
         } else {
-            onlineFields.style.display = 'none';
-            offlineFields.style.display = 'block';
-            locationInput.setAttribute('required', 'required');
+            if (onlineFields) onlineFields.classList.add('hidden');
+            if (offlineFields) offlineFields.classList.remove('hidden');
+            if (locationInput) locationInput.setAttribute('required', 'required');
             if (meetingLinkInput) {
                 meetingLinkInput.removeAttribute('required');
             }
         }
     }
-    
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         toggleMeetingModeFields();
@@ -1778,11 +1999,17 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
         event.preventDefault();
         const form = event.target;
         const formData = new FormData(form);
+        updateSiteVisitProjectHiddenInput();
+        const scheduledAt = new Date(`${formData.get('visit_date')}T${formData.get('visit_time')}`);
+        const projectName = document.getElementById('siteVisitProjectHidden').value || null;
         const data = {
             lead_id: LEAD_ID,
-            scheduled_at: new Date(formData.get('scheduled_at')).toISOString(),
-            project: document.getElementById('siteVisitProjectHidden').value || null,
+            scheduled_at: scheduledAt.toISOString(),
+            project: projectName,
+            property_name: projectName,
+            property_address: formData.get('visit_location') || null,
             visit_notes: formData.get('visit_notes') || null,
+            reminder_enabled: formData.get('visit_reminder') === 'on',
         };
 
         try {
@@ -1796,10 +2023,9 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
                 body: JSON.stringify(data),
             });
 
-            // Check if response is JSON before parsing
             const contentType = response.headers.get('content-type');
             let result;
-            
+
             if (contentType && contentType.includes('application/json')) {
                 result = await response.json();
             } else {
@@ -1821,7 +2047,7 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
                 }
                 closeSiteVisitModal();
                 setTimeout(() => {
-                    location.reload(); // Reload to show in timeline
+                    location.reload();
                 }, 1500);
             } else {
                 if (typeof showNotification === 'function') {
@@ -1840,11 +2066,12 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
         event.preventDefault();
         const form = event.target;
         const formData = new FormData(form);
-        
+        const scheduledAt = new Date(`${formData.get('meeting_date')}T${formData.get('meeting_time')}`);
+
         const data = {
             lead_id: LEAD_ID,
             meeting_sequence: parseInt(formData.get('meeting_sequence')),
-            scheduled_at: new Date(formData.get('scheduled_at')).toISOString(),
+            scheduled_at: scheduledAt.toISOString(),
             meeting_mode: formData.get('meeting_mode'),
             meeting_link: formData.get('meeting_link') || null,
             location: formData.get('location') || null,
@@ -1864,10 +2091,9 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
                 body: JSON.stringify(data),
             });
 
-            // Check if response is JSON before parsing
             const contentType = response.headers.get('content-type');
             let result;
-            
+
             if (contentType && contentType.includes('application/json')) {
                 result = await response.json();
             } else {
@@ -1882,10 +2108,9 @@ document.getElementById('leadRequirementsModal')?.addEventListener('click', func
                 showSuccessPopup(message);
                 closeMeetingModal();
                 setTimeout(() => {
-                    location.reload(); // Reload to show in timeline
+                    location.reload();
                 }, 2000);
             } else {
-                // Show detailed error message
                 let errorMsg = result.message || 'Failed to schedule meeting';
                 if (result.errors) {
                     const errorList = Object.values(result.errors).flat().join('\n');

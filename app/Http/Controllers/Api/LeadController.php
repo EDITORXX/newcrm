@@ -68,6 +68,13 @@ class LeadController extends Controller
             });
         }
 
+        if ($request->boolean('fresh_today')) {
+            $query->whereHas('assignments', function ($q) use ($user) {
+                $q->where('assigned_to', $user->id)
+                    ->whereDate('created_at', today());
+            });
+        }
+
         // Increase default per_page to show all leads (was 15, now 50)
         $perPage = $request->get('per_page', 50);
         $leads = $query->latest()->paginate($perPage);
@@ -85,7 +92,7 @@ class LeadController extends Controller
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
             'pincode' => 'nullable|string|max:10',
-            'source' => 'nullable|in:website,referral,walk_in,call,social_media,other',
+            'source' => 'nullable|in:' . implode(',', array_keys(Lead::sourceOptions())),
             'property_type' => 'nullable|in:apartment,villa,plot,commercial,other',
             'budget_min' => 'nullable|numeric|min:0',
             'budget_max' => 'nullable|numeric|min:0|gte:budget_min',
@@ -96,6 +103,7 @@ class LeadController extends Controller
 
         $validated['created_by'] = $request->user()->id;
         $validated['status'] = 'new';
+        $validated['source'] = Lead::normalizeSource($validated['source'] ?? null);
 
         $lead = Lead::create($validated);
 
@@ -143,7 +151,7 @@ class LeadController extends Controller
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
             'pincode' => 'nullable|string|max:10',
-            'source' => 'nullable|in:website,referral,walk_in,call,social_media,other',
+            'source' => 'nullable|in:' . implode(',', array_keys(Lead::sourceOptions())),
             'status' => 'sometimes|in:new,connected,verified_prospect,meeting_scheduled,meeting_completed,visit_scheduled,visit_done,revisited_scheduled,revisited_completed,closed,dead,junk,on_hold',
             'property_type' => 'nullable|in:apartment,villa,plot,commercial,other',
             'budget_min' => 'nullable|numeric|min:0',
@@ -168,6 +176,10 @@ class LeadController extends Controller
             }
         }
         
+        if (isset($validated['source'])) {
+            $validated['source'] = Lead::normalizeSource($validated['source']);
+        }
+
         $lead->update($validated);
 
         // Fire event if status changed

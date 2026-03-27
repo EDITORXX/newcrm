@@ -9,6 +9,32 @@ use Illuminate\Support\Facades\DB;
 
 class CallLogService
 {
+    private function applyDateRange($query, string $dateRange = 'today', $startDate = null, $endDate = null): void
+    {
+        switch ($dateRange) {
+            case 'this_week':
+                $query->thisWeek();
+                break;
+            case 'this_month':
+                $query->thisMonth();
+                break;
+            case 'custom':
+                if ($startDate && $endDate) {
+                    $query->whereBetween('start_time', [
+                        Carbon::parse($startDate)->startOfDay(),
+                        Carbon::parse($endDate)->endOfDay(),
+                    ]);
+                } else {
+                    $query->today();
+                }
+                break;
+            case 'today':
+            default:
+                $query->today();
+                break;
+        }
+    }
+
     /**
      * Format duration from seconds to "Xh Ym Zs"
      */
@@ -41,7 +67,7 @@ class CallLogService
     /**
      * Get call statistics for a specific user
      */
-    public function getCallStatistics(?int $userId = null, string $dateRange = 'today'): array
+    public function getCallStatistics(?int $userId = null, string $dateRange = 'today', $startDate = null, $endDate = null): array
     {
         $query = CallLog::query();
 
@@ -50,12 +76,7 @@ class CallLogService
         }
 
         // Apply date range
-        match($dateRange) {
-            'today' => $query->today(),
-            'this_week' => $query->thisWeek(),
-            'this_month' => $query->thisMonth(),
-            default => $query->today(),
-        };
+        $this->applyDateRange($query, $dateRange, $startDate, $endDate);
 
         $stats = $query->selectRaw('
             COUNT(*) as total_calls,
@@ -87,7 +108,7 @@ class CallLogService
     /**
      * Get team call statistics for a manager
      */
-    public function getTeamCallStatistics(int $managerId, string $dateRange = 'today'): array
+    public function getTeamCallStatistics(int $managerId, string $dateRange = 'today', $startDate = null, $endDate = null): array
     {
         $manager = User::findOrFail($managerId);
         
@@ -98,12 +119,7 @@ class CallLogService
         $query = CallLog::query()->forTeam($teamMemberIds);
 
         // Apply date range
-        match($dateRange) {
-            'today' => $query->today(),
-            'this_week' => $query->thisWeek(),
-            'this_month' => $query->thisMonth(),
-            default => $query->today(),
-        };
+        $this->applyDateRange($query, $dateRange, $startDate, $endDate);
 
         $stats = $query->selectRaw('
             COUNT(*) as total_calls,
@@ -118,7 +134,7 @@ class CallLogService
         $averageDuration = (int)($stats->average_duration ?? 0);
 
         // Get top performers
-        $topPerformers = $this->getTopPerformers($teamMemberIds, $dateRange, 5);
+        $topPerformers = $this->getTopPerformers($teamMemberIds, $dateRange, 5, $startDate, $endDate);
 
         return [
             'total_calls' => $totalCalls,
@@ -136,17 +152,12 @@ class CallLogService
     /**
      * Get system-wide call statistics
      */
-    public function getSystemCallStatistics(string $dateRange = 'today'): array
+    public function getSystemCallStatistics(string $dateRange = 'today', $startDate = null, $endDate = null): array
     {
         $query = CallLog::query();
 
         // Apply date range
-        match($dateRange) {
-            'today' => $query->today(),
-            'this_week' => $query->thisWeek(),
-            'this_month' => $query->thisMonth(),
-            default => $query->today(),
-        };
+        $this->applyDateRange($query, $dateRange, $startDate, $endDate);
 
         $stats = $query->selectRaw('
             COUNT(*) as total_calls,
@@ -161,13 +172,13 @@ class CallLogService
         $averageDuration = (int)($stats->average_duration ?? 0);
 
         // Get calls by role
-        $callsByRole = $this->getCallsByRole($dateRange);
+        $callsByRole = $this->getCallsByRole($dateRange, $startDate, $endDate);
         
         // Get top users
-        $topUsers = $this->getTopPerformers(null, $dateRange, 10);
+        $topUsers = $this->getTopPerformers(null, $dateRange, 10, $startDate, $endDate);
 
         // Get outcome distribution
-        $outcomeDistribution = $this->getOutcomeDistribution($dateRange);
+        $outcomeDistribution = $this->getOutcomeDistribution($dateRange, $startDate, $endDate);
 
         return [
             'total_calls' => $totalCalls,
@@ -214,7 +225,7 @@ class CallLogService
     /**
      * Get top performers by number of calls
      */
-    public function getTopPerformers(?array $userIds = null, string $dateRange = 'today', int $limit = 10): array
+    public function getTopPerformers(?array $userIds = null, string $dateRange = 'today', int $limit = 10, $startDate = null, $endDate = null): array
     {
         $query = CallLog::query();
 
@@ -223,12 +234,7 @@ class CallLogService
         }
 
         // Apply date range
-        match($dateRange) {
-            'today' => $query->today(),
-            'this_week' => $query->thisWeek(),
-            'this_month' => $query->thisMonth(),
-            default => $query->today(),
-        };
+        $this->applyDateRange($query, $dateRange, $startDate, $endDate);
 
         $performers = $query->selectRaw('
             COALESCE(user_id, telecaller_id) as user_id,
@@ -263,17 +269,11 @@ class CallLogService
     /**
      * Get calls by role
      */
-    public function getCallsByRole(string $dateRange = 'today'): array
+    public function getCallsByRole(string $dateRange = 'today', $startDate = null, $endDate = null): array
     {
         $query = CallLog::query();
 
-        // Apply date range
-        match($dateRange) {
-            'today' => $query->today(),
-            'this_week' => $query->thisWeek(),
-            'this_month' => $query->thisMonth(),
-            default => $query->today(),
-        };
+        $this->applyDateRange($query, $dateRange, $startDate, $endDate);
 
         $callsByRole = $query->join('users', function($join) {
                 $join->on('call_logs.user_id', '=', 'users.id')
@@ -297,17 +297,11 @@ class CallLogService
     /**
      * Get outcome distribution
      */
-    public function getOutcomeDistribution(string $dateRange = 'today'): array
+    public function getOutcomeDistribution(string $dateRange = 'today', $startDate = null, $endDate = null): array
     {
         $query = CallLog::query();
 
-        // Apply date range
-        match($dateRange) {
-            'today' => $query->today(),
-            'this_week' => $query->thisWeek(),
-            'this_month' => $query->thisMonth(),
-            default => $query->today(),
-        };
+        $this->applyDateRange($query, $dateRange, $startDate, $endDate);
 
         $distribution = $query->selectRaw('
             call_outcome,

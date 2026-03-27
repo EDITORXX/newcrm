@@ -7,10 +7,12 @@ use App\Events\SiteVisitCreated;
 use App\Models\SiteVisit;
 use App\Models\Lead;
 use App\Models\Prospect;
+use App\Services\AsmCnpAutomationService;
 use App\Services\TelecallerTaskService;
 use App\Services\NotificationService;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -18,11 +20,100 @@ use Illuminate\Support\Facades\Log;
 class SiteVisitController extends Controller
 {
     protected $notificationService;
+    protected $asmCnpAutomationService;
 
-    public function __construct(NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService, AsmCnpAutomationService $asmCnpAutomationService)
     {
         $this->notificationService = $notificationService;
+        $this->asmCnpAutomationService = $asmCnpAutomationService;
     }
+
+    private function getRuntimeBudgetRangeOptions(): array
+    {
+        static $options = null;
+
+        if ($options !== null) {
+            return $options;
+        }
+
+        $column = DB::selectOne("SHOW COLUMNS FROM site_visits LIKE 'budget_range'");
+        if (!$column || empty($column->Type)) {
+            return $options = [];
+        }
+
+        preg_match_all("/'([^']*)'/", $column->Type, $matches);
+        return $options = $matches[1] ?? [];
+    }
+
+    private function simplifyBudgetRangeLabel(string $value): string
+    {
+        $value = str_replace(['Ã¢â‚¬â€œ', 'â€“', '–', '—', '-'], ' ', $value);
+        $value = preg_replace('/[^a-z0-9]+/i', ' ', $value);
+        return trim(strtolower((string) $value));
+    }
+
+    private function normalizeBudgetRangeForStorage(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $aliases = [
+            'Below 50 Lacs' => 'Under 50 Lac',
+            '75 Lacs-1 Cr' => '50 Lac 1 Cr',
+            'Above 1 Cr' => '1 Cr 2 Cr',
+            'N.A' => 'Under 50 Lac',
+        ];
+
+        $comparisonValue = $aliases[$normalized] ?? $normalized;
+        $comparisonValue = $this->simplifyBudgetRangeLabel($comparisonValue);
+
+        foreach ($this->getRuntimeBudgetRangeOptions() as $option) {
+            if ($this->simplifyBudgetRangeLabel($option) === $comparisonValue) {
+                return $option;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeBudgetRangeValue(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $map = [
+            'Below 50 Lacs' => 'Under 50 Lac',
+            'Under 50 Lac' => 'Under 50 Lac',
+            '50 Lac - 1 Cr' => '50 Lac â€“ 1 Cr',
+            '50 Lac – 1 Cr' => '50 Lac â€“ 1 Cr',
+            '50 Lac â€“ 1 Cr' => '50 Lac â€“ 1 Cr',
+            '75 Lacs-1 Cr' => '50 Lac â€“ 1 Cr',
+            '1 Cr - 2 Cr' => '1 Cr â€“ 2 Cr',
+            '1 Cr – 2 Cr' => '1 Cr â€“ 2 Cr',
+            '1 Cr â€“ 2 Cr' => '1 Cr â€“ 2 Cr',
+            '2 Cr - 3 Cr' => '2 Cr â€“ 3 Cr',
+            '2 Cr – 3 Cr' => '2 Cr â€“ 3 Cr',
+            '2 Cr â€“ 3 Cr' => '2 Cr â€“ 3 Cr',
+            'Above 1 Cr' => '1 Cr â€“ 2 Cr',
+            'Above 3 Cr' => 'Above 3 Cr',
+            'N.A' => 'Under 50 Lac',
+        ];
+
+        return $map[$normalized] ?? $normalized;
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -88,6 +179,20 @@ class SiteVisitController extends Controller
             $query->where('closer_status', $request->closer_status);
         }
 
+        if ($request->has('closing_verification_status') && $request->closing_verification_status && $request->closing_verification_status !== 'all') {
+            $query->where('closing_verification_status', $request->closing_verification_status);
+        }
+
+        if ($request->boolean('closed_pipeline')) {
+            $query->where(function ($closedQuery) {
+                $closedQuery->whereNotNull('closing_verification_status')
+                    ->orWhereNotNull('closer_status')
+                    ->orWhereHas('lead', function ($leadQuery) {
+                        $leadQuery->where('status', 'closed');
+                    });
+            });
+        }
+
         if ($request->has('lead_id')) {
             $query->where('lead_id', $request->lead_id);
         }
@@ -149,8 +254,75 @@ class SiteVisitController extends Controller
         return response()->json($visits);
     }
 
+    public function requestClose(Request $request, SiteVisit $siteVisit)
+    {
+        $user = $request->user();
+
+        if (!$user->isSalesManager() && !$user->isAssistantSalesManager()) {
+            return response()->json(['success' => false, 'message' => 'Only ASM users can mark a visit as closed.'], 403);
+        }
+
+        if ($siteVisit->verification_status !== 'verified') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only verified site visits can be marked as closed.',
+            ], 422);
+        }
+
+        if ($siteVisit->closing_verification_status === 'pending' || $siteVisit->closing_verification_status === 'verified') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Closing request already exists for this site visit.',
+            ], 422);
+        }
+
+        try {
+            $siteVisit->closer_status = 'pending';
+            $siteVisit->converted_to_closer_at = now();
+            $siteVisit->closing_verification_status = 'pending';
+            $siteVisit->closing_verified_by = null;
+            $siteVisit->closing_verified_at = null;
+            $siteVisit->closing_rejection_reason = null;
+            $siteVisit->save();
+
+            if ($siteVisit->lead) {
+                $siteVisit->lead->update([
+                    'status' => 'closed',
+                    'status_auto_update_enabled' => false,
+                ]);
+                $this->asmCnpAutomationService->cancelLeadAutomation($siteVisit->lead, 'Lead moved to closed flow.');
+            }
+
+            try {
+                $this->notificationService->notifyClosingVerificationPending($siteVisit, $user->id);
+            } catch (\Exception $e) {
+                Log::warning('Error sending close request notification: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Close request submitted. Lead moved to Closed section and is awaiting verification.',
+                'data' => $siteVisit->fresh(['lead', 'creator', 'assignedTo']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error requesting close: ' . $e->getMessage(), [
+                'site_visit_id' => $siteVisit->id,
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark site visit as closed.',
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
+        $request->merge([
+            'budget_range' => $this->normalizeBudgetRangeForStorage($request->input('budget_range')),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'lead_id' => 'nullable|exists:leads,id',
             'prospect_id' => 'nullable|exists:prospects,id',
@@ -166,7 +338,7 @@ class SiteVisitController extends Controller
             'occupation' => 'nullable|string|max:255',
             'date_of_visit' => 'nullable|date',
             'project' => 'nullable|string|max:255',
-            'budget_range' => 'nullable|in:Under 50 Lac,50 Lac – 1 Cr,1 Cr – 2 Cr,2 Cr – 3 Cr,Above 3 Cr',
+            'budget_range' => 'nullable|string|max:255',
             'team_leader' => 'nullable|string|max:255',
             'property_type' => 'nullable|in:Plot/Villa,Flat,Commercial,Just Exploring',
             'payment_mode' => 'nullable|in:Self Fund,Loan',
@@ -185,7 +357,16 @@ class SiteVisitController extends Controller
         }
 
         $validated = $validator->validated();
+        if ($request->filled('budget_range') && !in_array($validated['budget_range'] ?? null, $this->getRuntimeBudgetRangeOptions(), true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => ['budget_range' => ['The selected budget range is invalid.']],
+            ], 422);
+        }
+
         $validated['created_by'] = $request->user()->id;
+        $validated['assigned_to'] = $validated['assigned_to'] ?? $request->user()->id;
         $validated['status'] = 'scheduled';
         $validated['verification_status'] = 'pending';
 
@@ -229,6 +410,7 @@ class SiteVisitController extends Controller
                     // Default to visit_scheduled for 'New Visit' or other types
                     $lead->updateStatusIfAllowed('visit_scheduled');
                 }
+                $this->asmCnpAutomationService->cancelLeadAutomation($lead, 'Lead moved to site visit flow.');
             }
         }
 
@@ -511,17 +693,10 @@ class SiteVisitController extends Controller
             return response()->json(['message' => 'Site visit creator not found'], 404);
         }
 
-        $creatorHasNoSenior = $creator->manager_id === null;
-        if ($user->isCrm()) {
-            if (!$creatorHasNoSenior) {
-                return response()->json([
-                    'message' => 'Forbidden. CRM can only verify when creator has no senior. A senior must verify this site visit.',
-                ], 403);
-            }
-        } else {
+        if (!$user->isAdmin() && !$user->isCrm()) {
             if (!$user->isSeniorOf($creator)) {
                 return response()->json([
-                    'message' => 'Forbidden. Only a senior of the visit creator (or CRM when creator has no senior) can verify this site visit.',
+                    'message' => 'Forbidden. Only Admin, CRM, or a senior of the visit creator can verify this site visit.',
                 ], 403);
             }
         }
@@ -609,15 +784,11 @@ class SiteVisitController extends Controller
     }
 
     /**
-     * Reject a site visit. Creator's senior or CRM (when no senior) can reject. Admin cannot.
+     * Reject a site visit. Admin and CRM can reject any pending visit; seniors keep existing access.
      */
     public function reject(Request $request, SiteVisit $siteVisit)
     {
         $user = $request->user();
-
-        if ($user->isAdmin()) {
-            return response()->json(['message' => 'Forbidden. Admin cannot reject site visits.'], 403);
-        }
 
         $siteVisit->load('creator');
         $creator = $siteVisit->creator;
@@ -625,17 +796,10 @@ class SiteVisitController extends Controller
             return response()->json(['message' => 'Site visit creator not found'], 404);
         }
 
-        $creatorHasNoSenior = $creator->manager_id === null;
-        if ($user->isCrm()) {
-            if (!$creatorHasNoSenior) {
-                return response()->json([
-                    'message' => 'Forbidden. CRM can only reject when creator has no senior. A senior must reject this site visit.',
-                ], 403);
-            }
-        } else {
+        if (!$user->isAdmin() && !$user->isCrm()) {
             if (!$user->isSeniorOf($creator)) {
                 return response()->json([
-                    'message' => 'Forbidden. Only a senior of the visit creator (or CRM when creator has no senior) can reject this site visit.',
+                    'message' => 'Forbidden. Only Admin, CRM, or a senior of the visit creator can reject this site visit.',
                 ], 403);
             }
         }
@@ -677,8 +841,8 @@ class SiteVisitController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSalesHead()) {
-            return response()->json(['message' => 'Forbidden. Only Sales Head can verify closers.'], 403);
+        if (!$user->isSalesHead() && !$user->isCrm() && !$user->isAdmin()) {
+            return response()->json(['message' => 'Forbidden. Only Sales Head, CRM, or Admin can verify closers.'], 403);
         }
 
         if ($siteVisit->closer_status === 'verified') {
@@ -745,8 +909,8 @@ class SiteVisitController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSalesHead()) {
-            return response()->json(['message' => 'Forbidden. Only Sales Head can reject closers.'], 403);
+        if (!$user->isSalesHead() && !$user->isCrm() && !$user->isAdmin()) {
+            return response()->json(['message' => 'Forbidden. Only Sales Head, CRM, or Admin can reject closers.'], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -778,14 +942,14 @@ class SiteVisitController extends Controller
     }
 
     /**
-     * Verify closing (CRM only) - Verifies closing request with KYC details. Admin cannot verify.
+     * Verify closing (CRM/Admin)
      */
     public function verifyClosing(Request $request, SiteVisit $siteVisit)
     {
         $user = $request->user();
 
-        if (!$user->isCrm()) {
-            return response()->json(['message' => 'Forbidden. Only CRM can verify closing.'], 403);
+        if (!$user->isCrm() && !$user->isAdmin()) {
+            return response()->json(['message' => 'Forbidden. Only CRM or Admin can verify closing.'], 403);
         }
 
         if ($siteVisit->closing_verification_status === 'verified') {
@@ -831,7 +995,7 @@ class SiteVisitController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Closing verified successfully. Users can now request incentives for this closed lead.',
+            'message' => 'Closing verified successfully. KYC can now be submitted from the Closed section.',
             'data' => $siteVisit->fresh(['lead', 'creator', 'closingVerifiedBy']),
         ]);
     }
@@ -843,8 +1007,8 @@ class SiteVisitController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isCrm()) {
-            return response()->json(['message' => 'Forbidden. Only CRM can reject closing.'], 403);
+        if (!$user->isCrm() && !$user->isAdmin()) {
+            return response()->json(['message' => 'Forbidden. Only CRM or Admin can reject closing.'], 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -883,39 +1047,36 @@ class SiteVisitController extends Controller
     }
 
     /**
-     * Request closer with proof photos
+     * Submit KYC after close request verification
      */
-    public function requestCloser(Request $request, SiteVisit $siteVisit)
+    public function submitKyc(Request $request, SiteVisit $siteVisit)
     {
         $user = $request->user();
 
-        // Check access - Only Senior Managers and Assistant Sales Managers can request closer
+        // Check access - Only Senior Managers and Assistant Sales Managers can submit KYC
         if (!$user->isSalesManager() && !$user->isAssistantSalesManager()) {
-            return response()->json(['message' => 'Only Senior Managers and Assistant Sales Managers can request closer.'], 403);
+            return response()->json(['message' => 'Only Senior Managers and Assistant Sales Managers can submit KYC.'], 403);
         }
         
         if ($user->isSalesManager() && $siteVisit->created_by !== $user->id) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        // Site visit must be verified before requesting closer
-        if ($siteVisit->verification_status !== 'verified') {
+        if ($siteVisit->closing_verification_status !== 'verified') {
             return response()->json([
                 'success' => false,
-                'message' => 'Site visit must be verified before requesting closer.',
+                'message' => 'Close request must be verified before submitting KYC.',
             ], 422);
         }
 
-        // Check if already converted
-        if ($siteVisit->closer_status !== null) {
+        if (!empty($siteVisit->kyc_documents)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Site visit is already converted to closer.',
+                'message' => 'KYC already submitted for this closed lead.',
             ], 422);
         }
 
         $validator = Validator::make($request->all(), [
-            // KYC fields
             'customer_name' => 'required|string|max:255',
             'nominee_name' => 'required|string|max:255',
             'second_customer_name' => 'nullable|string|max:255',
@@ -923,11 +1084,9 @@ class SiteVisitController extends Controller
             'pan_card' => 'required|string|max:20',
             'aadhaar_card_no' => 'required|string|max:20',
             'kyc_documents' => 'required|array|min:1',
-            'kyc_documents.*' => 'required|file|mimes:jpeg,jpg,png,pdf|max:5120', // Max 5MB per file
-            // Existing fields
+            'kyc_documents.*' => 'required|file|mimes:jpeg,jpg,png,pdf|max:5120',
             'proof_photos' => 'required|array|min:1',
-            'proof_photos.*' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120', // Max 5MB per image
-            'incentive_amount' => 'required|numeric|min:0',
+            'proof_photos.*' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -959,7 +1118,6 @@ class SiteVisitController extends Controller
         }
 
         try {
-            // Update site visit with KYC details and set closing verification status to pending
             $siteVisit->customer_name = $request->input('customer_name');
             $siteVisit->nominee_name = $request->input('nominee_name');
             $siteVisit->second_customer_name = $request->input('second_customer_name');
@@ -967,29 +1125,16 @@ class SiteVisitController extends Controller
             $siteVisit->pan_card = $request->input('pan_card');
             $siteVisit->aadhaar_card_no = $request->input('aadhaar_card_no');
             $siteVisit->kyc_documents = $kycDocumentPaths;
-            $siteVisit->closer_status = 'pending'; // Pending for closing verification
-            $siteVisit->converted_to_closer_at = now();
             $siteVisit->closer_request_proof_photos = $proofPhotoPaths;
-            $siteVisit->incentive_amount = $request->input('incentive_amount');
-            $siteVisit->closing_verification_status = 'pending'; // New field for CRM closing verification
             $siteVisit->save();
-
-            // Send notification to CRM about pending closing verification
-            try {
-                $this->notificationService->notifyClosingVerificationPending($siteVisit, $user->id);
-            } catch (\Exception $e) {
-                Log::warning('Error sending closing verification pending notification: ' . $e->getMessage());
-            }
-
-            // Don't create incentive here - it will be created after closing verification via requestIncentive endpoint
 
             return response()->json([
                 'success' => true,
-                'message' => 'Closing request submitted with KYC details. Awaiting CRM verification.',
+                'message' => 'KYC submitted successfully. You can now submit incentive request from Closed section.',
                 'data' => $siteVisit->fresh(['lead', 'creator', 'assignedTo']),
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error requesting closer: ' . $e->getMessage(), [
+            \Log::error('Error submitting KYC: ' . $e->getMessage(), [
                 'site_visit_id' => $siteVisit->id,
                 'user_id' => $user->id,
                 'trace' => $e->getTraceAsString(),
@@ -999,6 +1144,14 @@ class SiteVisitController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    /**
+     * Mark site visit as dead
+     */
+    public function requestCloser(Request $request, SiteVisit $siteVisit)
+    {
+        return $this->submitKyc($request, $siteVisit);
     }
 
     /**
@@ -1047,4 +1200,3 @@ class SiteVisitController extends Controller
         return $siteVisit->assigned_to === $user->id || $siteVisit->created_by === $user->id;
     }
 }
-

@@ -472,6 +472,24 @@
     border: 1px solid #e3ebe5;
 }
 
+.manager-lead-visit-panel {
+    background: linear-gradient(180deg, #f6fafc 0%, #edf5fb 100%);
+    border-color: #dbe7f2;
+}
+
+.manager-lead-visit-panel .manager-lead-followup-title {
+    color: #184a73;
+}
+
+.manager-lead-meeting-panel {
+    background: linear-gradient(180deg, #f6fcf9 0%, #edf8f2 100%);
+    border-color: #dceee2;
+}
+
+.manager-lead-meeting-panel .manager-lead-followup-title {
+    color: #0f6d44;
+}
+
 .manager-lead-followup-panel small {
     color: #6b726b;
 }

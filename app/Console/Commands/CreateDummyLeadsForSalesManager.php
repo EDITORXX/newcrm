@@ -2,76 +2,114 @@
 
 namespace App\Console\Commands;
 
+use App\Events\LeadAssigned;
 use App\Models\Lead;
 use App\Models\LeadAssignment;
-use App\Models\User;
 use App\Models\Role;
 use App\Models\Task;
-use App\Events\LeadAssigned;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class CreateDummyLeadsForSalesManager extends Command
 {
-    protected $signature = 'leads:create-dummy-for-manager {manager_email=salesmanager1@realtorcrm.com} {count=10}';
-    protected $description = 'Create dummy leads for a Senior Manager';
+    protected $signature = 'leads:create-dummy-for-manager
+                            {manager_identifier=Satya : Manager email or partial name}
+                            {count=5 : Number of leads to create}
+                            {--source=website : Lead source}
+                            {--cleanup-prefix=SATYA-WEB : Remove earlier dummy leads with this prefix before creating new ones}';
 
-    public function handle()
+    protected $description = 'Create dummy leads for a sales manager/assistant sales manager with guaranteed calling tasks';
+
+    public function handle(): int
     {
-        $managerEmail = $this->argument('manager_email');
-        $count = (int) $this->argument('count');
-        
+        $managerIdentifier = (string) $this->argument('manager_identifier');
+        $count = max(1, (int) $this->argument('count'));
+        $source = Lead::normalizeSource((string) $this->option('source'));
+        $cleanupPrefix = trim((string) $this->option('cleanup-prefix'));
+
         DB::beginTransaction();
-        
+
         try {
-            // Get Senior Manager
-            $manager = User::where('email', $managerEmail)
-                ->whereHas('role', function($q) {
-                    $q->where('slug', 'sales_manager');
+            $manager = User::query()
+                ->with('role')
+                ->where('is_active', true)
+                ->whereHas('role', function ($q) {
+                    $q->whereIn('slug', [
+                        Role::ASSISTANT_SALES_MANAGER,
+                        Role::SALES_MANAGER,
+                        Role::SENIOR_MANAGER,
+                    ]);
                 })
+                ->where(function ($q) use ($managerIdentifier) {
+                    $q->where('email', $managerIdentifier)
+                        ->orWhere('name', 'like', '%' . $managerIdentifier . '%');
+                })
+                ->orderByRaw(
+                    "CASE
+                        WHEN role_id = (SELECT id FROM roles WHERE slug = ?) THEN 0
+                        WHEN role_id = (SELECT id FROM roles WHERE slug = ?) THEN 1
+                        ELSE 2
+                    END",
+                    [Role::ASSISTANT_SALES_MANAGER, Role::SALES_MANAGER]
+                )
+                ->orderBy('id')
                 ->first();
-            
+
             if (!$manager) {
-                $this->error("Senior Manager with email '{$managerEmail}' not found!");
-                return 1;
+                $this->error("Manager/ASM matching '{$managerIdentifier}' not found.");
+                DB::rollBack();
+                return self::FAILURE;
             }
-            
-            $this->info("Creating {$count} dummy leads for: {$manager->name} (ID: {$manager->id})");
-            
-            // Get admin user for created_by
+
+            $this->info("Target user: {$manager->name} ({$manager->email}) [{$manager->role->slug}]");
+            $this->info("Creating {$count} dummy leads with source '{$source}'.");
+
             $adminRole = Role::where('slug', Role::ADMIN)->first();
-            $admin = $adminRole ? User::where('role_id', $adminRole->id)->where('is_active', true)->first() : null;
-            $createdBy = $admin ? $admin->id : 1;
-            
-            // Random Indian names
-            $firstNames = ['Raj', 'Priya', 'Amit', 'Neha', 'Rahul', 'Sneha', 'Vikram', 'Anjali', 'Deepak', 'Kavita', 'Arjun', 'Swati', 'Rohit', 'Pooja', 'Sachin', 'Divya', 'Karan', 'Meera', 'Vishal', 'Tanvi'];
-            $lastNames = ['Sharma', 'Patel', 'Singh', 'Kumar', 'Gupta', 'Verma', 'Yadav', 'Reddy', 'Malik', 'Chauhan', 'Shah', 'Mehta', 'Joshi', 'Desai', 'Agarwal', 'Gandhi', 'Nair', 'Rao', 'Iyer', 'Menon'];
-            
+            $admin = $adminRole
+                ? User::where('role_id', $adminRole->id)->where('is_active', true)->first()
+                : null;
+            $createdBy = $admin?->id ?? $manager->id;
+
+            $firstNames = ['Aarav', 'Vivaan', 'Aditya', 'Vihaan', 'Arjun', 'Reyansh', 'Kabir', 'Ananya', 'Diya', 'Ishita', 'Kavya', 'Meera', 'Priya', 'Sneha', 'Tanvi', 'Rohit', 'Rahul', 'Amit', 'Karan', 'Sakshi'];
+            $lastNames = ['Sharma', 'Patel', 'Singh', 'Verma', 'Gupta', 'Yadav', 'Reddy', 'Chauhan', 'Joshi', 'Agarwal', 'Nair', 'Iyer', 'Menon', 'Saxena', 'Pandey', 'Tiwari', 'Malhotra', 'Kapoor', 'Bansal', 'Mishra'];
+
+            if ($cleanupPrefix !== '') {
+                $oldLeads = Lead::where('source', $source)
+                    ->where('name', 'like', $cleanupPrefix . '%')
+                    ->get();
+
+                foreach ($oldLeads as $oldLead) {
+                    Task::where('lead_id', $oldLead->id)->delete();
+                    LeadAssignment::where('lead_id', $oldLead->id)->delete();
+                    $oldLead->delete();
+                }
+
+                if ($oldLeads->isNotEmpty()) {
+                    $this->info("Removed {$oldLeads->count()} old dummy leads with prefix '{$cleanupPrefix}'.");
+                }
+            }
+
             $leadsCreated = 0;
             $tasksCreated = 0;
-            
+
             for ($i = 1; $i <= $count; $i++) {
-                // Generate random Indian name
                 $firstName = $firstNames[array_rand($firstNames)];
                 $lastName = $lastNames[array_rand($lastNames)];
-                $randomName = $firstName . ' ' . $lastName;
-                
-                // Generate random 10-digit phone number starting with 9
-                $randomPhone = '9' . str_pad(rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-                
-                // Create lead (use 'google_sheets' as source since 'manual' might not be in enum)
+                $name = trim($cleanupPrefix . ' ' . $firstName . ' ' . $lastName);
+                $phone = '9' . str_pad((string) rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+
                 $lead = Lead::create([
-                    'name' => $randomName,
-                    'phone' => $randomPhone,
-                    'source' => 'google_sheets',
+                    'name' => $name,
+                    'phone' => $phone,
+                    'email' => Str::slug($firstName . '.' . $lastName . '.' . $i, '.') . '@example.com',
+                    'source' => $source,
                     'status' => 'new',
                     'created_by' => $createdBy,
                 ]);
-                
-                // Create assignment to Senior Manager
-                $assignment = LeadAssignment::create([
+
+                LeadAssignment::create([
                     'lead_id' => $lead->id,
                     'assigned_to' => $manager->id,
                     'assigned_by' => $createdBy,
@@ -79,40 +117,46 @@ class CreateDummyLeadsForSalesManager extends Command
                     'assigned_at' => now(),
                     'is_active' => true,
                 ]);
-                
-                // Create calling task for Senior Manager (scheduled 15 minutes from now)
-                $scheduledAt = now()->addMinutes(15);
-                $task = Task::create([
-                    'lead_id' => $lead->id,
-                    'assigned_to' => $manager->id,
-                    'type' => 'phone_call',
-                    'title' => 'Prospect Verification: ' . $lead->name,
-                    'status' => 'pending',
-                    'scheduled_at' => $scheduledAt,
-                    'created_by' => $createdBy,
-                ]);
-                
-                $this->line("  ✓ Created lead: {$lead->name} (Phone: {$lead->phone})");
+
+                try {
+                    event(new LeadAssigned($lead, $manager->id, $createdBy));
+                } catch (\Throwable $eventError) {
+                    $this->warn("LeadAssigned event warning for lead {$lead->id}: {$eventError->getMessage()}");
+                }
+
+                $task = Task::query()
+                    ->where('lead_id', $lead->id)
+                    ->where('assigned_to', $manager->id)
+                    ->where('type', 'phone_call')
+                    ->first();
+
+                if (!$task) {
+                    $task = Task::create([
+                        'lead_id' => $lead->id,
+                        'assigned_to' => $manager->id,
+                        'type' => 'phone_call',
+                        'title' => 'Call lead: ' . $lead->name,
+                        'description' => "Phone call task for lead: {$lead->name} ({$lead->phone})",
+                        'status' => 'pending',
+                        'scheduled_at' => now()->addMinutes(10),
+                        'created_by' => $createdBy,
+                    ]);
+                }
+
                 $leadsCreated++;
-                $tasksCreated++;
+                $tasksCreated += $task ? 1 : 0;
+                $this->line("Created lead {$lead->id}: {$lead->name} -> task #{$task->id}");
             }
-            
+
             DB::commit();
-            
-            $this->info("");
-            $this->info("✅ Successfully created {$leadsCreated} dummy leads for {$manager->name}!");
-            $this->info("✅ Created {$leadsCreated} lead assignments");
-            $this->info("✅ Created {$tasksCreated} calling tasks (scheduled 15 minutes from now)");
-            $this->info("");
-            
-            return 0;
-            
-        } catch (\Exception $e) {
+
+            $this->info("Created {$leadsCreated} leads and {$tasksCreated} calling tasks for {$manager->name}.");
+
+            return self::SUCCESS;
+        } catch (\Throwable $e) {
             DB::rollBack();
-            $this->error("");
-            $this->error("❌ Failed to create dummy leads: " . $e->getMessage());
-            $this->error("Stack trace: " . $e->getTraceAsString());
-            return 1;
+            $this->error('Failed to create dummy leads: ' . $e->getMessage());
+            return self::FAILURE;
         }
     }
 }

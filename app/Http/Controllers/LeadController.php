@@ -10,9 +10,11 @@ use App\Models\Prospect;
 use App\Models\Role;
 use App\Events\LeadAssigned;
 use App\Services\LeadActivityService;
+use App\Services\DynamicFormService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class LeadController extends Controller
 {
@@ -216,6 +218,9 @@ class LeadController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
+        $sourceRule = $user->isCrm()
+            ? 'required|in:' . implode(',', array_keys(Lead::sourceOptions()))
+            : 'nullable|in:' . implode(',', array_keys(Lead::sourceOptions()));
         
         // Full form: name and phone required; all other fields optional (CRM and non-CRM)
         $validated = $request->validate([
@@ -232,8 +237,7 @@ class LeadController extends Controller
             'preferred_projects.*' => 'nullable|exists:projects,id',
             'use_end_use' => 'nullable|string|in:End User,2nd Investments',
             'budget' => 'nullable|string|in:Under ₹1 Cr,₹1.1 Cr – ₹2 Cr,Above ₹2 Cr',
-            'source' => 'nullable|in:website,referral,walk_in,call,social_media,other,custom',
-            'custom_source' => 'required_if:source,custom|nullable|string|max:255',
+            'source' => $sourceRule,
             'property_type' => 'nullable|in:apartment,villa,plot,commercial,other',
             'possession_status' => 'nullable|string|in:Ready to Move,Under Construction',
             'requirements' => 'nullable|string',
@@ -251,16 +255,7 @@ class LeadController extends Controller
                 $validated['preferred_projects'] = json_encode($validated['preferred_projects']);
             }
 
-            // Handle custom source
-            if ($request->source === 'custom' && $request->has('custom_source')) {
-                $validated['source'] = $request->custom_source;
-            }
-            unset($validated['custom_source']);
-
-            // CRM default source when not provided
-            if ($user->isCrm() && empty($validated['source'])) {
-                $validated['source'] = 'crm_manual';
-            }
+            $validated['source'] = Lead::normalizeSource($validated['source'] ?? null);
 
             $lead = Lead::create($validated);
 
@@ -390,8 +385,28 @@ class LeadController extends Controller
                     ->get();
             }
 
-            return view('leads.show', compact('lead', 'timeline', 'responseTimeData', 'layout', 'ownerTransferUsers'));
+            $dynamicFormService = app(DynamicFormService::class);
+            $leadDetailRequirementsForm = $dynamicFormService->getPublishedFormByLocation('lead-detail.requirements');
+            $leadDetailMeetingForm = $dynamicFormService->getPublishedFormByLocation('lead-detail.meeting');
+            $leadDetailSiteVisitForm = $dynamicFormService->getPublishedFormByLocation('lead-detail.site-visit');
+            $leadDetailFollowUpForm = $dynamicFormService->getPublishedFormByLocation('lead-detail.follow-up');
+
+            return view('leads.show', compact(
+                'lead',
+                'timeline',
+                'responseTimeData',
+                'layout',
+                'ownerTransferUsers',
+                'leadDetailRequirementsForm',
+                'leadDetailMeetingForm',
+                'leadDetailSiteVisitForm',
+                'leadDetailFollowUpForm'
+            ));
         } catch (\Exception $e) {
+            if ($e instanceof HttpExceptionInterface) {
+                throw $e;
+            }
+
             Log::error('Error loading lead details: ' . $e->getMessage(), [
                 'lead_id' => $lead->id ?? null,
                 'user_id' => $request->user()?->id,
@@ -401,9 +416,13 @@ class LeadController extends Controller
             // Return view with error message instead of throwing
             return view('leads.show', [
                 'lead' => $lead,
-                'timeline' => [],
+                'timeline' => collect(),
                 'responseTimeData' => null,
                 'layout' => $layout ?? 'layouts.app',
+                'leadDetailRequirementsForm' => null,
+                'leadDetailMeetingForm' => null,
+                'leadDetailSiteVisitForm' => null,
+                'leadDetailFollowUpForm' => null,
                 'error' => 'An error occurred while loading lead details. Please refresh the page.',
             ]);
         }
@@ -435,10 +454,25 @@ class LeadController extends Controller
 
         $userRole = $user->role->slug;
 
+        if (($user->isAdmin() || $user->isCrm()) && $request->boolean('source_inline_update')) {
+            $validated = $request->validate([
+                'source' => 'required|in:' . implode(',', array_keys(Lead::sourceOptions())),
+            ]);
+
+            $lead->update([
+                'source' => Lead::normalizeSource($validated['source']),
+            ]);
+
+            return redirect()
+                ->route('leads.show', $lead->id)
+                ->with('success', 'Lead source updated successfully.');
+        }
+
         // Basic lead fields validation (name and phone - always required)
         $validationRules = [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'source' => 'nullable|in:' . implode(',', array_keys(Lead::sourceOptions())),
         ];
 
         // Get visible fields for user's role
@@ -488,6 +522,9 @@ class LeadController extends Controller
             // Update basic lead fields (name and phone)
             $lead->name = $validated['name'];
             $lead->phone = $validated['phone'];
+            if (isset($validated['source'])) {
+                $lead->source = Lead::normalizeSource($validated['source']);
+            }
             
             // Save dynamic form field values
             foreach ($visibleFields as $field) {
@@ -651,6 +688,13 @@ class LeadController extends Controller
 
     private function canAccessLead($user, Lead $lead): bool
     {
+        if (session()->has('impersonating_original_id')) {
+            $originalUser = User::with('role')->find(session('impersonating_original_id'));
+            if ($originalUser && ($originalUser->isAdmin() || $originalUser->isCrm())) {
+                return true;
+            }
+        }
+
         // Admin and CRM can see all leads
         if ($user->isAdmin() || $user->isCrm()) {
             return true;

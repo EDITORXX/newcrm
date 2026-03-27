@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Verifications - CRM')
-@section('page-title', 'Pending Verifications')
+@section('title', 'Verifications - ' . ($verification_panel_role ?? 'CRM'))
+@section('page-title', ($verification_panel_role ?? 'CRM') . ' Verifications')
 
 @push('styles')
 <style>
@@ -378,6 +378,10 @@
             <i class="fas fa-file-contract mr-2"></i>Closing Verification
             <span class="badge badge-pending" id="closingVerificationCount">0</span>
         </button>
+        <button class="tab" onclick="switchTab('incentives', event)">
+            <i class="fas fa-money-bill-wave mr-2"></i>Incentives
+            <span class="badge badge-pending" id="incentivesCount">0</span>
+        </button>
         <button class="tab" onclick="switchTab('verified', event)">
             <i class="fas fa-check-circle mr-2"></i>Verified
             <span class="badge badge-verified" id="verifiedCount">0</span>
@@ -436,6 +440,15 @@
             <div class="empty-state">
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>Loading closing verification requests...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="incentivesTab" class="tab-content" style="display: none;">
+        <div id="incentivesContainer">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading incentive requests...</p>
             </div>
         </div>
     </div>
@@ -675,6 +688,7 @@
         document.getElementById('siteVisitsTab').style.display = tab === 'site-visits' ? 'block' : 'none';
         document.getElementById('closersTab').style.display = tab === 'closers' ? 'block' : 'none';
         document.getElementById('closingVerificationTab').style.display = tab === 'closing-verification' ? 'block' : 'none';
+        document.getElementById('incentivesTab').style.display = tab === 'incentives' ? 'block' : 'none';
         document.getElementById('verifiedTab').style.display = tab === 'verified' ? 'block' : 'none';
         
         if (evt && evt.target) {
@@ -688,6 +702,7 @@
                     (tab === 'site-visits' && tabText.includes('site')) ||
                     (tab === 'closers' && tabText.includes('closer')) ||
                     (tab === 'closing-verification' && tabText.includes('closing')) ||
+                    (tab === 'incentives' && tabText.includes('incentive')) ||
                     (tab === 'verified' && tabText.includes('verified'))) {
                     t.classList.add('active');
                 }
@@ -705,6 +720,8 @@
             loadClosers();
         } else if (tab === 'closing-verification') {
             loadClosingVerifications();
+        } else if (tab === 'incentives') {
+            loadPendingIncentives();
         } else if (tab === 'verified') {
             loadVerifiedItems();
         }
@@ -1127,6 +1144,10 @@
             endpoint = `/meetings/${currentItemId}/reject`;
         } else if (currentType === 'closer') {
             endpoint = `/site-visits/${currentItemId}/reject-closer`;
+        } else if (currentType === 'closing-verification') {
+            endpoint = `/site-visits/${currentItemId}/reject-closing`;
+        } else if (currentType === 'incentive') {
+            endpoint = `/crm/incentives/${currentItemId}/reject`;
         } else {
             endpoint = `/site-visits/${currentItemId}/reject`;
         }
@@ -1147,6 +1168,10 @@
                 loadMeetings();
             } else if (currentType === 'closer') {
                 loadClosers();
+            } else if (currentType === 'closing-verification') {
+                loadClosingVerifications();
+            } else if (currentType === 'incentive') {
+                loadPendingIncentives();
             } else {
                 loadSiteVisits();
             }
@@ -2143,13 +2168,84 @@
 
         if (result && result.success) {
             if (typeof showNotification === 'function') {
-                showNotification('Closing verified successfully! Users can now request incentives.', 'success', 3000);
+                showNotification('Closing verified successfully! ASM can now submit KYC from Closed section.', 'success', 3000);
             } else {
                 alert('Closing verified successfully!');
             }
             loadClosingVerifications();
         } else {
             alert(result.message || 'Failed to verify closing');
+        }
+    }
+
+    async function loadPendingIncentives() {
+        const container = document.getElementById('incentivesContainer');
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading incentive requests...</p></div>';
+
+        try {
+            const response = await fetch('{{ url("/api/admin/verifications/pending-incentives") }}', {
+                headers: {
+                    'Authorization': `Bearer {{ $api_token }}`,
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+            const result = await response.json();
+            const incentives = result?.data || [];
+            document.getElementById('incentivesCount').textContent = incentives.length;
+
+            if (!incentives.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><p>No pending incentive requests.</p></div>';
+                return;
+            }
+
+            container.innerHTML = `<div class="prospects-grid">${incentives.map((incentive) => `
+                <div class="verification-card">
+                    <div class="verification-info" style="flex:1;">
+                        <div class="verification-header">
+                            <div>
+                                <h3>${incentive.site_visit?.lead?.name || incentive.site_visit?.customer_name || 'N/A'}</h3>
+                                <p><i class="fas fa-user mr-2"></i>Requested By: ${incentive.user?.name || 'N/A'}</p>
+                                <p><i class="fas fa-rupee-sign mr-2"></i>Amount: ₹${parseFloat(incentive.amount || 0).toFixed(2)}</p>
+                                <p><i class="fas fa-clock mr-2"></i>${new Date(incentive.created_at).toLocaleString('en-IN')}</p>
+                            </div>
+                            <span class="badge badge-pending">Pending</span>
+                        </div>
+                        <div class="verification-actions" style="margin-top:auto;">
+                            <button class="btn btn-success" style="flex:1;" onclick="verifyIncentive(${incentive.id})">
+                                <i class="fas fa-check mr-2"></i>Verify
+                            </button>
+                            <button class="btn btn-danger" style="flex:1;" onclick="showRejectModal('incentive', ${incentive.id})">
+                                <i class="fas fa-times mr-2"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}</div>`;
+        } catch (error) {
+            console.error('Error loading incentives:', error);
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading incentive requests</p></div>';
+        }
+    }
+
+    async function verifyIncentive(incentiveId) {
+        if (!confirm('Are you sure you want to verify this incentive request?')) return;
+
+        const result = await apiCall(`/crm/incentives/${incentiveId}/verify`, {
+            method: 'POST',
+            body: JSON.stringify({}),
+        });
+
+        if (result && result.success) {
+            if (typeof showNotification === 'function') {
+                showNotification(result.message || 'Incentive verified successfully!', 'success', 3000);
+            } else {
+                alert(result.message || 'Incentive verified successfully!');
+            }
+            loadPendingIncentives();
+            loadVerifiedItems();
+        } else {
+            alert(result.message || 'Failed to verify incentive');
         }
     }
 
@@ -2346,6 +2442,21 @@
                 }
             } catch (e) {
                 console.error('Error loading closers count:', e);
+            }
+
+            try {
+                const incentivesResponse = await fetch('{{ url("/api/admin/verifications/pending-incentives") }}', {
+                    headers: {
+                        'Authorization': `Bearer ${getToken()}`,
+                        'Accept': 'application/json',
+                    },
+                });
+                if (incentivesResponse.ok) {
+                    const incentivesData = await incentivesResponse.json();
+                    document.getElementById('incentivesCount').textContent = (incentivesData?.data || []).length;
+                }
+            } catch (e) {
+                console.error('Error loading incentive count:', e);
             }
             
             // Load verified items count
@@ -2648,4 +2759,3 @@
     }
 </script>
 @endpush
-

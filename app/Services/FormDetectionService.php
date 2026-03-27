@@ -11,6 +11,22 @@ class FormDetectionService
     {
         $definitions = [];
 
+        if ($locationPath === 'lead-detail.meeting') {
+            return $this->getLeadDetailMeetingFormFields();
+        }
+
+        if ($locationPath === 'lead-detail.requirements') {
+            return $this->getLeadDetailRequirementsFormFields();
+        }
+
+        if ($locationPath === 'lead-detail.site-visit') {
+            return $this->getLeadDetailSiteVisitFormFields();
+        }
+
+        if ($locationPath === 'lead-detail.follow-up') {
+            return $this->getLeadDetailFollowUpFormFields();
+        }
+
         switch ($formType) {
             case 'meeting':
                 $definitions = $this->getMeetingFormFields();
@@ -28,6 +44,9 @@ class FormDetectionService
                 break;
             case 'site_visit':
                 $definitions = $this->getSiteVisitFormFields();
+                break;
+            case 'follow_up':
+                $definitions = $this->getLeadDetailFollowUpFormFields();
                 break;
             default:
                 // Try to detect from location path
@@ -114,6 +133,330 @@ class FormDetectionService
                 'required' => false,
                 'order' => 7,
                 'section' => 'Additional Information',
+            ],
+        ];
+    }
+
+    protected function getLeadDetailMeetingFormFields(): array
+    {
+        return [
+            [
+                'field_key' => 'meeting_type',
+                'field_type' => 'select',
+                'label' => 'Meeting type',
+                'required' => true,
+                'options' => ['Initial Meeting', 'Follow-up Meeting', 'Negotiation Meeting', 'Closing Meeting'],
+                'order' => 0,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+            [
+                'field_key' => 'meeting_date',
+                'field_type' => 'date',
+                'label' => 'Scheduled date',
+                'required' => true,
+                'order' => 1,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+            [
+                'field_key' => 'meeting_time',
+                'field_type' => 'time',
+                'label' => 'Scheduled time',
+                'required' => true,
+                'order' => 2,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+            [
+                'field_key' => 'meeting_mode',
+                'field_type' => 'select',
+                'label' => 'Meeting mode',
+                'required' => true,
+                'options' => ['Online', 'Offline'],
+                'order' => 3,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+            [
+                'field_key' => 'meeting_link',
+                'field_type' => 'url',
+                'label' => 'Meeting link',
+                'required' => false,
+                'order' => 4,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+            [
+                'field_key' => 'location',
+                'field_type' => 'text',
+                'label' => 'Location',
+                'required' => false,
+                'order' => 5,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+            [
+                'field_key' => 'meeting_notes',
+                'field_type' => 'textarea',
+                'label' => 'Remark',
+                'required' => false,
+                'order' => 6,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+            [
+                'field_key' => 'reminder_enabled',
+                'field_type' => 'checkbox',
+                'label' => 'Remind me before meeting',
+                'required' => false,
+                'order' => 7,
+                'section' => 'Lead Detail Meeting Popup',
+            ],
+        ];
+    }
+
+    protected function getLeadDetailRequirementsFormFields(): array
+    {
+        return [
+            [
+                'field_key' => 'name',
+                'field_type' => 'text',
+                'label' => 'Customer name',
+                'placeholder' => 'Enter lead name',
+                'required' => true,
+                'order' => 0,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'phone',
+                'field_type' => 'text',
+                'label' => 'Phone',
+                'placeholder' => 'Enter phone number',
+                'required' => true,
+                'order' => 1,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'category',
+                'field_type' => 'select',
+                'label' => 'Category',
+                'required' => true,
+                'options' => ['Residential', 'Commercial', 'Both', 'N.A'],
+                'order' => 2,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'preferred_location',
+                'field_type' => 'select',
+                'label' => 'Location',
+                'required' => true,
+                'options' => ['Inside City', 'Sitapur Road', 'Hardoi Road', 'Faizabad Road', 'Sultanpur Road', 'Shaheed Path', 'Raebareily Road', 'Kanpur Road', 'Outer Ring Road', 'Bijnor Road', 'Deva Road', 'Sushant Golf City', 'Vrindavan Yojana', 'N.A'],
+                'order' => 3,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'budget',
+                'field_type' => 'select',
+                'label' => 'Budget',
+                'required' => true,
+                'options' => ['Below 50 Lacs', '50-75 Lacs', '75 Lacs-1 Cr', 'Above 1 Cr', 'Above 2 Cr', 'N.A'],
+                'order' => 4,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'type',
+                'field_type' => 'select',
+                'label' => 'Type',
+                'required' => true,
+                'options' => ['Plots & Villas', 'Apartments', 'Retail Shops', 'Office Space', 'Studio', 'Farmhouse', 'Agricultural', 'Others', 'N.A'],
+                'order' => 5,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'purpose',
+                'field_type' => 'select',
+                'label' => 'Purpose',
+                'required' => true,
+                'options' => ['End Use', 'Short Term Investment', 'Long Term Investment', 'Rental Income', 'Investment + End Use', 'N.A'],
+                'order' => 6,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'possession',
+                'field_type' => 'select',
+                'label' => 'Possession',
+                'required' => true,
+                'options' => ['Under Construction', 'Ready To Move', 'Pre Launch', 'Both', 'N.A'],
+                'order' => 7,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'lead_status',
+                'field_type' => 'select',
+                'label' => 'Status',
+                'required' => true,
+                'options' => ['hot', 'warm', 'cold', 'junk'],
+                'order' => 8,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'lead_quality',
+                'field_type' => 'select',
+                'label' => 'Lead quality',
+                'required' => true,
+                'options' => ['1', '2', '3', '4', '5'],
+                'order' => 9,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'interested_projects',
+                'field_type' => 'text',
+                'label' => 'Interested projects',
+                'placeholder' => 'Type a project and press Enter',
+                'required' => true,
+                'order' => 10,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'customer_job',
+                'field_type' => 'text',
+                'label' => 'Customer job',
+                'placeholder' => 'Enter job / occupation',
+                'required' => false,
+                'order' => 11,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'industry_sector',
+                'field_type' => 'select',
+                'label' => 'Industry / sector',
+                'required' => false,
+                'options' => ['IT', 'Education', 'Healthcare', 'Business', 'FMCG', 'Government', 'Other'],
+                'order' => 12,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'buying_frequency',
+                'field_type' => 'select',
+                'label' => 'Buying frequency',
+                'required' => false,
+                'options' => ['Regular', 'Occasional', 'First-time'],
+                'order' => 13,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'living_city',
+                'field_type' => 'text',
+                'label' => 'Living city',
+                'placeholder' => 'Enter living city',
+                'required' => false,
+                'order' => 14,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'city_type',
+                'field_type' => 'select',
+                'label' => 'City type',
+                'required' => false,
+                'options' => ['Metro', 'Tier 1', 'Tier 2', 'Tier 3', 'Local Resident'],
+                'order' => 15,
+                'section' => 'Lead Detail Requirements',
+            ],
+            [
+                'field_key' => 'manager_remark',
+                'field_type' => 'textarea',
+                'label' => 'Remark',
+                'placeholder' => 'Enter remarks or notes...',
+                'required' => false,
+                'order' => 16,
+                'section' => 'Lead Detail Requirements',
+            ],
+        ];
+    }
+
+    protected function getLeadDetailSiteVisitFormFields(): array
+    {
+        return [
+            [
+                'field_key' => 'visit_date',
+                'field_type' => 'date',
+                'label' => 'Visit date',
+                'required' => true,
+                'order' => 0,
+                'section' => 'Lead Detail Site Visit Popup',
+            ],
+            [
+                'field_key' => 'visit_time',
+                'field_type' => 'time',
+                'label' => 'Visit time',
+                'required' => true,
+                'order' => 1,
+                'section' => 'Lead Detail Site Visit Popup',
+            ],
+            [
+                'field_key' => 'visit_type',
+                'field_type' => 'select',
+                'label' => 'Visit type',
+                'required' => false,
+                'options' => ['Site visit', 'Office visit'],
+                'order' => 2,
+                'section' => 'Lead Detail Site Visit Popup',
+            ],
+            [
+                'field_key' => 'project_name',
+                'field_type' => 'text',
+                'label' => 'Project to visit',
+                'required' => false,
+                'order' => 3,
+                'section' => 'Lead Detail Site Visit Popup',
+            ],
+            [
+                'field_key' => 'visit_location',
+                'field_type' => 'text',
+                'label' => 'Visit location',
+                'required' => false,
+                'order' => 4,
+                'section' => 'Lead Detail Site Visit Popup',
+            ],
+            [
+                'field_key' => 'visit_notes',
+                'field_type' => 'textarea',
+                'label' => 'Remark',
+                'required' => false,
+                'order' => 5,
+                'section' => 'Lead Detail Site Visit Popup',
+            ],
+            [
+                'field_key' => 'visit_reminder',
+                'field_type' => 'checkbox',
+                'label' => 'Remind me before visit',
+                'required' => false,
+                'order' => 6,
+                'section' => 'Lead Detail Site Visit Popup',
+            ],
+        ];
+    }
+
+    protected function getLeadDetailFollowUpFormFields(): array
+    {
+        return [
+            [
+                'field_key' => 'followup_required',
+                'field_type' => 'checkbox',
+                'label' => 'Follow up required',
+                'required' => false,
+                'order' => 0,
+                'section' => 'Lead Detail Follow Up Popup',
+            ],
+            [
+                'field_key' => 'scheduled_at',
+                'field_type' => 'datetime-local',
+                'label' => 'Follow up date & time',
+                'required' => true,
+                'order' => 1,
+                'section' => 'Lead Detail Follow Up Popup',
+            ],
+            [
+                'field_key' => 'notes',
+                'field_type' => 'textarea',
+                'label' => 'Remark',
+                'required' => false,
+                'order' => 2,
+                'section' => 'Lead Detail Follow Up Popup',
             ],
         ];
     }

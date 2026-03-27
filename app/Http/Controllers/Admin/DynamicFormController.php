@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormField;
+use App\Services\DynamicFormService;
 use App\Services\FormDetectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,11 +13,20 @@ use Illuminate\Support\Str;
 
 class DynamicFormController extends Controller
 {
-    protected $formDetectionService;
+    private const ALLOWED_FORM_PATHS = [
+        'lead-detail.requirements',
+        'lead-detail.meeting',
+        'lead-detail.site-visit',
+        'lead-detail.follow-up',
+    ];
 
-    public function __construct(FormDetectionService $formDetectionService)
+    protected $formDetectionService;
+    protected $dynamicFormService;
+
+    public function __construct(FormDetectionService $formDetectionService, DynamicFormService $dynamicFormService)
     {
         $this->formDetectionService = $formDetectionService;
+        $this->dynamicFormService = $dynamicFormService;
     }
 
     /**
@@ -40,8 +50,12 @@ class DynamicFormController extends Controller
             'crm.automation.leads.create' => 'Lead Creation Form',
             'leads.create'                => 'Lead Form (Standard)',
             'leads.edit'                  => 'Lead Edit Form',
+            'lead-detail.requirements'    => 'Lead Detail Requirements Form',
             'meetings.create'             => 'Meeting Form',
             'site-visits.create'          => 'Site Visit Form',
+            'lead-detail.meeting'         => 'Lead Detail Meeting Popup Form',
+            'lead-detail.site-visit'      => 'Lead Detail Site Visit Popup Form',
+            'lead-detail.follow-up'       => 'Lead Detail Follow Up Popup Form',
             'calls.create'                => 'Call Log Form',
             'projects.create'             => 'Project Form',
             'closers.index'               => 'Closer Submit Form',
@@ -86,6 +100,36 @@ class DynamicFormController extends Controller
                 ['label' => 'Budget',          'type' => 'text',     'name' => 'budget',   'required' => false],
                 ['label' => 'Notes',           'type' => 'textarea', 'name' => 'notes',    'required' => false],
             ],
+            'lead-detail.requirements' => [
+                ['label' => 'Customer Name',        'type' => 'text',     'name' => 'name',                'required' => true],
+                ['label' => 'Phone',                'type' => 'tel',      'name' => 'phone',               'required' => true],
+                ['label' => 'Category',             'type' => 'select',   'name' => 'category',            'required' => true,
+                 'options' => ['Residential', 'Commercial', 'Both', 'N.A']],
+                ['label' => 'Location',             'type' => 'select',   'name' => 'preferred_location',  'required' => true,
+                 'options' => ['Inside City', 'Sitapur Road', 'Hardoi Road', 'Faizabad Road', 'Sultanpur Road', 'Shaheed Path', 'Raebareily Road', 'Kanpur Road', 'Outer Ring Road', 'Bijnor Road', 'Deva Road', 'Sushant Golf City', 'Vrindavan Yojana', 'N.A']],
+                ['label' => 'Budget',               'type' => 'select',   'name' => 'budget',              'required' => true,
+                 'options' => ['Below 50 Lacs', '50-75 Lacs', '75 Lacs-1 Cr', 'Above 1 Cr', 'Above 2 Cr', 'N.A']],
+                ['label' => 'Type',                 'type' => 'select',   'name' => 'type',                'required' => true,
+                 'options' => ['Plots & Villas', 'Apartments', 'Retail Shops', 'Office Space', 'Studio', 'Farmhouse', 'Agricultural', 'Others', 'N.A']],
+                ['label' => 'Purpose',              'type' => 'select',   'name' => 'purpose',             'required' => true,
+                 'options' => ['End Use', 'Short Term Investment', 'Long Term Investment', 'Rental Income', 'Investment + End Use', 'N.A']],
+                ['label' => 'Possession',           'type' => 'select',   'name' => 'possession',          'required' => true,
+                 'options' => ['Under Construction', 'Ready To Move', 'Pre Launch', 'Both', 'N.A']],
+                ['label' => 'Status',               'type' => 'select',   'name' => 'lead_status',         'required' => true,
+                 'options' => ['hot', 'warm', 'cold', 'junk']],
+                ['label' => 'Lead Quality',         'type' => 'select',   'name' => 'lead_quality',        'required' => true,
+                 'options' => ['1', '2', '3', '4', '5']],
+                ['label' => 'Interested Projects',  'type' => 'text',     'name' => 'interested_projects', 'required' => true],
+                ['label' => 'Customer Job',         'type' => 'text',     'name' => 'customer_job',        'required' => false],
+                ['label' => 'Industry / Sector',    'type' => 'select',   'name' => 'industry_sector',     'required' => false,
+                 'options' => ['IT', 'Education', 'Healthcare', 'Business', 'FMCG', 'Government', 'Other']],
+                ['label' => 'Buying Frequency',     'type' => 'select',   'name' => 'buying_frequency',    'required' => false,
+                 'options' => ['Regular', 'Occasional', 'First-time']],
+                ['label' => 'Living City',          'type' => 'text',     'name' => 'living_city',         'required' => false],
+                ['label' => 'City Type',            'type' => 'select',   'name' => 'city_type',           'required' => false,
+                 'options' => ['Metro', 'Tier 1', 'Tier 2', 'Tier 3', 'Local Resident']],
+                ['label' => 'Remark',               'type' => 'textarea', 'name' => 'manager_remark',      'required' => false],
+            ],
             'meetings.create' => [
                 ['label' => 'Customer Name',   'type' => 'text',     'name' => 'customer_name',  'required' => true],
                 ['label' => 'Phone Number',    'type' => 'tel',      'name' => 'phone',           'required' => true],
@@ -105,6 +149,33 @@ class DynamicFormController extends Controller
                  'options' => ['Select Project...']],
                 ['label' => 'Employee',        'type' => 'text',     'name' => 'employee',        'required' => false, 'readonly' => true],
                 ['label' => 'Visit Notes',     'type' => 'textarea', 'name' => 'notes',           'required' => false],
+            ],
+            'lead-detail.meeting' => [
+                ['label' => 'Meeting Type',    'type' => 'select',   'name' => 'meeting_type',    'required' => true,
+                 'options' => ['Initial Meeting', 'Follow-up Meeting', 'Negotiation Meeting', 'Closing Meeting']],
+                ['label' => 'Scheduled Date',  'type' => 'date',     'name' => 'meeting_date',    'required' => true],
+                ['label' => 'Scheduled Time',  'type' => 'time',     'name' => 'meeting_time',    'required' => true],
+                ['label' => 'Meeting Mode',    'type' => 'select',   'name' => 'meeting_mode',    'required' => true,
+                 'options' => ['Online', 'Offline']],
+                ['label' => 'Meeting Link',    'type' => 'url',      'name' => 'meeting_link',    'required' => false],
+                ['label' => 'Location',        'type' => 'text',     'name' => 'location',        'required' => false],
+                ['label' => 'Remark',          'type' => 'textarea', 'name' => 'meeting_notes',   'required' => false],
+                ['label' => 'Remind Me Before Meeting', 'type' => 'checkbox', 'name' => 'reminder_enabled', 'required' => false],
+            ],
+            'lead-detail.site-visit' => [
+                ['label' => 'Visit Date',      'type' => 'date',     'name' => 'visit_date',      'required' => true],
+                ['label' => 'Visit Time',      'type' => 'time',     'name' => 'visit_time',      'required' => true],
+                ['label' => 'Visit Type',      'type' => 'select',   'name' => 'visit_type',      'required' => false,
+                 'options' => ['Site visit', 'Office visit']],
+                ['label' => 'Project To Visit','type' => 'text',     'name' => 'project_name',    'required' => false],
+                ['label' => 'Visit Location',  'type' => 'text',     'name' => 'visit_location',  'required' => false],
+                ['label' => 'Remark',          'type' => 'textarea', 'name' => 'visit_notes',     'required' => false],
+                ['label' => 'Remind Me Before Visit', 'type' => 'checkbox', 'name' => 'visit_reminder', 'required' => false],
+            ],
+            'lead-detail.follow-up' => [
+                ['label' => 'Follow Up Required', 'type' => 'checkbox', 'name' => 'followup_required', 'required' => false],
+                ['label' => 'Follow Up Date & Time', 'type' => 'datetime-local', 'name' => 'scheduled_at', 'required' => true],
+                ['label' => 'Remark',          'type' => 'textarea', 'name' => 'notes',           'required' => false],
             ],
             'calls.create' => [
                 ['label' => 'Customer Name',   'type' => 'text',     'name' => 'customer_name',  'required' => true],
@@ -153,7 +224,8 @@ class DynamicFormController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DynamicForm::with(['fields', 'creator', 'replacedForm']);
+        $query = DynamicForm::with(['fields', 'creator', 'replacedForm'])
+            ->whereIn('location_path', self::ALLOWED_FORM_PATHS);
         
         // Apply filter if provided
         $filter = $request->input('filter', 'all');
@@ -166,7 +238,20 @@ class DynamicFormController extends Controller
         $customForms = $query->orderBy('created_at', 'desc')->get();
 
         // Get existing forms in the system
-        $existingForms = $this->getExistingForms();
+        $existingForms = collect($this->getExistingForms())
+            ->filter(function (array $form) {
+                return in_array($form['path'], self::ALLOWED_FORM_PATHS, true);
+            })
+            ->map(function (array $form) {
+                $form['edit_url'] = $this->buildExistingFormEditUrl($form);
+
+                if (empty($form['description'])) {
+                    $form['description'] = 'This edits the linked live form for this location. First edit creates it once; later edits update the same form.';
+                }
+
+                return $form;
+            })
+            ->all();
 
         return view('admin.forms.index', compact('customForms', 'existingForms', 'filter'));
     }
@@ -178,11 +263,38 @@ class DynamicFormController extends Controller
     {
         $existingForm = null;
         $detectedFields = [];
+
+        if (!$request->has('from_existing')) {
+            return redirect()
+                ->route('admin.forms.index')
+                ->withErrors(['error' => 'Direct form creation is disabled. Only approved linked forms can be managed here.']);
+        }
+
+        $oldFields = session()->getOldInput('fields');
+        if (is_string($oldFields)) {
+            $decodedFields = json_decode($oldFields, true);
+            if (is_array($decodedFields) && !empty($decodedFields)) {
+                $detectedFields = $decodedFields;
+            }
+        } elseif (is_array($oldFields) && !empty($oldFields)) {
+            $detectedFields = $oldFields;
+        }
         
         // If creating from existing form
         if ($request->has('from_existing')) {
             $formType = $request->input('type', 'custom');
             $locationPath = $request->input('path', '');
+
+            if (!in_array($locationPath, self::ALLOWED_FORM_PATHS, true)) {
+                return redirect()
+                    ->route('admin.forms.index')
+                    ->withErrors(['error' => 'This form is not available in the restricted forms section.']);
+            }
+
+            $linkedForm = $this->dynamicFormService->getLatestFormByLocation($locationPath);
+            if ($linkedForm) {
+                return redirect()->route('admin.forms.edit', $linkedForm->id);
+            }
             
             $existingForm = [
                 'name' => $request->input('name', 'New Form'),
@@ -192,7 +304,9 @@ class DynamicFormController extends Controller
             ];
             
             // Detect fields from existing form
-            $detectedFields = $this->formDetectionService->getFieldDefinitions($formType, $locationPath);
+            if (empty($detectedFields)) {
+                $detectedFields = $this->formDetectionService->getFieldDefinitions($formType, $locationPath);
+            }
         }
         
         return view('admin.forms.builder', [
@@ -210,6 +324,8 @@ class DynamicFormController extends Controller
         $dynamicForm->load(['fields' => function($query) {
             $query->orderBy('order');
         }]);
+
+        $this->hydrateMissingFieldOptions($dynamicForm);
 
         // #region agent log
         \Log::info('DynamicFormController:edit - Loading form for editing', [
@@ -266,12 +382,31 @@ class DynamicFormController extends Controller
             'fields.*.field_key' => 'required|string|max:255',
             'fields.*.field_type' => 'required|string|max:50',
             'fields.*.label' => 'required|string|max:255',
+            'fields.*.placeholder' => 'nullable|string',
+            'fields.*.help_text' => 'nullable|string',
+            'fields.*.options' => 'nullable|array',
+            'fields.*.options.*' => 'nullable|string',
+            'fields.*.validation' => 'nullable|array',
+            'fields.*.required' => 'nullable|boolean',
+            'fields.*.order' => 'nullable|integer',
+            'fields.*.section' => 'nullable|string|max:255',
+            'fields.*.styles' => 'nullable|array',
+            'fields.*.default_value' => 'nullable',
         ]);
 
         DB::beginTransaction();
         try {
             $status = $validated['status'] ?? 'draft';
             $locationPath = $validated['location_path'];
+
+            $linkedForm = $this->dynamicFormService->getLatestFormByLocation($locationPath);
+            if ($linkedForm) {
+                DB::rollBack();
+
+                return redirect()
+                    ->route('admin.forms.edit', $linkedForm->id)
+                    ->withErrors(['error' => 'A linked form for this location already exists. Edit the same form instead of creating a duplicate.']);
+            }
             
             // If publishing, check for existing published form at same location
             $replacesFormId = null;
@@ -293,7 +428,7 @@ class DynamicFormController extends Controller
             
             $form = DynamicForm::create([
                 'name' => $validated['name'],
-                'slug' => $validated['slug'] ?? Str::slug($validated['name']),
+                'slug' => $validated['slug'] ?? $this->generateUniqueSlug($validated['name']),
                 'description' => $validated['description'] ?? null,
                 'location_path' => $locationPath,
                 'form_type' => $validated['form_type'],
@@ -329,6 +464,11 @@ class DynamicFormController extends Controller
                 ->with('success', 'Form created successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('DynamicFormController:store - Failed to create form', [
+                'message' => $e->getMessage(),
+                'location_path' => $request->input('location_path'),
+                'name' => $request->input('name'),
+            ]);
             return back()
                 ->withErrors(['error' => 'Failed to create form: ' . $e->getMessage()])
                 ->withInput();
@@ -385,6 +525,16 @@ class DynamicFormController extends Controller
             'fields.*.field_key' => 'required|string|max:255',
             'fields.*.field_type' => 'required|string|max:50',
             'fields.*.label' => 'required|string|max:255',
+            'fields.*.placeholder' => 'nullable|string',
+            'fields.*.help_text' => 'nullable|string',
+            'fields.*.options' => 'nullable|array',
+            'fields.*.options.*' => 'nullable|string',
+            'fields.*.validation' => 'nullable|array',
+            'fields.*.required' => 'nullable|boolean',
+            'fields.*.order' => 'nullable|integer',
+            'fields.*.section' => 'nullable|string|max:255',
+            'fields.*.styles' => 'nullable|array',
+            'fields.*.default_value' => 'nullable',
         ]);
         
         // #region agent log
@@ -521,6 +671,11 @@ class DynamicFormController extends Controller
                 ->with('success', 'Form updated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('DynamicFormController:update - Failed to update form', [
+                'message' => $e->getMessage(),
+                'form_id' => $dynamicForm->id,
+                'location_path' => $request->input('location_path'),
+            ]);
             return back()
                 ->withErrors(['error' => 'Failed to update form: ' . $e->getMessage()])
                 ->withInput();
@@ -602,7 +757,44 @@ class DynamicFormController extends Controller
             'location' => 'Senior Manager > Create Site Visit',
             'path'     => 'site-visits.create',
             'type'     => 'site_visit',
+            'description' => 'Used on Senior Manager create site visit page. Changes here do not affect Lead Detail popup.',
         ]);
+
+        $forms[] = [
+            'name'        => 'Lead Detail Requirements Form',
+            'location'    => 'Lead Detail > Edit Requirements',
+            'path'        => 'lead-detail.requirements',
+            'type'        => 'lead',
+            'route'       => route('leads.index'),
+            'description' => 'Used on Lead Detail page when user clicks Edit Requirements. Changes here affect the main Lead Form modal on lead detail.',
+        ];
+
+        $forms[] = [
+            'name'        => 'Lead Detail Meeting Popup Form',
+            'location'    => 'Lead Detail > Quick Actions > Meeting',
+            'path'        => 'lead-detail.meeting',
+            'type'        => 'meeting',
+            'route'       => route('leads.index'),
+            'description' => 'Used on Lead Detail page when user clicks Meeting. Changes here affect only the Lead Detail Meeting popup.',
+        ];
+
+        $forms[] = [
+            'name'        => 'Lead Detail Site Visit Popup Form',
+            'location'    => 'Lead Detail > Quick Actions > Site Visit',
+            'path'        => 'lead-detail.site-visit',
+            'type'        => 'site_visit',
+            'route'       => route('leads.index'),
+            'description' => 'Used on Lead Detail page when user clicks Site Visit. Changes here affect only the Lead Detail Site Visit popup.',
+        ];
+
+        $forms[] = [
+            'name'        => 'Lead Detail Follow Up Popup Form',
+            'location'    => 'Lead Detail > Quick Actions > Follow Up',
+            'path'        => 'lead-detail.follow-up',
+            'type'        => 'follow_up',
+            'route'       => route('leads.index'),
+            'description' => 'Used on Lead Detail page when user clicks Follow Up. Changes here affect only the Lead Detail Follow Up popup.',
+        ];
 
         // 6. Call Log Form
         $addIfRouteExists('calls.create', [
@@ -637,5 +829,66 @@ class DynamicFormController extends Controller
         ]);
 
         return $forms;
+    }
+
+    private function buildExistingFormEditUrl(array $form): string
+    {
+        $linkedForm = $this->dynamicFormService->getLatestFormByLocation($form['path']);
+
+        if ($linkedForm) {
+            return route('admin.forms.edit', $linkedForm->id);
+        }
+
+        return route('admin.forms.create', [
+            'from_existing' => '1',
+            'name' => $form['name'],
+            'path' => $form['path'],
+            'type' => $form['type'],
+        ]);
+    }
+
+    private function hydrateMissingFieldOptions(DynamicForm $dynamicForm): void
+    {
+        if (!$dynamicForm->location_path) {
+            return;
+        }
+
+        $defaultFields = collect(
+            $this->formDetectionService->getFieldDefinitions($dynamicForm->form_type, $dynamicForm->location_path)
+        )->keyBy('field_key');
+
+        foreach ($dynamicForm->fields as $field) {
+            if (!in_array($field->field_type, ['select', 'radio', 'checkbox'], true)) {
+                continue;
+            }
+
+            if (!empty($field->options)) {
+                continue;
+            }
+
+            $defaultField = $defaultFields->get($field->field_key);
+            if (!empty($defaultField['options']) && is_array($defaultField['options'])) {
+                $field->options = $defaultField['options'];
+            }
+        }
+    }
+
+    private function generateUniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while (
+            DynamicForm::withTrashed()
+                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+                ->where('slug', $slug)
+                ->exists()
+        ) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
     }
 }

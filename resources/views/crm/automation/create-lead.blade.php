@@ -64,6 +64,16 @@
             </div>
 
             <div class="form-group" style="margin-top: 20px;">
+                <label for="source">Lead Source <span class="required">*</span></label>
+                <select name="source" id="source" required>
+                    <option value="">-- Select Source --</option>
+                    @foreach(\App\Models\Lead::sourceOptions() as $value => $label)
+                        <option value="{{ $value }}" {{ old('source') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
                 <label for="assigned_to">Assign To User (Optional)</label>
                 <select name="assigned_to" id="assigned_to">
                     <option value="">— Do not assign —</option>
@@ -84,4 +94,3 @@
     </div>
 </body>
 </html>
-

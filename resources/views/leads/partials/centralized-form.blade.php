@@ -50,6 +50,20 @@
                                placeholder="Enter phone number"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#205A44] focus:border-[#205A44]">
                     </div>
+
+                    @if($userRole === 'crm' || $userRole === 'admin')
+                    <div>
+                        <label for="lead_source" class="block text-sm font-medium text-gray-700 mb-2">Source</label>
+                        <select
+                            name="source"
+                            id="lead_source"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#205A44] focus:border-[#205A44]">
+                            @foreach(\App\Models\Lead::sourceOptions() as $value => $label)
+                                <option value="{{ $value }}" {{ old('source', \App\Models\Lead::normalizeSource($lead->source)) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
                 </div>
             </div>
             

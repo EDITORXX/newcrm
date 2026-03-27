@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Models\Meeting;
 use App\Models\SiteVisit;
 use App\Models\FollowUp;
 use App\Models\User;
@@ -23,15 +24,67 @@ class DashboardController extends Controller
         $this->targetService = $targetService;
     }
 
+    private function resolveDashboardDateRange(Request $request): array
+    {
+        $today = Carbon::today();
+        $dateFilter = $request->get('date_filter', 'today');
+
+        switch ($dateFilter) {
+            case 'this_week':
+                $startDate = $today->copy()->startOfWeek();
+                $endDate = $today->copy()->endOfWeek();
+                break;
+            case 'this_month':
+                $startDate = $today->copy()->startOfMonth();
+                $endDate = $today->copy()->endOfMonth();
+                break;
+            case 'custom':
+                $start = $request->get('start_date');
+                $end = $request->get('end_date');
+                if (!$start || !$end) {
+                    $dateFilter = 'today';
+                    $startDate = $today->copy()->startOfDay();
+                    $endDate = $today->copy()->endOfDay();
+                    break;
+                }
+
+                $startDate = Carbon::parse($start)->startOfDay();
+                $endDate = Carbon::parse($end)->endOfDay();
+                if ($startDate->gt($endDate)) {
+                    [$startDate, $endDate] = [$endDate->copy()->startOfDay(), $startDate->copy()->endOfDay()];
+                }
+                break;
+            case 'today':
+            default:
+                $dateFilter = 'today';
+                $startDate = $today->copy()->startOfDay();
+                $endDate = $today->copy()->endOfDay();
+                break;
+        }
+
+        return [
+            'date_filter' => $dateFilter,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'target_month' => $endDate->copy()->startOfMonth()->format('Y-m'),
+        ];
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
+        $range = $this->resolveDashboardDateRange($request);
 
         $data = [
             'stats' => $this->getStats($user),
             'recent_leads' => $this->getRecentLeads($user),
             'upcoming_followups' => $this->getUpcomingFollowups($user),
             'upcoming_site_visits' => $this->getUpcomingSiteVisits($user),
+            'dashboard_filter' => [
+                'date_filter' => $range['date_filter'],
+                'start_date' => $range['start_date']->toDateString(),
+                'end_date' => $range['end_date']->toDateString(),
+            ],
         ];
 
         // Add target progress for telecallers
@@ -44,11 +97,11 @@ class DashboardController extends Controller
 
         // Add team target progress for managers
         if ($user->isSalesManager() || $user->isAssistantSalesManager()) {
-            $teamProgress = $this->targetService->getTeamTargetsProgress($user->id);
+            $teamProgress = $this->getTeamTargetsProgressForRange($user, $range);
             $data['team_targets'] = $teamProgress;
-            $data['manager_targets'] = $this->getManagerTargetsVsAchievements($user);
-            $data['incentives'] = $this->getManagerIncentives($user);
-            $data['incentive_potential'] = $this->getManagerIncentivePotential($user);
+            $data['manager_targets'] = $this->getManagerTargetsVsAchievements($user, $range);
+            $data['incentives'] = $this->getManagerIncentives($user, $range);
+            $data['incentive_potential'] = $this->getManagerIncentivePotential($user, $range);
         }
 
         // Add Sales Head specific data
@@ -68,13 +121,18 @@ class DashboardController extends Controller
     /**
      * Get Manager/Sales Executive incentives (closer incentives)
      */
-    private function getManagerIncentives(User $user)
+    private function getManagerIncentives(User $user, array $range)
     {
         $incentives = Incentive::where('user_id', $user->id)
             ->where('type', 'closer')
             ->with(['siteVisit.lead', 'salesHeadVerifiedBy', 'crmVerifiedBy'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        $incentives = $incentives->filter(function ($incentive) use ($range) {
+            return $incentive->created_at
+                && $incentive->created_at->between($range['start_date'], $range['end_date']);
+        })->values();
 
         $pending = $incentives->where('status', 'pending_sales_head')
             ->concat($incentives->where('status', 'pending_crm'))
@@ -200,9 +258,9 @@ class DashboardController extends Controller
     /**
      * Get Manager/Sales Executive incentive potential (target_closers × incentive_per_closer)
      */
-    private function getManagerIncentivePotential(User $user)
+    private function getManagerIncentivePotential(User $user, array $range)
     {
-        $currentMonth = Carbon::now()->startOfMonth();
+        $currentMonth = Carbon::parse($range['target_month'] . '-01')->startOfMonth();
         
         $target = Target::where('user_id', $user->id)
             ->whereYear('target_month', $currentMonth->year)
@@ -262,9 +320,9 @@ class DashboardController extends Controller
     /**
      * Get Manager's own target vs achievements
      */
-    private function getManagerTargetsVsAchievements(User $user)
+    private function getManagerTargetsVsAchievements(User $user, array $range)
     {
-        $currentMonth = Carbon::now()->startOfMonth();
+        $currentMonth = Carbon::parse($range['target_month'] . '-01')->startOfMonth();
         
         $target = Target::where('user_id', $user->id)
             ->whereYear('target_month', $currentMonth->year)
@@ -279,14 +337,154 @@ class DashboardController extends Controller
             ];
         }
 
-        $meetingsProgress = $target->getAchievementProgress('meetings');
-        $visitsProgress = $target->getAchievementProgress('visits');
-        $closersProgress = $target->getAchievementProgress('closers');
+        $meetingsAchieved = $this->countUserMeetingsForRange($user, $range);
+        $visitsAchieved = $this->countUserVisitsForRange($user, $range);
+        $closersAchieved = $this->countUserClosersForRange($user, $range);
 
         return [
-            'meetings' => $meetingsProgress,
-            'visits' => $visitsProgress,
-            'closers' => $closersProgress,
+            'meetings' => $this->formatRangeProgress($target->target_meetings ?? 0, $meetingsAchieved),
+            'visits' => $this->formatRangeProgress($target->target_visits ?? 0, $visitsAchieved),
+            'closers' => $this->formatRangeProgress($target->target_closers ?? 0, $closersAchieved),
+        ];
+    }
+
+    private function formatRangeProgress(int $target, int $achieved): array
+    {
+        $percentage = $target > 0 ? min(100, round(($achieved / $target) * 100, 2)) : 0;
+
+        return [
+            'target' => $target,
+            'achieved' => $achieved,
+            'percentage' => $percentage,
+        ];
+    }
+
+    private function countUserMeetingsForRange(User $user, array $range): int
+    {
+        return Meeting::where(function ($query) use ($user) {
+            $query->where('created_by', $user->id)
+                ->orWhere('assigned_to', $user->id)
+                ->orWhereHas('lead', function ($leadQuery) use ($user) {
+                    $leadQuery->whereHas('activeAssignments', function ($assignmentQuery) use ($user) {
+                        $assignmentQuery->where('assigned_to', $user->id);
+                    });
+                });
+        })
+        ->where('status', 'completed')
+        ->where('is_converted', false)
+        ->whereNotNull('completed_at')
+        ->whereBetween('completed_at', [$range['start_date'], $range['end_date']])
+        ->where(function ($query) {
+            $query->whereNull('verification_status')
+                ->orWhere('verification_status', '!=', 'rejected');
+        })
+        ->when(\Illuminate\Support\Facades\Schema::hasColumn('meetings', 'is_rescheduled'), function ($query) {
+            $query->where('is_rescheduled', false);
+        })
+        ->count();
+    }
+
+    private function countUserVisitsForRange(User $user, array $range): int
+    {
+        return SiteVisit::where(function ($query) use ($user) {
+            $query->where('created_by', $user->id)
+                ->orWhere('assigned_to', $user->id)
+                ->orWhereHas('lead', function ($leadQuery) use ($user) {
+                    $leadQuery->whereHas('activeAssignments', function ($assignmentQuery) use ($user) {
+                        $assignmentQuery->where('assigned_to', $user->id);
+                    });
+                });
+        })
+        ->where('verification_status', 'verified')
+        ->whereNotNull('verified_at')
+        ->whereBetween('verified_at', [$range['start_date'], $range['end_date']])
+        ->when(\Illuminate\Support\Facades\Schema::hasColumn('site_visits', 'is_rescheduled'), function ($query) {
+            $query->where('is_rescheduled', false);
+        })
+        ->count();
+    }
+
+    private function countUserClosersForRange(User $user, array $range): int
+    {
+        return SiteVisit::where(function ($query) use ($user) {
+            $query->where('created_by', $user->id)
+                ->orWhere('assigned_to', $user->id)
+                ->orWhereHas('lead', function ($leadQuery) use ($user) {
+                    $leadQuery->whereHas('activeAssignments', function ($assignmentQuery) use ($user) {
+                        $assignmentQuery->where('assigned_to', $user->id);
+                    });
+                });
+        })
+        ->where('closer_status', 'verified')
+        ->whereNotNull('closer_verified_at')
+        ->whereBetween('closer_verified_at', [$range['start_date'], $range['end_date']])
+        ->when(\Illuminate\Support\Facades\Schema::hasColumn('site_visits', 'is_rescheduled'), function ($query) {
+            $query->where('is_rescheduled', false);
+        })
+        ->count();
+    }
+
+    private function getTeamTargetsProgressForRange(User $user, array $range): array
+    {
+        $month = $range['target_month'];
+        $targetMonth = Carbon::parse($month . '-01')->startOfMonth();
+
+        $teamMembers = User::where('manager_id', $user->id)
+            ->whereHas('role', function ($query) {
+                $query->where('slug', 'sales_executive');
+            })
+            ->with('role')
+            ->get();
+
+        $targets = Target::whereIn('user_id', $teamMembers->pluck('id'))
+            ->where('target_month', $targetMonth)
+            ->get()
+            ->keyBy('user_id');
+
+        $teamMembersData = [];
+        $teamMeetingsTarget = 0;
+        $teamVisitsTarget = 0;
+        $teamClosersTarget = 0;
+        $teamMeetingsAchieved = 0;
+        $teamVisitsAchieved = 0;
+        $teamClosersAchieved = 0;
+
+        foreach ($teamMembers as $member) {
+            $target = $targets->get($member->id);
+            $meetingsTarget = (int) ($target->target_meetings ?? 0);
+            $visitsTarget = (int) ($target->target_visits ?? 0);
+            $closersTarget = (int) ($target->target_closers ?? 0);
+            $meetingsAchieved = $this->countUserMeetingsForRange($member, $range);
+            $visitsAchieved = $this->countUserVisitsForRange($member, $range);
+            $closersAchieved = $this->countUserClosersForRange($member, $range);
+
+            $teamMeetingsTarget += $meetingsTarget;
+            $teamVisitsTarget += $visitsTarget;
+            $teamClosersTarget += $closersTarget;
+            $teamMeetingsAchieved += $meetingsAchieved;
+            $teamVisitsAchieved += $visitsAchieved;
+            $teamClosersAchieved += $closersAchieved;
+
+            $teamMembersData[] = [
+                'user_id' => $member->id,
+                'user_name' => $member->name ?? 'N/A',
+                'user_role' => $member->role->slug ?? 'N/A',
+                'user_role_name' => $member->role->name ?? 'N/A',
+                'targets' => [
+                    'meetings' => $this->formatRangeProgress($meetingsTarget, $meetingsAchieved),
+                    'visits' => $this->formatRangeProgress($visitsTarget, $visitsAchieved),
+                    'closers' => $this->formatRangeProgress($closersTarget, $closersAchieved),
+                ],
+            ];
+        }
+
+        return [
+            'team_totals' => [
+                'meetings' => $this->formatRangeProgress($teamMeetingsTarget, $teamMeetingsAchieved),
+                'visits' => $this->formatRangeProgress($teamVisitsTarget, $teamVisitsAchieved),
+                'closers' => $this->formatRangeProgress($teamClosersTarget, $teamClosersAchieved),
+            ],
+            'team_members' => $teamMembersData,
         ];
     }
 

@@ -415,15 +415,8 @@
                 <option value="cold">Cold</option>
             </select>
         </div>
-        <div class="prospect-view-toggle">
-            <button type="button" id="prospectCardsViewBtn" class="active" onclick="setProspectView('cards')">
-                <i class="fas fa-th-large mr-2"></i>Cards
-            </button>
-            <button type="button" id="prospectListViewBtn" onclick="setProspectView('list')">
-                <i class="fas fa-list-ul mr-2"></i>List
-            </button>
-        </div>
     </div>
+    <div id="prospectFilterNotice" class="mb-4 px-4 py-3 rounded-lg border border-green-200 bg-green-50 text-sm text-green-800" style="display: none;"></div>
 
     <!-- Loading State -->
     <div id="loadingState" class="text-center py-12">
@@ -480,6 +473,12 @@
 <script>
     const API_BASE_URL = '{{ url("/api/sales-manager") }}';
     const API_TOKEN = '{{ $api_token }}';
+    const ASM_SECTION_VIEW_PREFERENCES = @json($sectionViewPreferences ?? []);
+    const ASM_SECTION_VIEW_SAVE_URL = @json(route('sales-manager.settings.update'));
+    const prospectPageParams = new URLSearchParams(window.location.search);
+    const prospectPageFlags = {
+        createdToday: prospectPageParams.get('created_today') === '1',
+    };
     let searchTimeout = null;
     let teamMembers = [];
     let currentUser = null;
@@ -503,12 +502,69 @@
             .replace(/'/g, '&#039;');
     }
 
-    function setProspectView(view) {
+    function getAsmPreferredView(sectionKey, fallbackView) {
+        const preferred = ASM_SECTION_VIEW_PREFERENCES?.[sectionKey];
+        return preferred === 'list' || preferred === 'card' ? preferred : fallbackView;
+    }
+
+    async function persistAsmSectionViewPreference(sectionKey, view) {
+        try {
+            ASM_SECTION_VIEW_PREFERENCES[sectionKey] = view;
+            await fetch(ASM_SECTION_VIEW_SAVE_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    section_view_preferences: {
+                        [sectionKey]: view
+                    }
+                })
+            });
+        } catch (error) {
+            console.error('Failed to persist section view preference:', error);
+        }
+    }
+
+    function setProspectView(view, shouldPersist = true) {
         currentProspectView = view === 'list' ? 'list' : 'cards';
         document.getElementById('prospectCardsViewBtn')?.classList.toggle('active', currentProspectView === 'cards');
         document.getElementById('prospectListViewBtn')?.classList.toggle('active', currentProspectView === 'list');
         document.getElementById('prospectsCards').style.display = currentProspectView === 'cards' && allProspects.length ? 'block' : 'none';
         document.getElementById('prospectsList').style.display = currentProspectView === 'list' && allProspects.length ? 'block' : 'none';
+        if (shouldPersist) {
+            persistAsmSectionViewPreference('prospects', currentProspectView);
+        }
+    }
+
+    function applyProspectQueryFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const userFilter = document.getElementById('userFilter');
+        const leadStatusFilter = document.getElementById('leadStatusFilter');
+        const notice = document.getElementById('prospectFilterNotice');
+
+        const search = prospectPageParams.get('search');
+        const verificationStatus = prospectPageParams.get('verification_status');
+        const assignedTo = prospectPageParams.get('assigned_to');
+        const leadStatus = prospectPageParams.get('lead_status');
+
+        if (searchInput && search) searchInput.value = search;
+        if (statusFilter && verificationStatus) statusFilter.value = verificationStatus;
+        if (userFilter && assignedTo) userFilter.value = assignedTo;
+        if (leadStatusFilter && leadStatus) leadStatusFilter.value = leadStatus;
+
+        if (notice) {
+            if (prospectPageFlags.createdToday) {
+                notice.textContent = 'Showing prospects created today.';
+                notice.style.display = 'block';
+            } else {
+                notice.style.display = 'none';
+            }
+        }
     }
 
     function getProspectRemark(prospect) {
@@ -660,6 +716,10 @@
                 params.append('lead_status', leadStatus);
             }
 
+            if (prospectPageFlags.createdToday) {
+                params.append('created_today', '1');
+            }
+
             const response = await fetch(`${API_BASE_URL}/prospects?${params}`, {
                 headers: getAuthHeaders(),
                 credentials: 'same-origin',
@@ -683,7 +743,7 @@
                 
                 renderPagination(data);
                 emptyState.style.display = 'none';
-                setProspectView(currentProspectView);
+                setProspectView(currentProspectView, false);
             } else {
                 allProspects = [];
                 prospectsCards.style.display = 'none';
@@ -992,8 +1052,11 @@
 
     // Load prospects on page load
     document.addEventListener('DOMContentLoaded', function() {
-        loadTeamMembers();
-        loadProspects();
+        currentProspectView = getAsmPreferredView('prospects', currentProspectView);
+        loadTeamMembers().then(() => {
+            applyProspectQueryFilters();
+            loadProspects();
+        });
     });
 
     // Short Detail Modal Functions

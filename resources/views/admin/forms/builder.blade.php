@@ -327,8 +327,8 @@
                 <div class="form-header">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                         <div style="flex: 1;">
-                            <input type="text" name="name" id="formName" placeholder="Untitled Form" value="{{ $form->name ?? ($existingForm['name'] ?? '') }}" required>
-                            <input type="text" name="description" id="formDescription" placeholder="Form description (optional)" value="{{ $form->description ?? ($existingForm['description'] ?? '') }}" style="font-size: 14px; font-weight: normal; margin-top: 8px;">
+                            <input type="text" name="name" id="formName" placeholder="Untitled Form" value="{{ old('name', $form->name ?? ($existingForm['name'] ?? '')) }}" required>
+                            <input type="text" name="description" id="formDescription" placeholder="Form description (optional)" value="{{ old('description', $form->description ?? ($existingForm['description'] ?? '')) }}" style="font-size: 14px; font-weight: normal; margin-top: 8px;">
                         </div>
                         <div style="display: flex; gap: 12px; margin-left: 16px; align-items: flex-start;">
                             <button type="button" onclick="saveForm()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; height: fit-content;">
@@ -343,16 +343,16 @@
                     <div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div>
                             <label style="display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: #063A1C;">Location Path</label>
-                            <input type="text" name="location_path" id="locationPath" placeholder="e.g., leads/create" value="{{ $form->location_path ?? ($existingForm['location_path'] ?? '') }}" required style="width: 100%; padding: 8px; border: 1px solid #E5DED4; border-radius: 6px; color: #063A1C; background: white;">
+                            <input type="text" name="location_path" id="locationPath" placeholder="e.g., leads/create" value="{{ old('location_path', $form->location_path ?? ($existingForm['location_path'] ?? '')) }}" required style="width: 100%; padding: 8px; border: 1px solid #E5DED4; border-radius: 6px; color: #063A1C; background: white;">
                         </div>
                         <div>
                             <label style="display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; color: #063A1C;">Form Type</label>
                             <select name="form_type" id="formType" required style="width: 100%; padding: 8px; border: 1px solid #E5DED4; border-radius: 6px; color: #063A1C; background: white;">
-                                <option value="custom">Custom</option>
-                                <option value="lead" {{ ($form->form_type ?? ($existingForm['form_type'] ?? '')) === 'lead' ? 'selected' : '' }}>Lead</option>
-                                <option value="prospect" {{ ($form->form_type ?? ($existingForm['form_type'] ?? '')) === 'prospect' ? 'selected' : '' }}>Prospect</option>
-                                <option value="meeting" {{ ($form->form_type ?? ($existingForm['form_type'] ?? '')) === 'meeting' ? 'selected' : '' }}>Meeting</option>
-                                <option value="site_visit" {{ ($form->form_type ?? ($existingForm['form_type'] ?? '')) === 'site_visit' ? 'selected' : '' }}>Site Visit</option>
+                                <option value="custom" {{ old('form_type', $form->form_type ?? ($existingForm['form_type'] ?? '')) === 'custom' ? 'selected' : '' }}>Custom</option>
+                                <option value="lead" {{ old('form_type', $form->form_type ?? ($existingForm['form_type'] ?? '')) === 'lead' ? 'selected' : '' }}>Lead</option>
+                                <option value="prospect" {{ old('form_type', $form->form_type ?? ($existingForm['form_type'] ?? '')) === 'prospect' ? 'selected' : '' }}>Prospect</option>
+                                <option value="meeting" {{ old('form_type', $form->form_type ?? ($existingForm['form_type'] ?? '')) === 'meeting' ? 'selected' : '' }}>Meeting</option>
+                                <option value="site_visit" {{ old('form_type', $form->form_type ?? ($existingForm['form_type'] ?? '')) === 'site_visit' ? 'selected' : '' }}>Site Visit</option>
                             </select>
                         </div>
                     </div>
@@ -559,7 +559,7 @@
         };
 
         return `
-            <div class="form-field" data-field-id="${field.id}" data-field-type="${field.type}">
+            <div class="form-field" data-field-id="${field.id}" data-field-type="${field.type}" data-options="">
                 <div class="field-header">
                     <input type="text" class="field-label-input" value="${field.label}" placeholder="Field Label" data-field-property="label">
                     <div class="field-actions">
@@ -580,6 +580,48 @@
         }
     }
 
+    function getFieldOptionsFromPreview(fieldElement) {
+        const previewSelect = fieldElement.querySelector('.field-preview select');
+        if (previewSelect) {
+            return Array.from(previewSelect.querySelectorAll('option'))
+                .map(option => option.textContent.trim())
+                .filter(option => option && option !== '-- Select --');
+        }
+
+        return Array.from(fieldElement.querySelectorAll('.field-preview label'))
+            .map(label => label.textContent.trim())
+            .filter(Boolean);
+    }
+
+    function getStoredFieldOptions(fieldElement) {
+        if (!fieldElement) return [];
+
+        try {
+            if (fieldElement.dataset.options) {
+                const parsedOptions = JSON.parse(fieldElement.dataset.options);
+                if (Array.isArray(parsedOptions) && parsedOptions.length > 0) {
+                    return parsedOptions;
+                }
+            }
+        } catch (e) {
+            // Fall back to preview-derived options below
+        }
+
+        return getFieldOptionsFromPreview(fieldElement);
+    }
+
+    function setStoredFieldOptions(fieldElement, options) {
+        if (!fieldElement) return;
+
+        const normalizedOptions = Array.isArray(options)
+            ? options.map(option => option.trim()).filter(Boolean)
+            : [];
+
+        fieldElement.dataset.options = normalizedOptions.length > 0
+            ? JSON.stringify(normalizedOptions)
+            : '';
+    }
+
     function editField(btn) {
         const fieldElement = btn.closest('.form-field');
         currentEditingField = fieldElement;
@@ -594,7 +636,7 @@
         const existingKey = fieldElement.dataset.fieldKey || '';
         const existingPlaceholder = fieldElement.querySelector('.field-preview input, .field-preview textarea, .field-preview select')?.placeholder || '';
         const existingRequired = fieldElement.dataset.required === 'true';
-        const existingOptions = fieldElement.dataset.options ? JSON.parse(fieldElement.dataset.options).join('\n') : '';
+        const existingOptions = getStoredFieldOptions(fieldElement).join('\n');
         
         const settingsHTML = `
             <div class="form-group" style="margin-bottom: 16px;">
@@ -671,7 +713,7 @@
             if (optionsTextarea) {
                 optionsTextarea.required = false;
                 // Clear options data when switching away from select/radio/checkbox
-                currentEditingField.dataset.options = '';
+                setStoredFieldOptions(currentEditingField, []);
             }
         }
         
@@ -696,14 +738,7 @@
             }
         }
         
-        let existingOptions = [];
-        try {
-            if (fieldElement.dataset.options) {
-                existingOptions = JSON.parse(fieldElement.dataset.options);
-            }
-        } catch(e) {
-            existingOptions = [];
-        }
+        const existingOptions = getStoredFieldOptions(fieldElement);
         
         const fieldTypes = {
             text: `<input type="text" placeholder="${placeholder || 'Text input'}" disabled>`,
@@ -763,18 +798,14 @@
             const optionsText = document.getElementById('fieldOptions')?.value || '';
             if (optionsText) {
                 const options = optionsText.split('\n').filter(opt => opt.trim());
-                if (options.length > 0) {
-                    currentEditingField.dataset.options = JSON.stringify(options);
-                } else {
-                    currentEditingField.dataset.options = '';
-                }
+                setStoredFieldOptions(currentEditingField, options);
             } else {
                 // Clear options if empty
-                currentEditingField.dataset.options = '';
+                setStoredFieldOptions(currentEditingField, []);
             }
         } else {
             // Clear options if changing from select/radio/checkbox to other type
-            currentEditingField.dataset.options = '';
+            setStoredFieldOptions(currentEditingField, []);
         }
         
         // Update preview with new type and placeholder
@@ -813,6 +844,11 @@
 
     // Submit Form
     function submitForm() {
+        const fieldSettingsModal = document.getElementById('fieldSettingsModal');
+        if (fieldSettingsModal && fieldSettingsModal.classList.contains('active') && currentEditingField) {
+            saveFieldSettings();
+        }
+
         const form = document.getElementById('formBuilderForm');
         
         // Ensure form action is correct (for edit vs create)
@@ -879,14 +915,10 @@
             };
             
             // Add options if available
-            if (fieldElement.dataset.options) {
-                try {
-                    const options = JSON.parse(fieldElement.dataset.options);
-                    if (Array.isArray(options) && options.length > 0) {
-                        field.options = options;
-                    }
-                } catch(e) {
-                    field.options = [];
+            if (['select', 'radio', 'checkbox'].includes(fieldType)) {
+                const options = getStoredFieldOptions(fieldElement);
+                if (options.length > 0) {
+                    field.options = options;
                 }
             }
             

@@ -559,7 +559,7 @@ class GoogleSheetsService
                     $lead = Lead::create([
                         'name' => $name,
                         'phone' => $phone,
-                        'source' => 'google_sheets',
+                        'source' => Lead::normalizeSource('google_sheets'),
                         'status' => 'new',
                         'created_by' => $config->created_by,
                     ]);
@@ -808,4 +808,3 @@ class GoogleSheetsService
         return false;
     }
 }
-

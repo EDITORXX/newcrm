@@ -230,6 +230,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/profile', [\App\Http\Controllers\Api\SalesManagerController::class, 'updateProfile']);
         Route::post('/profile/picture', [\App\Http\Controllers\Api\SalesManagerController::class, 'uploadProfilePicture']);
         Route::post('/profile/password', [\App\Http\Controllers\Api\SalesManagerController::class, 'changePassword']);
+        Route::get('/dashboard-settings', [\App\Http\Controllers\Api\SalesManagerController::class, 'getDashboardSettings']);
+        Route::post('/dashboard-settings', [\App\Http\Controllers\Api\SalesManagerController::class, 'updateDashboardSettings']);
         
         // Team management
         Route::get('/team/member/{memberId}', [\App\Http\Controllers\Api\SalesManagerController::class, 'getTeamMemberDetails']);
@@ -286,8 +288,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/site-visits', [\App\Http\Controllers\Api\SiteVisitController::class, 'store']);
         Route::post('/site-visits/{siteVisit}/complete', [\App\Http\Controllers\Api\SiteVisitController::class, 'complete']);
         Route::post('/site-visits/{siteVisit}/reschedule', [\App\Http\Controllers\Api\SiteVisitController::class, 'reschedule']);
+        Route::post('/site-visits/{siteVisit}/request-close', [\App\Http\Controllers\Api\SiteVisitController::class, 'requestClose']);
         Route::post('/site-visits/{siteVisit}/convert-to-closer', [\App\Http\Controllers\Api\SiteVisitController::class, 'convertToCloser']);
         Route::post('/site-visits/{siteVisit}/request-closer', [\App\Http\Controllers\Api\SiteVisitController::class, 'requestCloser']);
+        Route::post('/site-visits/{siteVisit}/submit-kyc', [\App\Http\Controllers\Api\SiteVisitController::class, 'submitKyc']);
         Route::post('/site-visits/{siteVisit}/mark-dead', [\App\Http\Controllers\Api\SiteVisitController::class, 'markDead']);
         
         // Incentives (for Managers/Sales Executives - closer incentives)
@@ -510,11 +514,9 @@ Route::middleware('auth:sanctum')->group(function () {
                     ->get()
                     ->map(function($meeting) use ($user) {
                     $creator = $meeting->creator;
-                    $canVerify = false;
-                    if (!$user->isAdmin()) {
-                        if ($creator) {
-                            $canVerify = $creator->manager_id === null ? $user->isCrm() : $user->isSeniorOf($creator);
-                        }
+                    $canVerify = $user->isAdmin() || $user->isCrm();
+                    if (!$canVerify && $creator) {
+                        $canVerify = $user->isSeniorOf($creator);
                     }
                     return [
                         'id' => $meeting->id,
@@ -573,11 +575,9 @@ Route::middleware('auth:sanctum')->group(function () {
                     ->get()
                     ->map(function($visit) use ($user) {
                     $creator = $visit->creator;
-                    $canVerify = false;
-                    if (!$user->isAdmin()) {
-                        if ($creator) {
-                            $canVerify = $creator->manager_id === null ? $user->isCrm() : $user->isSeniorOf($creator);
-                        }
+                    $canVerify = $user->isAdmin() || $user->isCrm();
+                    if (!$canVerify && $creator) {
+                        $canVerify = $user->isSeniorOf($creator);
                     }
                     return [
                         'id' => $visit->id,
@@ -671,8 +671,8 @@ Route::middleware('auth:sanctum')->group(function () {
                             'lead' => $visit->lead ? ['id' => $visit->lead->id, 'name' => $visit->lead->name, 'phone' => $visit->lead->phone] : null,
                             'creator' => $visit->creator ? ['id' => $visit->creator->id, 'name' => $visit->creator->name] : null,
                             'assignedTo' => $visit->assignedTo ? ['id' => $visit->assignedTo->id, 'name' => $visit->assignedTo->name] : null,
-                            'can_verify' => $user->isSalesHead(),
-                            'can_verify_closing' => $user->isCrm(),
+                            'can_verify' => $user->isSalesHead() || $user->isCrm() || $user->isAdmin(),
+                            'can_verify_closing' => $user->isCrm() || $user->isAdmin(),
                         ];
                     });
                 
@@ -874,6 +874,64 @@ Route::middleware('auth:sanctum')->group(function () {
                     'site_visits' => [],
                     'closers' => [],
                     'total_count' => 0,
+                ], 500);
+            }
+        });
+
+        Route::get('/verifications/pending-incentives', function (Request $request) {
+            try {
+                $user = $request->user();
+                if (!$user) {
+                    return response()->json(['error' => 'Unauthorized'], 401);
+                }
+
+                $incentives = \App\Models\Incentive::where('status', 'pending_finance_manager')
+                    ->with([
+                        'siteVisit.lead:id,name,phone',
+                        'user:id,name',
+                    ])
+                    ->orderBy('created_at', 'desc')
+                    ->get()
+                    ->map(function ($incentive) use ($user) {
+                        return [
+                            'id' => $incentive->id,
+                            'type' => $incentive->type,
+                            'amount' => $incentive->amount,
+                            'status' => $incentive->status,
+                            'created_at' => optional($incentive->created_at)->toIso8601String(),
+                            'site_visit_id' => $incentive->site_visit_id,
+                            'user' => $incentive->user ? [
+                                'id' => $incentive->user->id,
+                                'name' => $incentive->user->name,
+                            ] : null,
+                            'site_visit' => $incentive->siteVisit ? [
+                                'id' => $incentive->siteVisit->id,
+                                'customer_name' => $incentive->siteVisit->customer_name,
+                                'phone' => $incentive->siteVisit->phone,
+                                'closing_verification_status' => $incentive->siteVisit->closing_verification_status,
+                                'lead' => $incentive->siteVisit->lead ? [
+                                    'id' => $incentive->siteVisit->lead->id,
+                                    'name' => $incentive->siteVisit->lead->name,
+                                    'phone' => $incentive->siteVisit->lead->phone,
+                                ] : null,
+                            ] : null,
+                            'can_verify' => $user->isAdmin() || $user->isCrm(),
+                        ];
+                    });
+
+                return response()->json([
+                    'data' => array_values($incentives->toArray()),
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Error loading pending incentives: ' . $e->getMessage(), [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+
+                return response()->json([
+                    'error' => 'Failed to load pending incentives',
+                    'message' => $e->getMessage(),
+                    'data' => [],
                 ], 500);
             }
         });

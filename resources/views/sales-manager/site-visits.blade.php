@@ -17,7 +17,7 @@
     }
     .visit-card {
         background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-        padding: 18px;
+        padding: 16px;
         border-radius: 20px;
         box-shadow: 0 18px 45px rgba(23, 97, 168, 0.08);
         border: 1px solid rgba(23, 97, 168, 0.10);
@@ -43,7 +43,7 @@
     .visit-header {
         display: flex;
         flex-direction: column;
-        margin-bottom: 14px;
+        margin-bottom: 10px;
     }
     .visit-topline {
         display: flex;
@@ -55,12 +55,59 @@
         margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
     .visit-actions .btn {
         width: 100%;
         margin-left: 0;
         margin-top: 0;
+    }
+    .card-action-menu {
+        position: relative;
+        width: 100%;
+    }
+    .card-action-trigger {
+        width: 100%;
+    }
+    .card-action-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid #d7e7f7;
+        box-shadow: 0 20px 40px rgba(23, 97, 168, 0.14);
+        min-width: 100%;
+    }
+    .card-action-dropdown.show {
+        display: flex;
+    }
+    .card-action-item {
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 0.86rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        cursor: pointer;
+    }
+    .card-action-item.btn-success,
+    .card-action-item.btn-danger,
+    .card-action-item.btn-primary,
+    .card-action-item.btn-warning {
+        width: 100%;
+        margin: 0;
     }
     .visit-info h3 {
         font-size: 1.2rem;
@@ -81,9 +128,9 @@
         background: #f7fbfe;
         border: 1px solid #deebf8;
         border-radius: 12px;
-        padding: 10px 12px;
-        min-height: 64px;
-        margin-bottom: 12px;
+        padding: 9px 11px;
+        min-height: 0;
+        margin-bottom: 10px;
     }
     .visit-remark strong {
         display: block;
@@ -112,6 +159,7 @@
         flex-wrap: wrap;
         gap: 8px;
         margin-top: 0;
+        margin-bottom: 4px;
     }
     .badge {
         display: inline-flex;
@@ -150,6 +198,18 @@
         background: #10b981;
         color: white;
     }
+    .badge-awaiting {
+        background: #fff7ed;
+        color: #c2410c;
+    }
+    .badge-closing-pending {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+    .badge-closing-rejected {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
     .btn {
         padding: 10px 14px;
         border: none;
@@ -187,16 +247,6 @@
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         color: white;
         box-shadow: 0 10px 22px rgba(245, 158, 11, 0.18);
-    }
-    .status-note {
-        text-align: center;
-        padding: 10px;
-        border-radius: 12px;
-        background: #eff6ff;
-        color: #1d4ed8;
-        font-size: 0.82rem;
-        font-weight: 600;
-        border: 1px solid #bfdbfe;
     }
     .view-toggle-group {
         display: inline-flex;
@@ -250,15 +300,16 @@
     }
     #visitsContainer.list-view .visit-card {
         flex-direction: row;
-        align-items: center;
-        gap: 18px;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 16px;
     }
     #visitsContainer.list-view .visit-header {
         flex: 1 1 auto;
         margin-bottom: 0;
     }
     #visitsContainer.list-view .visit-actions {
-        flex: 0 0 230px;
+        flex: 0 0 170px;
         margin-top: 0;
     }
     .empty-state {
@@ -336,8 +387,8 @@
             margin: 0 auto;
         }
         .visit-card {
-            padding: 15px;
-            border-radius: 18px;
+            padding: 14px;
+            border-radius: 16px;
         }
         .visit-info h3 {
             font-size: 1.1rem;
@@ -349,6 +400,10 @@
         }
         .visit-actions {
             gap: 8px;
+        }
+        .card-action-dropdown {
+            position: static;
+            margin-top: 8px;
         }
         .view-toggle-group {
             width: auto;
@@ -364,6 +419,9 @@
         }
         #visitsContainer.list-view .visit-actions {
             flex: 1 1 auto;
+        }
+        .visit-remark {
+            margin-bottom: 8px;
         }
         .filters {
             flex-direction: row;
@@ -415,19 +473,6 @@
 <div class="mb-6">
     <div class="asm-page-header">
         <h2 class="asm-page-title">Site Visits</h2>
-        <div class="asm-page-toolbar">
-            <div class="view-toggle-group" aria-label="Visit View Toggle">
-                <button type="button" class="view-toggle-btn active" data-view="card" onclick="setVisitsView('card')">
-                    <i class="fas fa-grip"></i>Cards
-                </button>
-                <button type="button" class="view-toggle-btn" data-view="list" onclick="setVisitsView('list')">
-                    <i class="fas fa-list"></i>List
-                </button>
-            </div>
-            <a href="{{ route('sales-manager.site-visits.create') }}" class="btn btn-primary desktop-text">
-                <i class="fas fa-plus mr-2"></i>Schedule Site Visit
-            </a>
-        </div>
     </div>
 
     <div class="filters">
@@ -451,11 +496,6 @@
             <option value="this_year">This Year</option>
             <option value="custom">Custom Date</option>
         </select>
-        <a href="{{ route('sales-manager.site-visits.create') }}" class="filter-btn btn btn-primary" style="text-align: center; padding: 10px 16px; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            <i class="fas fa-map-marker-alt"></i>
-            <span class="desktop-text">Schedule Site Visit</span>
-            <span class="mobile-text">Visit</span>
-        </a>
         <select id="closerFilter" class="filter-select filter-closer" onchange="loadSiteVisits()" style="min-width: 120px;">
             <option value="">Closer</option>
             <option value="pending">Pending</option>
@@ -480,6 +520,35 @@
 @push('scripts')
 <script>
     const API_BASE_URL = '{{ url("/api/sales-manager") }}';
+    const ASM_SECTION_VIEW_PREFERENCES = @json($sectionViewPreferences ?? []);
+    const ASM_SECTION_VIEW_SAVE_URL = @json(route('sales-manager.settings.update'));
+
+    function getAsmPreferredView(sectionKey, fallbackView) {
+        const preferred = ASM_SECTION_VIEW_PREFERENCES?.[sectionKey];
+        return preferred === 'list' || preferred === 'card' ? preferred : fallbackView;
+    }
+
+    async function persistAsmSectionViewPreference(sectionKey, view) {
+        try {
+            ASM_SECTION_VIEW_PREFERENCES[sectionKey] = view;
+            await fetch(ASM_SECTION_VIEW_SAVE_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    section_view_preferences: {
+                        [sectionKey]: view
+                    }
+                })
+            });
+        } catch (error) {
+            console.error('Failed to persist section view preference:', error);
+        }
+    }
     
     function getToken() {
         return localStorage.getItem('sales_manager_token') || '{{ session("api_token") }}';
@@ -576,7 +645,7 @@
         return text.length > maxLength ? text.slice(0, maxLength).trim() + '...' : text;
     }
 
-    function setVisitsView(view) {
+    function setVisitsView(view, shouldPersist = true) {
         const container = document.getElementById('visitsContainer');
         if (!container) return;
         container.classList.toggle('list-view', view === 'list');
@@ -586,6 +655,9 @@
         try {
             localStorage.setItem('asm_visits_view', view);
         } catch (e) {}
+        if (shouldPersist) {
+            persistAsmSectionViewPreference('site_visits', view);
+        }
     }
 
     async function loadSiteVisits() {
@@ -656,6 +728,56 @@
                 const propertyType = visit.property_type || (visit.lead && visit.lead.property_type) || 'N/A';
                 const project = visit.property_name || visit.project || (visit.lead && visit.lead.preferred_projects) || 'N/A';
                 const remark = truncateText(getVisitRemark(visit), 120);
+                const isScheduled = visit.status === 'scheduled';
+                const isCompleted = visit.status === 'completed';
+                const isPendingVerification = isCompleted && visit.verification_status === 'pending';
+                const isVerified = visit.verification_status === 'verified';
+                const hasCloserState = !!visit.closer_status;
+                const hasClosingState = !!visit.closing_verification_status;
+
+                const visitActionItems = [];
+
+                if (isScheduled) {
+                    visitActionItems.push(`
+                        <button class="card-action-item btn btn-success" onclick="closeAllSiteVisitActionMenus(); showCompleteSiteVisitModal(${visit.id});">
+                            <i class="fas fa-check"></i>Complete
+                        </button>
+                    `);
+                    visitActionItems.push(`
+                        <button class="card-action-item btn btn-danger" onclick="closeAllSiteVisitActionMenus(); showMarkDeadModal('site-visit', ${visit.id});">
+                            <i class="fas fa-skull"></i>Mark as Dead
+                        </button>
+                    `);
+                    visitActionItems.push(`
+                        <button class="card-action-item btn btn-warning" onclick="closeAllSiteVisitActionMenus(); showRescheduleSiteVisitModal(${visit.id});">
+                            <i class="fas fa-calendar-plus"></i>Reschedule
+                        </button>
+                    `);
+                }
+
+                if (isVerified && !hasCloserState && !hasClosingState) {
+                    visitActionItems.push(`
+                        <button class="card-action-item btn btn-primary" onclick="closeAllSiteVisitActionMenus(); requestCloseFromVisit(${visit.id});">
+                            <i class="fas fa-circle-check"></i>Mark as Closed
+                        </button>
+                    `);
+                }
+
+                if (isCompleted) {
+                    visitActionItems.push(`
+                        <button class="card-action-item btn btn-danger" onclick="closeAllSiteVisitActionMenus(); showMarkDeadModal('site-visit', ${visit.id});">
+                            <i class="fas fa-skull"></i>Mark as Dead
+                        </button>
+                    `);
+                }
+
+                if (visit.lead_id) {
+                    visitActionItems.push(`
+                        <a href="/leads/${visit.lead_id}" target="_blank" class="card-action-item btn btn-primary" onclick="closeAllSiteVisitActionMenus()">
+                            <i class="fas fa-eye"></i>View Detail
+                        </a>
+                    `);
+                }
 
                 return `
                     <div class="visit-card ${statusClass}">
@@ -680,56 +802,33 @@
                                     <span class="badge ${statusBadge}">${visit.status}</span>
                                     ${visit.verification_status ? `<span class="badge ${verificationBadge}">${visit.verification_status}</span>` : ''}
                                     ${visit.closer_status ? `<span class="badge ${closerBadge}">Closer: ${visit.closer_status}</span>` : ''}
+                                    ${isPendingVerification ? `<span class="badge badge-awaiting">Awaiting Verification</span>` : ''}
+                                    ${visit.closing_verification_status === 'pending' ? `<span class="badge badge-closing-pending">Closing Awaiting</span>` : ''}
+                                    ${visit.closing_verification_status === 'verified' ? `<span class="badge badge-closer-verified">Closing Verified</span>` : ''}
+                                    ${visit.closing_verification_status === 'rejected' ? `<span class="badge badge-closing-rejected">Closing Rejected</span>` : ''}
                                 </div>
                             </div>
                         </div>
                         <div class="visit-actions">
-                            ${visit.status === 'scheduled' ? `
-                                <button class="btn btn-success" onclick="showCompleteSiteVisitModal(${visit.id})">
-                                    <i class="fas fa-check"></i>Complete
-                                </button>
-                                <button class="btn btn-danger" onclick="showMarkDeadModal('site-visit', ${visit.id})">
-                                    <i class="fas fa-skull"></i>Mark as Dead
-                                </button>
-                            ` : ''}
-                            ${visit.status === 'completed' && visit.verification_status === 'pending' ? `
-                                <div class="status-note">
-                                    Awaiting Verification
+                            ${visitActionItems.length ? `
+                                <div class="card-action-menu" data-site-visit-action-menu="${visit.id}">
+                                    <button class="btn btn-primary card-action-trigger" onclick="toggleSiteVisitActionMenu(${visit.id}, event)">
+                                        <i class="fas fa-bolt"></i>Action
+                                    </button>
+                                    <div class="card-action-dropdown" id="siteVisitActionDropdown${visit.id}">
+                                        ${visitActionItems.join('')}
+                                    </div>
                                 </div>
                             ` : ''}
-                            ${visit.verification_status === 'verified' && !visit.closer_status && !visit.closing_verification_status ? `
-                                <button class="btn btn-primary" onclick="showRequestCloserModal(${visit.id})">
-                                    <i class="fas fa-handshake"></i>Request Closing
-                                </button>
-                            ` : ''}
-                            ${visit.closing_verification_status === 'pending' ? `
-                                <div class="status-note">
-                                    Closing Awaiting CRM Verification
-                                </div>
-                            ` : ''}
+                            
                             ${visit.closing_verification_status === 'verified' && visit.closer_status === 'verified' ? `
                                 <div style="text-align: center; padding: 8px; margin-bottom: 8px;">
                                     <span class="badge badge-closer-verified">Closing Verified ✓</span>
                                 </div>
-                                <button class="btn btn-success" onclick="showRequestIncentiveModal(${visit.id})" style="width: 100%;">
-                                    <i class="fas fa-money-bill-wave"></i>Request Incentive
-                                </button>
+                                
                             ` : ''}
-                            ${visit.closing_verification_status === 'rejected' ? `
-                                <div style="text-align: center; padding: 8px;">
-                                    <span class="badge" style="background: #ef4444; color: white;">Closing Rejected</span>
-                                </div>
-                            ` : ''}
-                            ${visit.status === 'completed' ? `
-                                <button class="btn btn-danger" onclick="showMarkDeadModal('site-visit', ${visit.id})">
-                                    <i class="fas fa-skull"></i>Mark as Dead
-                                </button>
-                            ` : ''}
-                            ${visit.lead_id ? `
-                                <a href="/leads/${visit.lead_id}" target="_blank" class="btn btn-primary" style="width: 100%; margin-top: 8px; text-align: center; text-decoration: none;">
-                                    <i class="fas fa-eye"></i>View Detail
-                                </a>
-                            ` : ''}
+                            
+                            
                         </div>
                     </div>
                 `;
@@ -743,6 +842,35 @@
     }
 
     let currentSiteVisitId = null;
+
+    function closeAllSiteVisitActionMenus() {
+        document.querySelectorAll('.card-action-dropdown.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+
+    function toggleSiteVisitActionMenu(id, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const targetMenu = document.getElementById(`siteVisitActionDropdown${id}`);
+        if (!targetMenu) return;
+
+        const shouldOpen = !targetMenu.classList.contains('show');
+        closeAllSiteVisitActionMenus();
+
+        if (shouldOpen) {
+            targetMenu.classList.add('show');
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('[data-site-visit-action-menu]')) {
+            closeAllSiteVisitActionMenus();
+        }
+    });
 
     async function showCompleteSiteVisitModal(id) {
         currentSiteVisitId = id;
@@ -1066,6 +1194,31 @@
             }
         } catch (error) {
             console.error('Error:', error);
+            alert('Network error. Please try again.');
+        }
+    }
+
+    async function requestCloseFromVisit(id) {
+        try {
+            const token = getToken();
+            const response = await fetch(`${API_BASE_URL}/site-visits/${id}/request-close`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+            });
+
+            const result = await response.json();
+            if (response.ok && result.success) {
+                showSiteVisitSuccessModal(result.message || 'Close request submitted successfully.');
+                loadSiteVisits();
+                return;
+            }
+
+            alert(result.message || 'Failed to mark as closed');
+        } catch (error) {
+            console.error('Error requesting close:', error);
             alert('Network error. Please try again.');
         }
     }
@@ -1408,10 +1561,25 @@
 
     // Initialize
     (function() {
+        const pageParams = new URLSearchParams(window.location.search);
+        const requestedDateFilter = pageParams.get('date_filter');
+        const dateFilterEl = document.getElementById('dateFilter');
+        const dateFromEl = document.getElementById('dateFrom');
+        const dateToEl = document.getElementById('dateTo');
         const savedView = (() => {
             try { return localStorage.getItem('asm_visits_view') || 'card'; } catch (e) { return 'card'; }
         })();
-        setVisitsView(savedView);
+        setVisitsView(getAsmPreferredView('site_visits', savedView), false);
+
+        if (dateFilterEl && requestedDateFilter && ['today', 'this_week', 'this_month', 'this_year', 'custom'].includes(requestedDateFilter)) {
+            dateFilterEl.value = requestedDateFilter;
+            if (requestedDateFilter === 'custom') {
+                if (dateFromEl && pageParams.get('date_from')) dateFromEl.value = pageParams.get('date_from');
+                if (dateToEl && pageParams.get('date_to')) dateToEl.value = pageParams.get('date_to');
+            }
+            toggleCustomDate();
+        }
+
         loadSiteVisits();
     })();
 </script>
@@ -1445,32 +1613,41 @@
 
 <!-- Complete Site Visit Modal -->
 <div id="completeSiteVisitModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 20px;">Complete Site Visit</h3>
-        <p style="color: #ef4444; margin-bottom: 16px;"><strong>Proof photos are required to complete the site visit.</strong></p>
+    <div class="modal-content complete-site-visit-modal-card" style="max-width: 760px; padding: 0; overflow: hidden;">
+        <div class="complete-site-visit-modal-head">
+            <div>
+                <h3>Complete Site Visit</h3>
+                <p>Upload proof, capture projects, and record visit outcome before submitting.</p>
+            </div>
+            <span class="complete-site-visit-badge">Required</span>
+        </div>
+        <div class="complete-site-visit-modal-body">
+            <div class="complete-site-visit-alert">
+                <i class="fas fa-camera"></i>
+                <div>
+                    <strong>Proof photos are mandatory.</strong>
+                    <span>Add at least one clear site visit photo. Max 5MB per image.</span>
+                </div>
+            </div>
         
-        <div class="form-group">
-            <label>Proof Photos <span style="color: #ef4444;">*</span></label>
+        <div class="complete-site-visit-upload">
+            <label for="siteVisitProofPhotosInput">Proof Photos <span class="req">*</span></label>
             <input type="file" id="siteVisitProofPhotosInput" multiple accept="image/*" onchange="handleSiteVisitProofPhotosChange(event)" required>
-            <div id="siteVisitProofPhotosPreview" style="display: flex; flex-wrap: wrap; margin-top: 10px;"></div>
-            <small style="color: #6b7280;">Upload at least one photo as proof. Max 5MB per image.</small>
+            <div id="siteVisitProofPhotosPreview" class="complete-site-visit-preview"></div>
         </div>
 
-        <div class="form-group">
-            <label>Visited Project</label>
-            <div id="completeProjectTagsContainer" class="complete-project-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px; min-height: 42px; background: white; margin-bottom: 8px;">
-                <!-- Tags will be dynamically added here -->
-            </div>
-            <input type="text" id="completeProjectInput" placeholder="Type project name and press Enter" 
-                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 4px;">
-            <input type="hidden" id="completeProjectHidden" name="visited_projects">
+        <div class="complete-site-visit-grid">
+            <div class="form-group complete-site-visit-field complete-site-visit-field-wide">
+                <label for="completeProjectInput">Visited Project</label>
+                <div id="completeProjectTagsContainer" class="complete-site-visit-tags"></div>
+                <input type="text" id="completeProjectInput" placeholder="Type project name and press Enter">
+                <input type="hidden" id="completeProjectHidden" name="visited_projects">
             <small style="color: #6b7280;">Type project name and press Enter to add. Click × to remove.</small>
         </div>
 
-        <div class="form-group">
-            <label>Tentative Closing Time</label>
-            <select id="completeTentativeClosingTime" name="tentative_closing_time" 
-                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+        <div class="form-group complete-site-visit-field">
+            <label for="completeTentativeClosingTime">Tentative Closing Time</label>
+            <select id="completeTentativeClosingTime" name="tentative_closing_time">
                 <option value="">Select an option</option>
                 <option value="within_3_days">Within 3 Days</option>
                 <option value="tomorrow">Tomorrow</option>
@@ -1480,16 +1657,14 @@
             </select>
         </div>
 
-        <div class="form-group">
-            <label>Feedback</label>
-            <textarea id="siteVisitFeedback" rows="3" placeholder="Site visit feedback..." 
-                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;"></textarea>
+        <div class="form-group complete-site-visit-field complete-site-visit-field-wide">
+            <label for="siteVisitFeedback">Feedback</label>
+            <textarea id="siteVisitFeedback" rows="4" placeholder="Summarize site visit response, interest level, and objections..."></textarea>
         </div>
 
-        <div class="form-group">
-            <label>Rating</label>
-            <select id="siteVisitRating" 
-                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+        <div class="form-group complete-site-visit-field">
+            <label for="siteVisitRating">Rating</label>
+            <select id="siteVisitRating">
                 <option value="">Select rating</option>
                 <option value="1">1 - Poor</option>
                 <option value="2">2 - Fair</option>
@@ -1499,15 +1674,16 @@
             </select>
         </div>
 
-        <div class="form-group">
-            <label>Notes</label>
-            <textarea id="siteVisitNotes" rows="3" placeholder="Additional notes..." 
-                style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;"></textarea>
+        <div class="form-group complete-site-visit-field complete-site-visit-field-wide">
+            <label for="siteVisitNotes">Notes</label>
+            <textarea id="siteVisitNotes" rows="4" placeholder="Add internal notes, next steps, or commercial details..."></textarea>
         </div>
 
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        </div>
+        <div class="complete-site-visit-actions">
             <button type="button" class="btn btn-secondary" onclick="closeCompleteSiteVisitModal()">Cancel</button>
             <button type="button" class="btn btn-success" onclick="submitCompleteSiteVisit()">Submit</button>
+        </div>
         </div>
     </div>
 </div>
@@ -1632,6 +1808,8 @@
 }
 .modal.show {
     display: flex;
+    overflow-y: auto;
+    padding: 18px 0;
 }
 .modal-content {
     background: white;
@@ -1650,6 +1828,196 @@
     margin-bottom: 8px;
     font-weight: 500;
     color: #333;
+}
+.complete-site-visit-modal-card {
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 92vw);
+    max-height: min(88vh, 920px);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    border: 1px solid #dce9e2;
+    box-shadow: 0 24px 48px rgba(23, 97, 168, 0.16);
+}
+.complete-site-visit-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 28px 18px;
+    background: linear-gradient(135deg, #f6fbff 0%, #edf5ff 100%);
+    border-bottom: 1px solid #d7e5f6;
+}
+.complete-site-visit-modal-head h3 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    color: #0f3d67;
+}
+.complete-site-visit-modal-head p {
+    margin: 8px 0 0;
+    color: #62778b;
+    font-size: 14px;
+}
+.complete-site-visit-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #e7f0ff;
+    color: #1761A8;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.complete-site-visit-modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 24px 28px 12px;
+}
+.complete-site-visit-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border: 1px solid #ffd4d4;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #fff5f5 0%, #fffafa 100%);
+}
+.complete-site-visit-alert i {
+    font-size: 20px;
+    color: #dc2626;
+    margin-top: 2px;
+}
+.complete-site-visit-alert strong,
+.complete-site-visit-alert span {
+    display: block;
+}
+.complete-site-visit-alert strong {
+    color: #b42318;
+    margin-bottom: 3px;
+}
+.complete-site-visit-alert span {
+    color: #7a5c5c;
+    font-size: 13px;
+}
+.complete-site-visit-upload {
+    padding: 18px;
+    margin-bottom: 20px;
+    border: 1px solid #dce9e2;
+    border-radius: 18px;
+    background: #f9fcff;
+}
+.complete-site-visit-upload label,
+.complete-site-visit-field label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #123f68;
+}
+.complete-site-visit-upload input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed #8eb5dc;
+    border-radius: 14px;
+    background: #fff;
+}
+.complete-site-visit-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+.complete-site-visit-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.52fr);
+    gap: 18px;
+}
+.complete-site-visit-field {
+    margin-bottom: 0;
+}
+.complete-site-visit-field-wide {
+    grid-column: 1 / -1;
+}
+.complete-site-visit-field input[type="text"],
+.complete-site-visit-field textarea,
+.complete-site-visit-field select {
+    width: 100%;
+    border: 1px solid #d4dfeb;
+    border-radius: 14px;
+    padding: 14px 15px;
+    color: #183c2c;
+    background: #fff;
+}
+.complete-site-visit-field textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+.complete-site-visit-field small {
+    display: block;
+    margin-top: 8px;
+    color: #6b7280;
+}
+.complete-site-visit-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    min-height: 52px;
+    margin-bottom: 8px;
+    border: 1px solid #d4dfeb;
+    border-radius: 14px;
+    background: #fff;
+}
+.complete-site-visit-upload input[type="file"]:focus,
+.complete-site-visit-field input[type="text"]:focus,
+.complete-site-visit-field textarea:focus,
+.complete-site-visit-field select:focus {
+    outline: none;
+    border-color: #1761A8;
+    box-shadow: 0 0 0 3px rgba(23, 97, 168, 0.12);
+}
+.complete-site-visit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 18px 28px 24px;
+    border-top: 1px solid #e4edf6;
+    background: #ffffff;
+}
+.complete-site-visit-actions .btn {
+    min-width: 120px;
+    min-height: 46px;
+    border-radius: 12px;
+    font-weight: 700;
+}
+@media (max-width: 768px) {
+    .complete-site-visit-modal-card {
+        width: min(760px, 95vw);
+        max-height: 90vh;
+    }
+    .complete-site-visit-modal-head,
+    .complete-site-visit-modal-body,
+    .complete-site-visit-actions {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+    .complete-site-visit-modal-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .complete-site-visit-grid {
+        grid-template-columns: 1fr;
+    }
+    .complete-site-visit-actions {
+        flex-direction: column-reverse;
+    }
+    .complete-site-visit-actions .btn {
+        width: 100%;
+    }
 }
 .btn-secondary {
     background: #6b7280;

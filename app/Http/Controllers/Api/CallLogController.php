@@ -244,13 +244,15 @@ class CallLogController extends Controller
     {
         $user = $request->user();
         $dateRange = $request->get('date_range', 'today');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
 
         if ($user->isSalesExecutive() || $user->isAssistantSalesManager()) {
-            $stats = $this->callLogService->getCallStatistics($user->id, $dateRange);
+            $stats = $this->callLogService->getCallStatistics($user->id, $dateRange, $startDate, $endDate);
         } elseif ($user->isSalesManager() || $user->isSalesHead()) {
-            $stats = $this->callLogService->getTeamCallStatistics($user->id, $dateRange);
+            $stats = $this->callLogService->getTeamCallStatistics($user->id, $dateRange, $startDate, $endDate);
         } else {
-            $stats = $this->callLogService->getSystemCallStatistics($dateRange);
+            $stats = $this->callLogService->getSystemCallStatistics($dateRange, $startDate, $endDate);
         }
 
         return response()->json([
@@ -266,12 +268,17 @@ class CallLogController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSalesManager() && !$user->isSalesHead() && !$user->isAdmin()) {
+        if (!$user->isSalesManager() && !$user->isSalesHead() && !$user->isAdmin() && !$user->isAssistantSalesManager()) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
         $dateRange = $request->get('date_range', 'today');
-        $stats = $this->callLogService->getTeamCallStatistics($user->id, $dateRange);
+        $stats = $this->callLogService->getTeamCallStatistics(
+            $user->id,
+            $dateRange,
+            $request->get('start_date'),
+            $request->get('end_date')
+        );
 
         return response()->json([
             'success' => true,
@@ -286,15 +293,17 @@ class CallLogController extends Controller
     {
         $user = $request->user();
         $dateRange = $request->get('date_range', 'today');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
 
         if ($user->isSalesExecutive() || $user->isAssistantSalesManager()) {
-            $stats = $this->callLogService->getCallStatistics($user->id, $dateRange);
+            $stats = $this->callLogService->getCallStatistics($user->id, $dateRange, $startDate, $endDate);
             // Add calls per hour
             $stats['calls_per_hour'] = $this->callLogService->getCallsPerHour($user->id, Carbon::today());
         } elseif ($user->isSalesManager() || $user->isSalesHead()) {
-            $stats = $this->callLogService->getTeamCallStatistics($user->id, $dateRange);
+            $stats = $this->callLogService->getTeamCallStatistics($user->id, $dateRange, $startDate, $endDate);
         } else {
-            $stats = $this->callLogService->getSystemCallStatistics($dateRange);
+            $stats = $this->callLogService->getSystemCallStatistics($dateRange, $startDate, $endDate);
         }
 
         // Get recent calls (last 5)

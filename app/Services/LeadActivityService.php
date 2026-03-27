@@ -117,7 +117,7 @@ class LeadActivityService
         }
 
         // 5. Site Visits
-        foreach ($lead->siteVisits()->with(['creator', 'assignedTo', 'verifiedBy'])->orderBy('created_at', 'desc')->get() as $siteVisit) {
+        foreach ($lead->siteVisits()->with(['creator', 'assignedTo', 'verifiedBy', 'closingVerifiedBy', 'rescheduledBy', 'incentives.user'])->orderBy('created_at', 'desc')->get() as $siteVisit) {
             // Site Visit Created event
             $projectsText = $siteVisit->project ? ". Projects: " . $siteVisit->project : '';
             $activities->push([
@@ -136,6 +136,25 @@ class LeadActivityService
                     'status' => $siteVisit->status,
                 ],
             ]);
+
+            if ($siteVisit->is_rescheduled && $siteVisit->rescheduled_at) {
+                $activities->push([
+                    'type' => 'site_visit_rescheduled',
+                    'title' => 'Site Visit Rescheduled',
+                    'description' => "Site visit rescheduled for {$lead->name}" .
+                        ($siteVisit->scheduled_at ? " to " . $siteVisit->scheduled_at->format('M d, Y h:i A') : '') .
+                        ($siteVisit->reschedule_reason ? ". Reason: {$siteVisit->reschedule_reason}" : ''),
+                    'user' => $siteVisit->rescheduledBy ?? $siteVisit->creator,
+                    'timestamp' => $siteVisit->rescheduled_at,
+                    'icon' => 'fa-calendar-day',
+                    'color' => '#f59e0b',
+                    'metadata' => [
+                        'scheduled_at' => $siteVisit->scheduled_at,
+                        'reschedule_reason' => $siteVisit->reschedule_reason,
+                        'reschedule_count' => $siteVisit->reschedule_count,
+                    ],
+                ]);
+            }
 
             // Site Visit Completed event (only if status is completed)
             if ($siteVisit->status === 'completed' && $siteVisit->completed_at) {
@@ -168,6 +187,68 @@ class LeadActivityService
                     'color' => '#10b981',
                     'metadata' => [
                         'verification_status' => $siteVisit->verification_status,
+                    ],
+                ]);
+            }
+
+            if ($siteVisit->closing_verification_status === 'pending' && $siteVisit->converted_to_closer_at) {
+                $activities->push([
+                    'type' => 'close_requested',
+                    'title' => 'Close Requested',
+                    'description' => "Close request submitted for {$lead->name}",
+                    'user' => $siteVisit->creator,
+                    'timestamp' => $siteVisit->converted_to_closer_at,
+                    'icon' => 'fa-file-signature',
+                    'color' => '#2563eb',
+                    'metadata' => [
+                        'closing_verification_status' => $siteVisit->closing_verification_status,
+                    ],
+                ]);
+            }
+
+            if ($siteVisit->closing_verified_at && $siteVisit->closingVerifiedBy) {
+                $activities->push([
+                    'type' => 'close_verified',
+                    'title' => 'Close Verified',
+                    'description' => "Close verified by {$siteVisit->closingVerifiedBy->name}",
+                    'user' => $siteVisit->closingVerifiedBy,
+                    'timestamp' => $siteVisit->closing_verified_at,
+                    'icon' => 'fa-stamp',
+                    'color' => '#16a34a',
+                    'metadata' => [
+                        'closing_verification_status' => $siteVisit->closing_verification_status,
+                    ],
+                ]);
+            }
+
+            if (!empty($siteVisit->kyc_documents) && $siteVisit->updated_at) {
+                $activities->push([
+                    'type' => 'kyc_submitted',
+                    'title' => 'KYC Submitted',
+                    'description' => "KYC documents submitted for {$lead->name}",
+                    'user' => $siteVisit->creator,
+                    'timestamp' => $siteVisit->updated_at,
+                    'icon' => 'fa-id-card',
+                    'color' => '#7c3aed',
+                    'metadata' => [
+                        'kyc_documents_count' => is_array($siteVisit->kyc_documents) ? count($siteVisit->kyc_documents) : 0,
+                    ],
+                ]);
+            }
+
+            foreach ($siteVisit->incentives as $incentive) {
+                $activities->push([
+                    'type' => 'incentive_submitted',
+                    'title' => 'Incentive Submitted',
+                    'description' => "Incentive request of ₹{$incentive->amount} submitted",
+                    'user' => $incentive->user,
+                    'timestamp' => $incentive->created_at,
+                    'icon' => 'fa-money-bill-wave',
+                    'color' => '#b45309',
+                    'metadata' => [
+                        'status' => $incentive->status,
+                        'amount' => $incentive->amount,
+                        'type' => $incentive->type,
                     ],
                 ]);
             }
@@ -218,7 +299,7 @@ class LeadActivityService
         }
 
         // 7. Meetings
-        foreach ($lead->meetings()->with(['creator', 'assignedTo', 'verifiedBy'])->orderBy('created_at', 'desc')->get() as $meeting) {
+        foreach ($lead->meetings()->with(['creator', 'assignedTo', 'verifiedBy', 'rescheduledBy'])->orderBy('created_at', 'desc')->get() as $meeting) {
             $activities->push([
                 'type' => 'meeting',
                 'title' => 'Meeting ' . ucfirst($meeting->status),
@@ -235,6 +316,25 @@ class LeadActivityService
                     'customer_name' => $meeting->customer_name,
                 ],
             ]);
+
+            if ($meeting->is_rescheduled && $meeting->rescheduled_at) {
+                $activities->push([
+                    'type' => 'meeting_rescheduled',
+                    'title' => 'Meeting Rescheduled',
+                    'description' => "Meeting rescheduled for {$lead->name}" .
+                        ($meeting->scheduled_at ? " to " . $meeting->scheduled_at->format('M d, Y h:i A') : '') .
+                        ($meeting->reschedule_reason ? ". Reason: {$meeting->reschedule_reason}" : ''),
+                    'user' => $meeting->rescheduledBy ?? $meeting->creator,
+                    'timestamp' => $meeting->rescheduled_at,
+                    'icon' => 'fa-calendar-day',
+                    'color' => '#f59e0b',
+                    'metadata' => [
+                        'scheduled_at' => $meeting->scheduled_at,
+                        'reschedule_reason' => $meeting->reschedule_reason,
+                        'reschedule_count' => $meeting->reschedule_count,
+                    ],
+                ]);
+            }
 
             // If verified, add verification activity
             if ($meeting->verified_at && $meeting->verifiedBy) {

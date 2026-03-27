@@ -23,6 +23,9 @@ class Kernel extends ConsoleKernel
         
         // Send follow-up reminder notifications every 15 minutes
         $schedule->command('notifications:followup-reminders')->everyFifteenMinutes();
+
+        // Process ASM fresh lead CNP automation every 5 minutes
+        $schedule->command('asm-cnp:process')->everyFiveMinutes();
         
         // Reset daily limits at midnight
         $schedule->job(new \App\Jobs\ResetDailyLimitsJob)->dailyAt('00:00');
@@ -44,4 +47,3 @@ class Kernel extends ConsoleKernel
         require base_path('routes/console.php');
     }
 }
-

@@ -75,11 +75,163 @@
         justify-content: center;
         margin-bottom: 8px;
     }
+    .asm-dashboard-filter-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 16px 0 0;
+        padding: 14px 16px;
+        background: rgba(255,255,255,0.78);
+        border: 1px solid #d8e3dc;
+        border-radius: 18px;
+    }
+    .asm-hero-mobile-top {
+        display: contents;
+    }
+    .asm-dashboard-filter-copy strong {
+        display: block;
+        color: #063A1C;
+        font-size: 14px;
+        font-weight: 700;
+    }
+    .asm-dashboard-filter-copy span {
+        display: block;
+        color: #5f6f68;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    .asm-dashboard-filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .asm-dashboard-filter-mobile {
+        display: none;
+        width: 100%;
+    }
+    .asm-dashboard-filter-select {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid #d2ddd5;
+        border-radius: 12px;
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #174130;
+        background: #fff;
+    }
+    .asm-dashboard-filter-chip {
+        border: 1px solid #d2ddd5;
+        background: #fff;
+        color: #174130;
+        border-radius: 999px;
+        padding: 9px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .asm-dashboard-filter-chip.active {
+        background: linear-gradient(135deg, #063A1C 0%, #205A44 100%);
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 10px 18px rgba(6, 58, 28, 0.18);
+    }
+    .asm-dashboard-custom-range {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .asm-dashboard-custom-range.active {
+        display: flex;
+    }
+    .asm-dashboard-date-input {
+        border: 1px solid #d2ddd5;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 12px;
+        color: #1f2937;
+        background: #fff;
+        min-width: 150px;
+    }
+    .asm-dashboard-apply-btn {
+        border: none;
+        border-radius: 12px;
+        background: #205A44;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 10px 14px;
+        cursor: pointer;
+    }
+    .asm-dashboard-filter-status {
+        color: #4b6358;
+        font-size: 12px;
+        font-weight: 600;
+    }
     
     /* Responsive Styles */
     @media (max-width: 767px) {
-        .asm-dashboard-mobile-menu {
-            display: inline-flex;
+        .asm-hero-mobile-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .asm-hero-copy {
+            display: flex;
+            flex-direction: column;
+        }
+        .asm-dashboard-filter-bar {
+            margin: 0;
+            margin-left: auto;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            width: auto;
+            min-width: 128px;
+            flex: 0 0 auto;
+        }
+        .asm-dashboard-filter-copy {
+            display: none;
+        }
+        .asm-dashboard-filter-bar {
+            gap: 0;
+        }
+        .asm-dashboard-filter-actions {
+            display: none;
+        }
+        .asm-dashboard-filter-mobile {
+            display: block;
+            width: 100%;
+        }
+        .asm-dashboard-filter-select {
+            min-height: 38px;
+            border-radius: 12px;
+            padding: 0 36px 0 12px;
+            font-size: 12px;
+            min-width: 128px;
+            box-shadow: 0 6px 18px rgba(6, 58, 28, 0.08);
+        }
+        .asm-dashboard-custom-range {
+            width: 100%;
+            margin-top: 10px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .asm-dashboard-date-input,
+        .asm-dashboard-apply-btn {
+            width: 100%;
+        }
+        .asm-dashboard-filter-status {
+            font-size: 11px;
         }
         .chart-container {
             height: 250px;
@@ -240,27 +392,6 @@
         .stats-grid > div:active {
             transform: scale(0.98) !important;
             box-shadow: 0 2px 6px rgba(6, 58, 28, 0.3) !important;
-        }
-        
-        /* Team call stats section */
-        #teamCallStatsSection > div:first-child {
-            flex-direction: column;
-            gap: 12px;
-            align-items: flex-start !important;
-        }
-        
-        #teamCallStatsSection > div:first-child > div {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            width: 100%;
-        }
-        
-        #teamCallStatsSection > div:first-child button {
-            flex: 1;
-            min-width: 80px;
-            padding: 8px 12px;
-            font-size: 12px;
         }
         
         /* Table responsive */
@@ -658,16 +789,31 @@
     }
     .asm-mini-metrics {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 10px;
         margin-top: 18px;
     }
-    .asm-mini-metrics div {
+    .asm-mini-metrics > div,
+    .asm-mini-metrics > a {
         background: rgba(255,255,255,0.08);
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 14px;
         padding: 12px;
         min-width: 0;
+    }
+    .asm-mini-metric-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+    .asm-mini-metric-link:hover,
+    .asm-mini-metric-link:focus-visible {
+        background: rgba(255,255,255,0.12);
+        border-color: rgba(255,255,255,0.18);
+        transform: translateY(-1px);
+        text-decoration: none;
+        color: inherit;
     }
     .asm-mini-metrics strong {
         display: block;
@@ -680,13 +826,15 @@
         font-size: 11px;
         color: rgba(255,255,255,0.64);
     }
-    .asm-mini-metric-mvf strong {
-        font-size: 16px;
-        white-space: nowrap;
-        letter-spacing: 0.02em;
+    @media (max-width: 1100px) {
+        .asm-mini-metrics {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
     }
-    .asm-mini-metric-mvf span {
-        line-height: 1.35;
+    @media (max-width: 640px) {
+        .asm-mini-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
     .asm-stats-grid {
         gap: 14px !important;
@@ -747,6 +895,20 @@
         font-size: 16px;
         box-shadow: 0 10px 22px rgba(0,0,0,0.12);
     }
+    .asm-stat-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .asm-stat-link:hover,
+    .asm-stat-link:focus-visible {
+        color: inherit;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 20px 40px rgba(6, 58, 28, 0.22) !important;
+        border-color: rgba(255,255,255,0.16);
+    }
     .asm-panel {
         background: #fff;
         border: 1px solid #e4e0d7;
@@ -775,10 +937,11 @@
         .asm-hero-copy h2 {
             font-size: 22px;
             font-family: 'Outfit', sans-serif;
+            margin-bottom: 0;
         }
         .asm-hero-kicker {
             font-size: 18px;
-            margin-bottom: 16px;
+            margin-bottom: 0;
         }
         .asm-stats-grid {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -800,24 +963,64 @@
 @section('content')
 <section class="asm-hero">
     <div class="asm-hero-copy">
-        <button id="asmDashboardMenuButton" class="asm-dashboard-mobile-menu" type="button" aria-label="Open menu">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="asm-hero-kicker">Dashboard</div>
+        <div class="asm-hero-mobile-top">
+            <div class="asm-hero-kicker">Dashboard</div>
+            <div class="asm-dashboard-filter-bar">
+                <div class="asm-dashboard-filter-copy">
+                    <strong>Dashboard Date Filter</strong>
+                    <span>Ye range top cards aur niche ke sections sab par apply hogi.</span>
+                </div>
+                <div class="asm-dashboard-filter-actions">
+                    <button type="button" class="asm-dashboard-filter-chip" data-dashboard-filter="today">Today</button>
+                    <button type="button" class="asm-dashboard-filter-chip" data-dashboard-filter="this_week">This Week</button>
+                    <button type="button" class="asm-dashboard-filter-chip" data-dashboard-filter="this_month">This Month</button>
+                    <button type="button" class="asm-dashboard-filter-chip" data-dashboard-filter="custom">Custom</button>
+                </div>
+                <div class="asm-dashboard-filter-mobile">
+                    <select id="asmDashboardFilterSelect" class="asm-dashboard-filter-select">
+                        <option value="today">Today</option>
+                        <option value="this_week">This Week</option>
+                        <option value="this_month">This Month</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+            </div>
+        </div>
         <h2>Good morning, <span>{{ auth()->user()->name }}</span></h2>
-        <div class="asm-focus-panel" style="margin-top: 22px;">
+        <div class="asm-dashboard-custom-range" id="asmDashboardCustomRange">
+            <input type="date" id="asmDashboardStartDate" class="asm-dashboard-date-input">
+            <input type="date" id="asmDashboardEndDate" class="asm-dashboard-date-input">
+            <button type="button" class="asm-dashboard-apply-btn" id="asmDashboardApplyRange">Apply Range</button>
+            <span class="asm-dashboard-filter-status" id="asmDashboardFilterStatus"></span>
+        </div>
+        <div class="asm-focus-panel" id="asmTodayFocusPanel" style="margin-top: 22px;">
             <div>
                 <div class="eyebrow">Today Focus</div>
             </div>
             <div class="asm-mini-metrics">
-                <div><strong id="freshLeadsHero">0</strong><span>Fresh Leads</span></div>
-                <div><strong id="overdueTasksHero">0</strong><span>Overdue</span></div>
-                <div class="asm-mini-metric-mvf"><strong id="todayMvfHero">0 / 0 / 0</strong><span>Meetings / Visits / Follow-ups</span></div>
+                <a href="{{ route('sales-manager.leads', ['fresh_today' => 1]) }}" class="asm-mini-metric-link" id="asmTodayFocusFreshLeadsCard">
+                    <strong id="freshLeadsHero">0</strong><span>Fresh Leads</span>
+                </a>
+                <a href="{{ route('sales-manager.tasks', ['status' => 'overdue']) }}" class="asm-mini-metric-link" id="asmTodayFocusOverdueCard">
+                    <strong id="overdueTasksHero">0</strong><span>Overdue</span>
+                </a>
+                <a href="{{ route('sales-manager.meetings', ['date_filter' => 'today']) }}" class="asm-mini-metric-link" id="asmTodayFocusMeetingsCard">
+                    <strong id="todayMeetingsHero">0</strong>
+                    <span>Meetings</span>
+                </a>
+                <a href="{{ route('sales-manager.site-visits', ['date_filter' => 'today']) }}" class="asm-mini-metric-link" id="asmTodayFocusVisitsCard">
+                    <strong id="todayVisitsHero">0</strong>
+                    <span>Site Visits</span>
+                </a>
+                <a href="{{ route('sales-manager.tasks', ['focus' => 'followups', 'date_filter' => 'today']) }}" class="asm-mini-metric-link" id="asmTodayFocusFollowupsCard">
+                    <strong id="todayFollowupsHero">0</strong>
+                    <span>Follow-ups</span>
+                </a>
             </div>
         </div>
     </div>
-    <div class="asm-hero-side">
-        <div class="asm-favorites-panel">
+    <div class="asm-hero-side" id="asmFavoritesPanelWrap">
+        <div class="asm-favorites-panel" id="asmFavoritesPanel">
             <div>
                 <div class="eyebrow">Favorites</div>
                 <h3>Favorite Leads</h3>
@@ -828,11 +1031,11 @@
         </div>
     </div>
 </section>
-<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mb-6 stats-grid asm-stats-grid">
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mb-6 stats-grid asm-stats-grid" id="asmStatsGrid">
     <!-- Stats Cards - Reordered for mobile: Leads Received, Today Prospects, Pending Verifications, Over Due Task, Team Members -->
     
     <!-- 1. Leads Received -->
-    <div class="rounded-lg shadow p-6 dashboard-card asm-stat-card">
+    <a href="{{ route('sales-manager.leads') }}" class="rounded-lg shadow p-6 dashboard-card asm-stat-card asm-stat-link" id="asmStatLeadsReceived">
         <div class="stat-head">
             <div>
                 <p class="stat-kicker">Pipeline</p>
@@ -841,10 +1044,10 @@
             </div>
             <span class="stat-icon"><i class="fas fa-user-friends"></i></span>
         </div>
-    </div>
+    </a>
 
     <!-- 2. Today's Prospects -->
-    <div class="rounded-lg shadow p-6 dashboard-card asm-stat-card">
+    <a href="{{ route('sales-manager.prospects', ['created_today' => 1]) }}" class="rounded-lg shadow p-6 dashboard-card asm-stat-card asm-stat-link" id="asmStatTodaysProspects">
         <div class="stat-head">
             <div>
                 <p class="stat-kicker">Today</p>
@@ -853,10 +1056,10 @@
             </div>
             <span class="stat-icon"><i class="fas fa-star"></i></span>
         </div>
-    </div>
+    </a>
 
     <!-- 3. Pending Verifications -->
-    <div class="rounded-lg shadow p-6 dashboard-card asm-stat-card">
+    <a href="{{ route('sales-manager.prospects', ['verification_status' => 'pending_verification']) }}" class="rounded-lg shadow p-6 dashboard-card asm-stat-card asm-stat-link" id="asmStatPendingVerifications">
         <div class="stat-head">
             <div>
                 <p class="stat-kicker">Approval Queue</p>
@@ -865,10 +1068,10 @@
             </div>
             <span class="stat-icon"><i class="fas fa-shield-alt"></i></span>
         </div>
-    </div>
+    </a>
 
     <!-- 4. Over Due Task -->
-    <div class="rounded-lg shadow p-6 dashboard-card asm-stat-card">
+    <a href="{{ route('sales-manager.tasks', ['status' => 'overdue']) }}" class="rounded-lg shadow p-6 dashboard-card asm-stat-card asm-stat-link" id="asmStatOverdueTasks">
         <div class="stat-head">
             <div>
                 <p class="stat-kicker">Attention</p>
@@ -877,10 +1080,10 @@
             </div>
             <span class="stat-icon"><i class="fas fa-clock"></i></span>
         </div>
-    </div>
+    </a>
 
     <!-- 5. Team Members (hidden on mobile) -->
-    <div class="rounded-lg shadow p-6 dashboard-card team-members-card asm-stat-card">
+    <a href="{{ route('sales-manager.team') }}" class="rounded-lg shadow p-6 dashboard-card team-members-card asm-stat-card asm-stat-link" id="asmStatTeamMembers">
         <div class="stat-head">
             <div>
                 <p class="stat-kicker">Coverage</p>
@@ -889,10 +1092,10 @@
             </div>
             <span class="stat-icon"><i class="fas fa-users"></i></span>
         </div>
-    </div>
+    </a>
 
     <!-- 6. Pending Tasks (kept for desktop) -->
-    <div class="rounded-lg shadow p-6 dashboard-card asm-stat-card">
+    <a href="{{ route('sales-manager.tasks', ['status' => 'pending']) }}" class="rounded-lg shadow p-6 dashboard-card asm-stat-card asm-stat-link" id="asmStatPendingTasks">
         <div class="stat-head">
             <div>
                 <p class="stat-kicker">Backlog</p>
@@ -901,10 +1104,10 @@
             </div>
             <span class="stat-icon"><i class="fas fa-list-check"></i></span>
         </div>
-    </div>
+    </a>
 
     <!-- 7. No response yet -->
-    <div class="rounded-lg shadow p-6 dashboard-card asm-stat-card">
+    <a href="#smNoResponseSection" class="rounded-lg shadow p-6 dashboard-card asm-stat-card asm-stat-link" id="asmStatNoResponseYet">
         <div class="stat-head">
             <div>
                 <p class="stat-kicker">Risk</p>
@@ -913,23 +1116,16 @@
             </div>
             <span class="stat-icon"><i class="fas fa-inbox"></i></span>
         </div>
-    </div>
+    </a>
 </div>
 
 <!-- Leads allocated – no response yet (SM/ASM) -->
-<div class="bg-white rounded-lg shadow p-6 mb-6 asm-panel">
+<div id="smNoResponseSection" class="bg-white rounded-lg shadow p-6 mb-6 asm-panel">
     <h2 class="asm-panel-title">
         <i class="fas fa-inbox mr-2 text-[#063A1C]"></i>Leads allocated – no response yet
     </h2>
     <p class="asm-panel-subtitle mb-4">Leads assigned to you on which you haven't responded yet.</p>
-    <div class="flex flex-wrap items-center gap-2 mb-4">
-        <label for="sm-leads-pending-date-range" class="text-sm font-medium text-gray-700">Date range:</label>
-        <select id="sm-leads-pending-date-range" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#063A1C] focus:border-[#063A1C]">
-            <option value="this_week">This week</option>
-            <option value="this_month" selected>This month</option>
-            <option value="all_time">All time</option>
-        </select>
-    </div>
+    <div class="text-sm font-medium text-gray-600 mb-4" id="smLeadsPendingRangeLabel">Current filter: Today</div>
     <div class="overflow-x-auto rounded-lg border border-gray-200">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -944,74 +1140,6 @@
                 <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">Loading...</td></tr>
             </tbody>
         </table>
-    </div>
-</div>
-
-<!-- Team Call Statistics -->
-<div class="bg-white rounded-lg shadow p-6 mb-6" id="teamCallStatsSection" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-        <h2 class="text-xl font-bold text-gray-900">
-            <i class="fas fa-phone mr-2"></i>Team Call Statistics
-        </h2>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="loadTeamCallStats('today')" class="px-4 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg text-sm font-medium hover:from-[#205A44] hover:to-[#15803d]">Today</button>
-            <button onclick="loadTeamCallStats('this_week')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">This Week</button>
-            <button onclick="loadTeamCallStats('this_month')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">This Month</button>
-        </div>
-    </div>
-    
-    <!-- Team Call Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div class="text-sm text-blue-600 mb-1">Team Total Calls</div>
-            <div class="text-2xl font-bold text-blue-900" id="teamTotalCalls">0</div>
-        </div>
-        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-            <div class="text-sm text-green-600 mb-1">Total Duration</div>
-            <div class="text-2xl font-bold text-green-900" id="teamTotalDuration">0s</div>
-        </div>
-        <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <div class="text-sm text-purple-600 mb-1">Average Duration</div>
-            <div class="text-2xl font-bold text-purple-900" id="teamAvgDuration">0s</div>
-        </div>
-        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <div class="text-sm text-orange-600 mb-1">Connection Rate</div>
-            <div class="text-2xl font-bold text-orange-900" id="teamConnectionRate">0%</div>
-        </div>
-    </div>
-
-    <!-- Top Performers -->
-    <div id="topPerformersSection" style="display: none;">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Performers</h3>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Calls</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Duration</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Avg Duration</th>
-                    </tr>
-                </thead>
-                <tbody id="topPerformersTable" class="bg-white divide-y divide-gray-200">
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Team Call Breakdown Chart -->
-    <div class="mt-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Calls by Team Member</h3>
-        <div class="chart-container" style="position: relative; height: 300px;">
-            <canvas id="teamCallsChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
-        <a href="{{ route('calls.index') }}" class="px-4 py-2 bg-[#205A44] text-white rounded-lg hover:bg-[#15803d] transition-colors duration-200 text-sm font-medium">
-            <i class="fas fa-list mr-2"></i> View All Team Calls
-        </a>
     </div>
 </div>
 
@@ -1190,18 +1318,6 @@
 <script>
     const API_BASE_URL = '{{ url("/api/sales-manager") }}';
     const API_TOKEN = '{{ $api_token ?? session("api_token") ?? "" }}';
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const dashboardMenuBtn = document.getElementById('asmDashboardMenuButton');
-        if (!dashboardMenuBtn) return;
-
-        dashboardMenuBtn.addEventListener('click', function () {
-            const headerMenuBtn = document.getElementById('asmMobileMenuToggle');
-            if (headerMenuBtn) {
-                headerMenuBtn.click();
-            }
-        });
-    });
     
     // Store token in localStorage if available
     if (API_TOKEN) {
@@ -1270,13 +1386,155 @@
         }
     }
 
+    const DASHBOARD_FILTER_DEFAULTS = {
+        date_filter: 'today',
+        start_date: '',
+        end_date: ''
+    };
+    let asmDashboardDateFilter = { ...DASHBOARD_FILTER_DEFAULTS };
+
+    function getDashboardFilterParams() {
+        const params = new URLSearchParams();
+        params.set('date_filter', asmDashboardDateFilter.date_filter || 'today');
+        if (asmDashboardDateFilter.date_filter === 'custom') {
+            if (asmDashboardDateFilter.start_date) {
+                params.set('start_date', asmDashboardDateFilter.start_date);
+            }
+            if (asmDashboardDateFilter.end_date) {
+                params.set('end_date', asmDashboardDateFilter.end_date);
+            }
+        }
+        return params;
+    }
+
+    function getDashboardFilterLabel() {
+        switch (asmDashboardDateFilter.date_filter) {
+            case 'this_week':
+                return 'This Week';
+            case 'this_month':
+                return 'This Month';
+            case 'custom':
+                return asmDashboardDateFilter.start_date && asmDashboardDateFilter.end_date
+                    ? `${asmDashboardDateFilter.start_date} to ${asmDashboardDateFilter.end_date}`
+                    : 'Custom Range';
+            case 'today':
+            default:
+                return 'Today';
+        }
+    }
+
+    function syncDashboardFilterUi() {
+        document.querySelectorAll('[data-dashboard-filter]').forEach(function (button) {
+            button.classList.toggle('active', button.dataset.dashboardFilter === asmDashboardDateFilter.date_filter);
+        });
+
+        const customRange = document.getElementById('asmDashboardCustomRange');
+        const startInput = document.getElementById('asmDashboardStartDate');
+        const endInput = document.getElementById('asmDashboardEndDate');
+        const status = document.getElementById('asmDashboardFilterStatus');
+        const mobileSelect = document.getElementById('asmDashboardFilterSelect');
+        const rangeLabel = getDashboardFilterLabel();
+
+        if (customRange) {
+            customRange.classList.toggle('active', asmDashboardDateFilter.date_filter === 'custom');
+        }
+        if (startInput) {
+            startInput.value = asmDashboardDateFilter.start_date || '';
+        }
+        if (endInput) {
+            endInput.value = asmDashboardDateFilter.end_date || '';
+        }
+        if (status) {
+            status.textContent = `Current: ${rangeLabel}`;
+        }
+        if (mobileSelect) {
+            mobileSelect.value = asmDashboardDateFilter.date_filter || 'today';
+        }
+
+        const noResponseLabel = document.getElementById('smLeadsPendingRangeLabel');
+        if (noResponseLabel) {
+            noResponseLabel.textContent = `Current filter: ${rangeLabel}`;
+        }
+
+    }
+
+    function hydrateDashboardFilterFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const dateFilter = params.get('date_filter') || 'today';
+        asmDashboardDateFilter = {
+            date_filter: ['today', 'this_week', 'this_month', 'custom'].includes(dateFilter) ? dateFilter : 'today',
+            start_date: params.get('start_date') || '',
+            end_date: params.get('end_date') || ''
+        };
+        syncDashboardFilterUi();
+    }
+
+    function persistDashboardFilterToUrl() {
+        const params = getDashboardFilterParams();
+        const nextUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, '', nextUrl);
+    }
+
+    async function applyDashboardFilter(nextFilter) {
+        asmDashboardDateFilter = {
+            ...asmDashboardDateFilter,
+            ...nextFilter
+        };
+
+        if (asmDashboardDateFilter.date_filter !== 'custom') {
+            asmDashboardDateFilter.start_date = '';
+            asmDashboardDateFilter.end_date = '';
+        }
+
+        syncDashboardFilterUi();
+        persistDashboardFilterToUrl();
+        await loadDashboardData();
+    }
+
+    function bindDashboardFilterControls() {
+        document.querySelectorAll('[data-dashboard-filter]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const nextFilter = button.dataset.dashboardFilter;
+                if (nextFilter === 'custom') {
+                    asmDashboardDateFilter.date_filter = 'custom';
+                    syncDashboardFilterUi();
+                    return;
+                }
+                applyDashboardFilter({ date_filter: nextFilter });
+            });
+        });
+
+        document.getElementById('asmDashboardFilterSelect')?.addEventListener('change', function () {
+            const nextFilter = this.value || 'today';
+            if (nextFilter === 'custom') {
+                asmDashboardDateFilter.date_filter = 'custom';
+                syncDashboardFilterUi();
+                return;
+            }
+            applyDashboardFilter({ date_filter: nextFilter });
+        });
+
+        document.getElementById('asmDashboardApplyRange')?.addEventListener('click', function () {
+            const startDate = document.getElementById('asmDashboardStartDate')?.value || '';
+            const endDate = document.getElementById('asmDashboardEndDate')?.value || '';
+            if (!startDate || !endDate) {
+                alert('Custom range ke liye start aur end date dono select karo.');
+                return;
+            }
+            applyDashboardFilter({
+                date_filter: 'custom',
+                start_date: startDate,
+                end_date: endDate
+            });
+        });
+    }
+
     async function loadSmLeadsPendingResponse() {
         const tbody = document.getElementById('sm-leads-pending-response-tbody');
         const countEl = document.getElementById('smNoResponseYetCount');
-        const dateRange = document.getElementById('sm-leads-pending-date-range')?.value || 'this_month';
         if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">Loading...</td></tr>';
         try {
-            const data = await apiCall('/leads-pending-response?date_range=' + encodeURIComponent(dateRange));
+            const data = await apiCall('/leads-pending-response?' + getDashboardFilterParams().toString());
             if (!data || data.error) {
                 if (countEl) countEl.textContent = '0';
                 if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-red-600">Error loading data.</td></tr>';
@@ -1309,9 +1567,10 @@
         try {
             console.log('Loading dashboard data...');
             console.log('API Token available:', !!getToken());
+            const dashboardParams = getDashboardFilterParams();
             
             // Load profile for team stats first
-            const profile = await apiCall('/profile');
+            const profile = await apiCall('/profile?' + dashboardParams.toString());
             console.log('Profile API response:', profile);
             
             if (profile && profile.team_stats) {
@@ -1327,13 +1586,17 @@
                 document.getElementById('overdueTasks').textContent = profile.team_stats.overdue_tasks || 0;
                 const freshLeadsHero = document.getElementById('freshLeadsHero');
                 const overdueTasksHero = document.getElementById('overdueTasksHero');
-                const todayMvfHero = document.getElementById('todayMvfHero');
+                const todayMeetingsHero = document.getElementById('todayMeetingsHero');
+                const todayVisitsHero = document.getElementById('todayVisitsHero');
+                const todayFollowupsHero = document.getElementById('todayFollowupsHero');
                 const todayMeetings = profile.team_stats.today_meetings_count || 0;
                 const todayVisits = profile.team_stats.today_visits_count || 0;
                 const todayFollowups = profile.team_stats.today_followups_count || 0;
                 if (freshLeadsHero) freshLeadsHero.textContent = profile.team_stats.fresh_leads_today || 0;
                 if (overdueTasksHero) overdueTasksHero.textContent = profile.team_stats.overdue_tasks || 0;
-                if (todayMvfHero) todayMvfHero.textContent = `${todayMeetings} / ${todayVisits} / ${todayFollowups}`;
+                if (todayMeetingsHero) todayMeetingsHero.textContent = todayMeetings;
+                if (todayVisitsHero) todayVisitsHero.textContent = todayVisits;
+                if (todayFollowupsHero) todayFollowupsHero.textContent = todayFollowups;
                 renderFavoriteLeads(profile.favorite_leads || []);
                 console.log('Team stats updated:', profile.team_stats);
             } else {
@@ -1345,7 +1608,7 @@
 
             // Load dashboard data for incentives and targets
             try {
-                const dashboardData = await fetch('{{ url("/api/dashboard") }}', {
+                const dashboardData = await fetch(`{{ url("/api/dashboard") }}?${dashboardParams.toString()}`, {
                     headers: {
                         'Authorization': `Bearer ${getToken()}`,
                         'Accept': 'application/json',
@@ -1392,6 +1655,7 @@
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             }
+
         } catch (error) {
             console.error('Error loading dashboard data:', error);
             console.error('Error details:', error.message, error.stack);
@@ -1428,6 +1692,175 @@
                 </a>
             `;
         }).join('');
+    }
+
+    const ASM_DASHBOARD_DEFAULTS = {
+        today_focus_panel: true,
+        today_focus_fresh_leads: true,
+        today_focus_overdue: true,
+        today_focus_meetings: true,
+        today_focus_site_visits: true,
+        today_focus_follow_ups: true,
+        favorites_panel: true,
+        stat_leads_received: true,
+        stat_todays_prospects: true,
+        stat_pending_verifications: true,
+        stat_overdue_tasks: true,
+        stat_team_members: true,
+        stat_pending_tasks: true,
+        stat_no_response_yet: true,
+        no_response_section: true,
+        manager_targets_section: true,
+        team_targets_section: true,
+        team_members_cards_section: true,
+        incentives_section: true
+    };
+    const INITIAL_ASM_DASHBOARD_VISIBILITY = @json($dashboardVisibility ?? []);
+
+    const ASM_DASHBOARD_WIDGET_MAP = {
+        today_focus_panel: 'asmTodayFocusPanel',
+        today_focus_fresh_leads: 'asmTodayFocusFreshLeadsCard',
+        today_focus_overdue: 'asmTodayFocusOverdueCard',
+        today_focus_meetings: 'asmTodayFocusMeetingsCard',
+        today_focus_site_visits: 'asmTodayFocusVisitsCard',
+        today_focus_follow_ups: 'asmTodayFocusFollowupsCard',
+        favorites_panel: 'asmFavoritesPanelWrap',
+        stat_leads_received: 'asmStatLeadsReceived',
+        stat_todays_prospects: 'asmStatTodaysProspects',
+        stat_pending_verifications: 'asmStatPendingVerifications',
+        stat_overdue_tasks: 'asmStatOverdueTasks',
+        stat_team_members: 'asmStatTeamMembers',
+        stat_pending_tasks: 'asmStatPendingTasks',
+        stat_no_response_yet: 'asmStatNoResponseYet',
+        no_response_section: 'smNoResponseSection',
+        manager_targets_section: 'managerTargetsSection',
+        team_targets_section: 'teamTargetsSection',
+        team_members_cards_section: 'teamMembersCardsSection',
+        incentives_section: 'incentivesSection'
+    };
+
+    const ASM_STAT_CARD_KEYS = [
+        'stat_leads_received',
+        'stat_todays_prospects',
+        'stat_pending_verifications',
+        'stat_overdue_tasks',
+        'stat_team_members',
+        'stat_pending_tasks',
+        'stat_no_response_yet'
+    ];
+
+    const ASM_TODAY_FOCUS_CHILD_KEYS = [
+        'today_focus_fresh_leads',
+        'today_focus_overdue',
+        'today_focus_meetings',
+        'today_focus_site_visits',
+        'today_focus_follow_ups'
+    ];
+
+    const IS_ASSISTANT_SALES_MANAGER = @json(auth()->user()->isAssistantSalesManager());
+    let asmDashboardVisibility = {
+        ...ASM_DASHBOARD_DEFAULTS,
+        ...INITIAL_ASM_DASHBOARD_VISIBILITY
+    };
+
+    function setAsmWidgetVisibility(id, shouldShow, displayValue = '') {
+        const element = document.getElementById(id);
+        if (!element) {
+            return;
+        }
+
+        if (shouldShow) {
+            element.style.display = displayValue;
+            element.hidden = false;
+            element.removeAttribute('aria-hidden');
+            return;
+        }
+
+        element.style.display = 'none';
+        element.hidden = true;
+        element.setAttribute('aria-hidden', 'true');
+    }
+
+    function collapseAsmStatsGridIfNeeded() {
+        const statsGrid = document.getElementById('asmStatsGrid');
+        if (!statsGrid) {
+            return;
+        }
+
+        const hasVisibleCard = ASM_STAT_CARD_KEYS.some(function (key) {
+            const element = document.getElementById(ASM_DASHBOARD_WIDGET_MAP[key]);
+            return element && element.style.display !== 'none';
+        });
+
+        statsGrid.style.display = hasVisibleCard ? '' : 'none';
+    }
+
+    function syncAsmTodayFocusVisibility(settings) {
+        const panelVisible = !!settings.today_focus_panel;
+        setAsmWidgetVisibility('asmTodayFocusPanel', panelVisible);
+
+        if (!panelVisible) {
+            return;
+        }
+
+        let hasVisibleChild = false;
+        ASM_TODAY_FOCUS_CHILD_KEYS.forEach(function (key) {
+            const visible = !!settings[key];
+            setAsmWidgetVisibility(ASM_DASHBOARD_WIDGET_MAP[key], visible);
+            if (visible) {
+                hasVisibleChild = true;
+            }
+        });
+
+        setAsmWidgetVisibility('asmTodayFocusPanel', hasVisibleChild);
+    }
+
+    function applyAsmDashboardVisibility(settings) {
+        asmDashboardVisibility = { ...ASM_DASHBOARD_DEFAULTS, ...(settings || {}) };
+
+        syncAsmTodayFocusVisibility(asmDashboardVisibility);
+
+        Object.entries(ASM_DASHBOARD_WIDGET_MAP).forEach(function ([key, id]) {
+            if (key.startsWith('today_focus_')) {
+                return;
+            }
+
+            setAsmWidgetVisibility(id, !!asmDashboardVisibility[key]);
+        });
+
+        collapseAsmStatsGridIfNeeded();
+    }
+
+    async function loadAsmDashboardVisibility() {
+        applyAsmDashboardVisibility(asmDashboardVisibility);
+
+        if (!IS_ASSISTANT_SALES_MANAGER) {
+            applyAsmDashboardVisibility(ASM_DASHBOARD_DEFAULTS);
+            return ASM_DASHBOARD_DEFAULTS;
+        }
+
+        try {
+            const response = await fetch('/api/sales-manager/dashboard-settings', {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`,
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Failed to load dashboard settings.');
+            }
+
+            applyAsmDashboardVisibility(result.dashboard_visibility || ASM_DASHBOARD_DEFAULTS);
+            return asmDashboardVisibility;
+        } catch (error) {
+            console.error('Error loading ASM dashboard visibility:', error);
+            applyAsmDashboardVisibility(ASM_DASHBOARD_DEFAULTS);
+            return ASM_DASHBOARD_DEFAULTS;
+        }
     }
 
     function loadIncentives(incentives) {
@@ -1676,11 +2109,11 @@
     }
 
     // Initialize on page load
-    (function() {
+    (async function() {
+        hydrateDashboardFilterFromUrl();
+        bindDashboardFilterControls();
+        await loadAsmDashboardVisibility();
         loadDashboardData();
-
-        const smPendingDateRange = document.getElementById('sm-leads-pending-date-range');
-        if (smPendingDateRange) smPendingDateRange.addEventListener('change', loadSmLeadsPendingResponse);
     })();
 </script>
 @endpush

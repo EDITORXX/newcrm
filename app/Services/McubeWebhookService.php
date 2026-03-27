@@ -57,7 +57,7 @@ class McubeWebhookService
                 $lead = Lead::create([
                     'name'       => 'MCube Lead (' . $customerPhone . ')',
                     'phone'      => $customerPhone,
-                    'source'     => 'mcube',
+                    'source'     => Lead::normalizeSource('mcube'),
                     'status'     => 'new',
                     'created_by' => $agent->id,
                 ]);

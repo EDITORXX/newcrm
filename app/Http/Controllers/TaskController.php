@@ -239,7 +239,7 @@ class TaskController extends Controller
             'investment' => 'nullable|numeric|min:0',
             'budget_min' => 'nullable|numeric|min:0',
             'budget_max' => 'nullable|numeric|min:0|gte:budget_min',
-            'source' => 'nullable|in:website,referral,walk_in,call,social_media,other',
+            'source' => 'nullable|in:' . implode(',', array_keys(\App\Models\Lead::sourceOptions())),
             'property_type' => 'nullable|in:apartment,villa,plot,commercial,other',
             'requirements' => 'nullable|string',
             'notes' => 'nullable|string',

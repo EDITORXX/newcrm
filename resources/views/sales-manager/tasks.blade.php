@@ -45,6 +45,12 @@
     .task-filter-main .task-filter-select {
         min-height: 48px;
     }
+    .task-type-primary-select {
+        min-width: 168px;
+    }
+    .task-status-primary-select {
+        min-width: 168px;
+    }
     .task-filter-extra {
         display: inline-flex;
         align-items: center;
@@ -133,6 +139,45 @@
     .tasks-container.asm-tasks-pro .tasks-grid {
         gap: 16px;
         margin-top: 14px;
+    }
+    .tasks-container.asm-tasks-list-view .tasks-grid {
+        grid-template-columns: 1fr;
+    }
+    .tasks-container.asm-tasks-list-view .task-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(180px, 0.7fr);
+        gap: 16px;
+        align-items: start;
+    }
+    .tasks-container.asm-tasks-list-view .task-actions {
+        flex-direction: column;
+        justify-content: stretch;
+    }
+    .tasks-container.asm-tasks-list-view .task-action-btn {
+        width: 100%;
+    }
+    .task-view-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem;
+        border-radius: 999px;
+        border: 1px solid #d7dfdb;
+        background: #fff;
+    }
+    .task-view-toggle button {
+        border: 0;
+        background: transparent;
+        color: #527166;
+        padding: 0.58rem 0.95rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+    .task-view-toggle button.active {
+        background: linear-gradient(135deg, #063A1C 0%, #205A44 100%);
+        color: #fff;
+        box-shadow: 0 8px 18px rgba(6, 58, 28, 0.18);
     }
     .tasks-container.asm-tasks-pro .task-card {
         border-width: 1px;
@@ -471,6 +516,17 @@
             width: 100%;
             justify-content: flex-end;
             margin-left: 0;
+            flex-wrap: wrap;
+        }
+        .task-view-toggle {
+            width: 100%;
+            justify-content: stretch;
+        }
+        .task-view-toggle button {
+            flex: 1 1 0;
+        }
+        .tasks-container.asm-tasks-list-view .task-card {
+            grid-template-columns: 1fr;
         }
         
         /* Hide desktop buttons on mobile */
@@ -1156,15 +1212,19 @@
         <div class="task-filter-layout">
         <!-- Desktop: Button Filters -->
         <div class="task-filter-main filter-buttons-desktop">
-            <button class="filter-btn active" data-status="all">All Tasks</button>
-            <button class="filter-btn" data-status="pending">Pending</button>
-            <button class="filter-btn" data-status="overdue">Overdue</button>
-            <button class="filter-btn" data-status="rescheduled">Rescheduled</button>
-            <button class="filter-btn" data-status="completed">Completed</button>
-
+            <div class="task-status-filter-desktop">
+                <select id="taskStatusFilterDesktop" class="date-filter-select task-status-primary-select">
+                    <option value="all">All Tasks</option>
+                    <option value="pending">Pending</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="rescheduled">Rescheduled</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
             <div class="task-type-filter-desktop">
-                <select id="taskTypeFilterDesktop" class="date-filter-select">
+                <select id="taskTypeFilterDesktop" class="date-filter-select task-type-primary-select">
                     <option value="all">All Types</option>
+                    <option value="fresh_lead">Fresh Lead</option>
                     <option value="follow_up">Follow Up</option>
                     <option value="meeting">Meeting</option>
                     <option value="site_visit">Site Visit</option>
@@ -1209,6 +1269,7 @@
         <div class="task-type-filter-mobile" style="display: none;">
             <select id="taskTypeFilterMobile" class="task-filter-select">
                 <option value="all">All Types</option>
+                <option value="fresh_lead">Fresh Lead</option>
                 <option value="follow_up">Follow Up</option>
                 <option value="meeting">Meeting</option>
                 <option value="site_visit">Site Visit</option>
@@ -1221,7 +1282,7 @@
         <div class="task-filter-extra">
             <!-- Custom Date Picker (hidden by default) -->
             <input type="date" id="customDatePicker" style="display: none; margin-left: 8px; padding: 8px 12px; border: 2px solid #205A44; border-radius: 8px; font-size: 14px;">
-            
+
             <button id="removeAllOverdueBtn" class="btn-remove-overdue" onclick="removeAllOverdueTasks()" style="display: none;">
                 <i class="fas fa-trash-alt"></i>
                 Remove All Overdue
@@ -1248,9 +1309,6 @@
         </div>
         <div class="modal-body">
             <div class="asm-outcome-modal-body">
-                <p class="asm-outcome-copy">
-                    Select the outcome for this completed ASM call:
-                </p>
                 <div class="asm-outcome-grid">
                     <button type="button" class="asm-outcome-btn asm-outcome-btn-green" onclick="selectTaskOutcome('interested')">
                         <i class="fas fa-thumbs-up"></i>
@@ -1411,6 +1469,36 @@
 
 @push('scripts')
 <script>
+    const ASM_SECTION_VIEW_PREFERENCES = @json($sectionViewPreferences ?? []);
+    const ASM_SECTION_VIEW_SAVE_URL = @json(route('sales-manager.settings.update'));
+
+    function getAsmPreferredView(sectionKey, fallbackView) {
+        const preferred = ASM_SECTION_VIEW_PREFERENCES?.[sectionKey];
+        return preferred === 'list' || preferred === 'card' ? preferred : fallbackView;
+    }
+
+    async function persistAsmSectionViewPreference(sectionKey, view) {
+        try {
+            ASM_SECTION_VIEW_PREFERENCES[sectionKey] = view;
+            await fetch(ASM_SECTION_VIEW_SAVE_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    section_view_preferences: {
+                        [sectionKey]: view
+                    }
+                })
+            });
+        } catch (error) {
+            console.error('Failed to persist section view preference:', error);
+        }
+    }
+
     // Global variables and functions for onclick handlers
     // Use relative path to avoid APP_URL misconfig issues
     const API_BASE_URL = '/api/sales-manager';
@@ -1438,7 +1526,7 @@
     let savedCategory = 'all';
     try {
         const saved = localStorage.getItem('salesManagerTaskCategory');
-        if (saved && ['all', 'follow_up', 'meeting', 'site_visit', 'prospect', 'closer', 'other'].includes(saved)) {
+        if (saved && ['all', 'fresh_lead', 'follow_up', 'meeting', 'site_visit', 'prospect', 'closer', 'other'].includes(saved)) {
             savedCategory = saved;
         }
     } catch (e) {
@@ -1457,6 +1545,13 @@
     let currentStatus = savedFilter;
     let currentCategory = savedCategory;
     let currentTaskId = null;
+    let currentTasksView = 'card';
+    function normalizeTaskStatusFilter(status) {
+        if (!status) {
+            return 'pending';
+        }
+        return status;
+    }
     function setCurrentTaskId(value) {
         currentTaskId = value;
         window.currentTaskId = value;
@@ -1468,9 +1563,26 @@
     }
     
     // Attach to window for global access
+    currentStatus = normalizeTaskStatusFilter(currentStatus);
     window.currentStatus = currentStatus;
     window.currentCategory = currentCategory;
     window.currentTaskId = currentTaskId;
+
+    function setTasksView(view, shouldPersist = true) {
+        currentTasksView = view === 'list' ? 'list' : 'card';
+        const shell = document.querySelector('.tasks-container');
+        if (shell) {
+            shell.classList.toggle('asm-tasks-list-view', currentTasksView === 'list');
+        }
+        document.getElementById('taskCardsViewBtn')?.classList.toggle('active', currentTasksView === 'card');
+        document.getElementById('taskListViewBtn')?.classList.toggle('active', currentTasksView === 'list');
+        try {
+            localStorage.setItem('asm_tasks_view', currentTasksView);
+        } catch (e) {}
+        if (shouldPersist) {
+            persistAsmSectionViewPreference('tasks', currentTasksView);
+        }
+    }
 
     function getAuthHeaders() {
         const token = API_TOKEN || localStorage.getItem('sales_manager_token') || '';
@@ -1601,6 +1713,7 @@
 
     // Filter tasks function - must be globally accessible for onclick handlers
     function filterTasks(status, dateFilter = null, customDate = null, category = null) {
+        status = normalizeTaskStatusFilter(status);
         console.log('filterTasks called with status:', status, 'dateFilter:', dateFilter, 'customDate:', customDate, 'category:', category);
         currentStatus = status;
         
@@ -1630,18 +1743,14 @@
             console.error('Failed to save filter to localStorage:', e);
         }
         
-        // Update button states
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.getAttribute('data-status') === status) {
-                btn.classList.add('active');
-            }
-        });
-        
         // Update status dropdown value
         const filterDropdown = document.getElementById('taskFilterDropdown');
         if (filterDropdown) {
             filterDropdown.value = status;
+        }
+        const filterDropdownDesktop = document.getElementById('taskStatusFilterDesktop');
+        if (filterDropdownDesktop) {
+            filterDropdownDesktop.value = status;
         }
         
         // Update date dropdown values
@@ -1965,7 +2074,7 @@
                             <i class="fas fa-phone"></i>
                             <span>Call</span>
                         </button>
-                        <button class="task-action-btn btn-view-detail" onclick="openTaskOutcomeModal(${task.id})" title="Mark Complete">
+                        <button class="task-action-btn btn-view-detail" onclick="openTaskOutcomeModal(${task.id}, '${task.category || 'other'}')" title="Mark Complete">
                             <i class="fas fa-check-circle"></i>
                             <span>Mark Complete</span>
                         </button>
@@ -3079,28 +3188,10 @@
     // Load interested projects for manager form (render as tags)
     async function loadInterestedProjectsForManager() {
         try {
-            // Use full path for interested projects endpoint
-            const response = await fetch('/api/interested-project-names', {
-                headers: getAuthHeaders(),
-            });
-            const projectsResponse = await response.json();
             const projectTagsGrid = document.getElementById('project-tags-grid');
-            
-            if (projectsResponse && projectsResponse.success && projectsResponse.data && projectTagsGrid) {
+
+            if (projectTagsGrid) {
                 projectTagsGrid.innerHTML = '';
-                projectsResponse.data.forEach(project => {
-                    const tag = document.createElement('div');
-                    tag.className = 'project-tag';
-                    tag.dataset.projectId = project.id;
-                    tag.innerHTML = `
-                        <span class="project-tag-text">${escapeHtml(project.name)}</span>
-                        <i class="fas fa-check project-tag-check"></i>
-                    `;
-                    tag.addEventListener('click', function() {
-                        toggleProjectTag(this);
-                    });
-                    projectTagsGrid.appendChild(tag);
-                });
             }
         } catch (error) {
             console.error('Error loading interested projects:', error);
@@ -3411,7 +3502,7 @@
                 const prospect = task.prospect || {};
                 const formFields = lead.form_fields || {};
                 const isProspect = prospect && prospect.id;
-                const isFromGoogleSheets = lead.source === 'google_sheets';
+                const isFromGoogleSheets = lead.source === 'google_sheets' || lead.source === 'sheet';
                 
                 let detailsHTML = '';
                 
@@ -3500,46 +3591,65 @@
         console.log('API_BASE_URL:', API_BASE_URL);
         console.log('API_TOKEN available:', !!API_TOKEN);
         console.log('API_TOKEN value:', API_TOKEN ? API_TOKEN.substring(0, 20) + '...' : 'null');
+        const savedTasksView = (() => {
+            try { return localStorage.getItem('asm_tasks_view') || 'card'; } catch (e) { return 'card'; }
+        })();
+        setTasksView(getAsmPreferredView('tasks', savedTasksView), false);
         const pageParams = new URLSearchParams(window.location.search);
         const focusMode = pageParams.get('focus');
+        const requestedStatus = pageParams.get('status');
+        const requestedDateFilter = pageParams.get('date_filter');
+        const requestedCustomDate = pageParams.get('date');
+        const hasRequestedStatus = !!requestedStatus && ['all', 'pending', 'overdue', 'rescheduled', 'completed'].includes(requestedStatus);
+        const hasRequestedDateFilter = !!requestedDateFilter && ['all', 'today', 'tomorrow', 'this_week', 'this_month', 'custom'].includes(requestedDateFilter);
         
-        // Set up event delegation for filter buttons (instead of inline onclick)
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const status = this.getAttribute('data-status');
-                console.log('Filter button clicked, status:', status);
-                if (window.filterTasks) {
-                    window.filterTasks(status);
-                } else {
-                    console.error('filterTasks function not available');
-                    filterTasks(status); // Try direct call as fallback
-                }
-            });
-        });
-        
-        // Set up status dropdown filter for mobile
+        // Set up status dropdown filters
         const filterDropdown = document.getElementById('taskFilterDropdown');
+        const filterDropdownDesktop = document.getElementById('taskStatusFilterDesktop');
+
+        function handleStatusDropdownChange(statusValue) {
+            const normalizedStatus = normalizeTaskStatusFilter(statusValue);
+            console.log('Status filter dropdown changed, status:', normalizedStatus);
+            if (window.filterTasks) {
+                window.filterTasks(normalizedStatus);
+            } else {
+                filterTasks(normalizedStatus);
+            }
+        }
+
         if (filterDropdown) {
             filterDropdown.addEventListener('change', function(e) {
                 const status = this.value;
-                console.log('Status filter dropdown changed, status:', status);
-                if (window.filterTasks) {
-                    window.filterTasks(status);
-                } else {
-                    filterTasks(status);
-                }
+                handleStatusDropdownChange(status);
             });
-            
-            // Set initial value from saved filter
-            try {
-                const saved = localStorage.getItem('salesManagerTasksFilter');
-                if (saved && ['all', 'pending', 'overdue', 'rescheduled', 'completed'].includes(saved)) {
+        }
+
+        if (filterDropdownDesktop) {
+            filterDropdownDesktop.addEventListener('change', function() {
+                handleStatusDropdownChange(this.value);
+            });
+        }
+
+        if (hasRequestedStatus) {
+            const normalizedRequestedStatus = normalizeTaskStatusFilter(requestedStatus);
+            if (filterDropdown) filterDropdown.value = normalizedRequestedStatus;
+            if (filterDropdownDesktop) filterDropdownDesktop.value = normalizedRequestedStatus;
+            currentStatus = normalizedRequestedStatus;
+            window.currentStatus = normalizedRequestedStatus;
+        }
+
+        try {
+            const saved = localStorage.getItem('salesManagerTasksFilter');
+            if (saved && ['all', 'pending', 'overdue', 'rescheduled', 'completed'].includes(saved)) {
+                if (filterDropdown) {
                     filterDropdown.value = saved;
                 }
-            } catch (e) {
-                console.error('Error reading saved filter:', e);
+                if (filterDropdownDesktop) {
+                    filterDropdownDesktop.value = saved;
+                }
             }
+        } catch (e) {
+            console.error('Error reading saved filter:', e);
         }
 
         const categoryDropdownDesktop = document.getElementById('taskTypeFilterDesktop');
@@ -3570,7 +3680,7 @@
 
         try {
             const savedCategory = localStorage.getItem('salesManagerTaskCategory');
-            if (savedCategory && ['all', 'follow_up', 'meeting', 'site_visit', 'prospect', 'closer', 'other'].includes(savedCategory)) {
+            if (savedCategory && ['all', 'fresh_lead', 'follow_up', 'meeting', 'site_visit', 'prospect', 'closer', 'other'].includes(savedCategory)) {
                 if (categoryDropdownDesktop) {
                     categoryDropdownDesktop.value = savedCategory;
                 }
@@ -3587,13 +3697,14 @@
         if (focusMode === 'followups') {
             if (categoryDropdownDesktop) categoryDropdownDesktop.value = 'prospect';
             if (categoryDropdownMobile) categoryDropdownMobile.value = 'prospect';
-            if (filterDropdown) filterDropdown.value = 'pending';
-            currentStatus = 'pending';
-            window.currentStatus = 'pending';
+            if (!hasRequestedStatus) {
+                if (filterDropdown) filterDropdown.value = 'pending';
+                if (filterDropdownDesktop) filterDropdownDesktop.value = 'pending';
+                currentStatus = 'pending';
+                window.currentStatus = 'pending';
+            }
             currentCategory = 'follow_up';
             window.currentCategory = 'follow_up';
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector('.filter-btn[data-status="pending"]')?.classList.add('active');
         }
         
         // Set up date dropdown filters (mobile and desktop)
@@ -3635,17 +3746,20 @@
                 handleDateFilterChange(this.value);
             });
             
-            // Set initial value from saved filter
-            try {
-                const saved = localStorage.getItem('salesManagerDateFilter');
-                if (saved && ['all', 'today', 'tomorrow', 'this_week', 'this_month', 'custom'].includes(saved)) {
-                    dateDropdownMobile.value = saved;
-                    if (saved === 'custom') {
-                        handleDateFilterChange('custom');
+            if (hasRequestedDateFilter) {
+                dateDropdownMobile.value = requestedDateFilter;
+            } else {
+                try {
+                    const saved = localStorage.getItem('salesManagerDateFilter');
+                    if (saved && ['all', 'today', 'tomorrow', 'this_week', 'this_month', 'custom'].includes(saved)) {
+                        dateDropdownMobile.value = saved;
+                        if (saved === 'custom') {
+                            handleDateFilterChange('custom');
+                        }
                     }
+                } catch (e) {
+                    console.error('Error reading saved date filter:', e);
                 }
-            } catch (e) {
-                console.error('Error reading saved date filter:', e);
             }
         }
         
@@ -3654,17 +3768,20 @@
                 handleDateFilterChange(this.value);
             });
             
-            // Set initial value from saved filter
-            try {
-                const saved = localStorage.getItem('salesManagerDateFilter');
-                if (saved && ['all', 'today', 'tomorrow', 'this_week', 'this_month', 'custom'].includes(saved)) {
-                    dateDropdownDesktop.value = saved;
-                    if (saved === 'custom') {
-                        handleDateFilterChange('custom');
+            if (hasRequestedDateFilter) {
+                dateDropdownDesktop.value = requestedDateFilter;
+            } else {
+                try {
+                    const saved = localStorage.getItem('salesManagerDateFilter');
+                    if (saved && ['all', 'today', 'tomorrow', 'this_week', 'this_month', 'custom'].includes(saved)) {
+                        dateDropdownDesktop.value = saved;
+                        if (saved === 'custom') {
+                            handleDateFilterChange('custom');
+                        }
                     }
+                } catch (e) {
+                    console.error('Error reading saved date filter:', e);
                 }
-            } catch (e) {
-                console.error('Error reading saved date filter:', e);
             }
         }
         
@@ -3710,11 +3827,26 @@
                 }
                 savedCustomDate = localStorage.getItem('salesManagerCustomDate');
                 const savedCategory = localStorage.getItem('salesManagerTaskCategory');
-                    if (savedCategory && ['all', 'follow_up', 'meeting', 'site_visit', 'prospect', 'closer', 'other'].includes(savedCategory)) {
+                    if (savedCategory && ['all', 'fresh_lead', 'follow_up', 'meeting', 'site_visit', 'prospect', 'closer', 'other'].includes(savedCategory)) {
                     savedCategoryFilter = savedCategory;
                 }
             } catch (e) {
                 console.error('Error reading saved date filter:', e);
+            }
+
+            if (hasRequestedDateFilter) {
+                savedDateFilter = requestedDateFilter;
+                savedCustomDate = requestedDateFilter === 'custom' ? requestedCustomDate : null;
+                if (customDatePicker) {
+                    if (requestedDateFilter === 'custom') {
+                        customDatePicker.style.display = 'block';
+                        if (requestedCustomDate) {
+                            customDatePicker.value = requestedCustomDate;
+                        }
+                    } else {
+                        customDatePicker.style.display = 'none';
+                    }
+                }
             }
             
             // Use filterTasks instead of loadTasks to restore UI state
@@ -3773,21 +3905,6 @@
         // DOM already loaded, call immediately
         console.log('DOM already loaded, initializing immediately...');
         setTimeout(function() {
-            // Set up filter button event listeners
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const status = this.getAttribute('data-status');
-                    console.log('Filter button clicked, status:', status);
-                    if (window.filterTasks) {
-                        window.filterTasks(status);
-                    } else {
-                        console.error('filterTasks function not available');
-                        filterTasks(status); // Try direct call as fallback
-                    }
-                });
-            });
-            
             const tasksGridEl = document.getElementById('tasksGrid');
             if (tasksGridEl) {
                 console.log('Tasks grid found in fallback, calling filterTasks() with saved filter:', currentStatus);
@@ -3830,6 +3947,7 @@
 
     // ASM task outcome overrides
     let selectedTaskOutcome = null;
+    let currentTaskCategory = 'other';
 
     async function handleManagerCallClick(taskId, phoneNumber) {
         setCurrentTaskId(taskId);
@@ -3848,8 +3966,9 @@
         window.location.href = `tel:${cleanPhone}`;
     }
 
-    function openTaskOutcomeModal(taskId) {
+    function openTaskOutcomeModal(taskId, taskCategory = 'other') {
         setCurrentTaskId(taskId);
+        currentTaskCategory = taskCategory || 'other';
         selectedTaskOutcome = null;
         document.getElementById('verifyRejectPromptModal')?.classList.add('active');
     }
@@ -3860,6 +3979,7 @@
 
     function cancelVerifyRejectPrompt() {
         closeTaskOutcomeModal();
+        currentTaskCategory = 'other';
         setCurrentTaskId(null);
     }
 
@@ -3883,6 +4003,14 @@
         }
 
         if (outcome === 'follow_up' || outcome === 'cnp') {
+            if (outcome === 'cnp' && currentTaskCategory === 'fresh_lead') {
+                const result = await submitTaskOutcome('cnp', {}, false);
+                if (result?.success) {
+                    currentTaskCategory = 'other';
+                }
+                return;
+            }
+
             selectedTaskOutcome = outcome;
             const title = document.getElementById('outcomeDateTimeModalTitle');
             const text = document.getElementById('outcomeDateTimeModalText');
@@ -4019,6 +4147,7 @@
         }
 
         setCurrentTaskId(null);
+        currentTaskCategory = 'other';
         selectedTaskOutcome = null;
         showAlert(result.message || 'Outcome submitted successfully', 'success');
         return result;

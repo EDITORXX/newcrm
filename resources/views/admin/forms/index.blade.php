@@ -21,9 +21,6 @@
             Published
         </a>
     </div>
-    <a href="{{ route('admin.forms.create') }}" class="btn btn-brand-gradient" style="color: white; text-decoration: none;">
-        <i class="fas fa-plus" style="margin-right: 5px;"></i> Create New Form
-    </a>
     <a href="{{ route('admin.forms.test-field-type') }}" class="btn" style="background: #ef4444; color: white; text-decoration: none;">
         <i class="fas fa-bug" style="margin-right: 5px;"></i> Test Field Type
     </a>
@@ -35,38 +32,43 @@
     .forms-container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 20px;
+        gap: 24px;
         margin-top: 20px;
     }
     .form-card {
         background: white;
-        border: 1px solid #E5DED4;
-        border-radius: 12px;
-        padding: 24px;
+        border: 1px solid #e7e0d7;
+        border-radius: 22px;
+        padding: 28px;
         transition: all 0.3s;
-        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
     }
     .form-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 14px 32px rgba(17, 24, 39, 0.08);
         transform: translateY(-2px);
     }
     .form-card-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 16px;
+        gap: 16px;
+        margin-bottom: 12px;
     }
     .form-card-title {
-        font-size: 20px;
-        font-weight: 600;
+        font-size: 19px;
+        line-height: 1.35;
+        font-weight: 700;
         color: var(--text-color);
         margin: 0;
     }
     .form-card-badge {
-        padding: 4px 12px;
-        border-radius: 12px;
+        padding: 6px 12px;
+        border-radius: 999px;
         font-size: 12px;
-        font-weight: 500;
+        font-weight: 700;
+        white-space: nowrap;
     }
     .badge-custom {
         background: #dbeafe;
@@ -79,36 +81,43 @@
     .form-card-meta {
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        margin-top: 12px;
+        gap: 10px;
+        margin-top: 10px;
+        flex: 1;
     }
     .form-meta-item {
         display: flex;
-        align-items: center;
-        gap: 8px;
+        align-items: flex-start;
+        gap: 10px;
         font-size: 14px;
-        color: #666;
+        color: #5b6473;
+        line-height: 1.5;
     }
     .form-meta-item i {
         width: 16px;
         color: #205A44;
+        margin-top: 3px;
     }
     .form-card-actions {
         display: flex;
-        gap: 8px;
-        margin-top: 16px;
-        padding-top: 16px;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 18px;
         border-top: 1px solid #E5DED4;
     }
     .form-action-btn {
         flex: 1;
-        padding: 8px 16px;
+        padding: 12px 16px;
         border: none;
-        border-radius: 6px;
+        border-radius: 12px;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 700;
         cursor: pointer;
         transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
     .btn-edit {
         background: #205A44;
@@ -207,6 +216,33 @@
         border: 1px solid #E5DED4;
         border-radius: 8px;
     }
+    .form-card-summary {
+        color: #5b6473;
+        margin: 0 0 14px 0;
+        font-size: 15px;
+        line-height: 1.6;
+        min-height: 72px;
+    }
+    @media (max-width: 768px) {
+        .forms-container {
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+        .form-card {
+            padding: 22px;
+            border-radius: 18px;
+        }
+        .form-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .form-card-summary {
+            min-height: auto;
+        }
+        .form-card-actions {
+            flex-direction: column;
+        }
+    }
 </style>
 @endpush
 
@@ -238,6 +274,9 @@
                         <h3 class="form-card-title">{{ $form['name'] }}</h3>
                         <span class="form-card-badge badge-existing">Existing</span>
                     </div>
+                    @if(!empty($form['description']))
+                        <p class="form-card-summary">{{ $form['description'] }}</p>
+                    @endif
                     <div class="form-card-meta">
                         <div class="form-meta-item">
                             <i class="fas fa-map-marker-alt"></i>
@@ -256,9 +295,9 @@
                         <button type="button" onclick="viewForm('{{ $form['route'] }}', '{{ $form['name'] }}', '{{ $form['path'] }}')" class="form-action-btn btn-view" style="border: none;">
                             <i class="fas fa-eye"></i> View Form
                         </button>
-                        <button type="button" onclick="editExistingForm('{{ $form['path'] }}', '{{ $form['name'] }}', '{{ $form['type'] }}')" class="form-action-btn btn-edit" style="border: none;">
+                        <a href="{{ $form['edit_url'] }}" class="form-action-btn btn-edit" style="border: none; text-decoration: none; text-align: center;">
                             <i class="fas fa-edit"></i> Edit
-                        </button>
+                        </a>
                     </div>
                 </div>
             @endforeach
@@ -281,7 +320,7 @@
                         </div>
                     </div>
                     @if($form->description)
-                        <p style="color: #666; margin: 12px 0; font-size: 14px;">{{ $form->description }}</p>
+                        <p class="form-card-summary">{{ $form->description }}</p>
                     @endif
                     <div class="form-card-meta">
                         <div class="form-meta-item">
@@ -333,11 +372,8 @@
     @else
         <div class="empty-state">
             <i class="fas fa-inbox"></i>
-            <h3>No Custom Forms Yet</h3>
-            <p>Create your first dynamic form to get started!</p>
-            <a href="{{ route('admin.forms.create') }}" class="btn btn-brand-gradient" style="margin-top: 20px; color: white; text-decoration: none; display: inline-block;">
-                <i class="fas fa-plus"></i> Create Form
-            </a>
+            <h3>No Linked Forms Yet</h3>
+            <p>The approved forms will appear here after their first edit and publish.</p>
         </div>
     @endif
 </div>
@@ -379,17 +415,6 @@
     function closeFormPreview() {
         document.getElementById('formPreviewModal').classList.remove('active');
         document.getElementById('formPreviewIframe').src = 'about:blank';
-    }
-    
-    function editExistingForm(formPath, formName, formType) {
-        // Redirect to form builder with pre-filled data
-        const params = new URLSearchParams({
-            from_existing: '1',
-            name: formName,
-            path: formPath,
-            type: formType
-        });
-        window.location.href = '{{ route("admin.forms.create") }}?' + params.toString();
     }
     
     // Close modal on outside click

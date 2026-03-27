@@ -4,10 +4,165 @@ namespace App\Http\Controllers;
 
 use App\Services\DynamicFormService;
 use Illuminate\Http\Request;
+use App\Models\SalesManagerProfile;
 use App\Models\User;
 
 class SalesManagerController extends Controller
 {
+    private function defaultDashboardVisibility(): array
+    {
+        return [
+            'today_focus_panel' => true,
+            'today_focus_fresh_leads' => true,
+            'today_focus_overdue' => true,
+            'today_focus_meetings' => true,
+            'today_focus_site_visits' => true,
+            'today_focus_follow_ups' => true,
+            'favorites_panel' => true,
+            'stat_leads_received' => true,
+            'stat_todays_prospects' => true,
+            'stat_pending_verifications' => true,
+            'stat_overdue_tasks' => true,
+            'stat_team_members' => true,
+            'stat_pending_tasks' => true,
+            'stat_no_response_yet' => true,
+            'no_response_section' => true,
+            'manager_targets_section' => true,
+            'team_targets_section' => true,
+            'team_members_cards_section' => true,
+            'incentives_section' => true,
+            'chatbot_widget' => false,
+        ];
+    }
+
+    private function isAsmChatbotEnabledForUser(User $user): bool
+    {
+        if (!$user->isAssistantSalesManager()) {
+            return true;
+        }
+
+        $visibility = $this->getAsmDashboardVisibilityForUser($user);
+        return (bool) ($visibility['chatbot_widget'] ?? false);
+    }
+
+    private function defaultSectionViewPreferences(): array
+    {
+        return [
+            'leads' => 'list',
+            'prospects' => 'card',
+            'meetings' => 'card',
+            'site_visits' => 'card',
+            'tasks' => 'card',
+        ];
+    }
+
+    private function getAsmDashboardVisibilityForUser(User $user): array
+    {
+        $defaults = $this->defaultDashboardVisibility();
+
+        if (!$user->isAssistantSalesManager()) {
+            return $defaults;
+        }
+
+        $profile = SalesManagerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            ['preferences' => []]
+        );
+
+        $saved = is_array($profile->preferences['dashboard_visibility'] ?? null)
+            ? $profile->preferences['dashboard_visibility']
+            : [];
+
+        return array_merge($defaults, $saved);
+    }
+
+    private function getAsmSectionViewPreferencesForUser(User $user): array
+    {
+        $defaults = $this->defaultSectionViewPreferences();
+
+        if (!$user->isAssistantSalesManager()) {
+            return $defaults;
+        }
+
+        $profile = SalesManagerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            ['preferences' => []]
+        );
+
+        $saved = is_array($profile->preferences['section_view_preferences'] ?? null)
+            ? $profile->preferences['section_view_preferences']
+            : [];
+
+        $normalized = [];
+        foreach ($defaults as $key => $default) {
+            $value = $saved[$key] ?? $default;
+            $normalized[$key] = $value === 'list' ? 'list' : 'card';
+        }
+
+        return $normalized;
+    }
+
+    private function persistAsmDashboardVisibility(User $user, array $submitted): array
+    {
+        $defaults = $this->defaultDashboardVisibility();
+        $allowedKeys = array_keys($defaults);
+
+        $profile = SalesManagerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            ['preferences' => []]
+        );
+
+        $filtered = [];
+        foreach ($allowedKeys as $key) {
+            if (array_key_exists($key, $submitted)) {
+                $filtered[$key] = filter_var($submitted[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                $filtered[$key] = $filtered[$key] === null ? (bool) $submitted[$key] : $filtered[$key];
+            }
+        }
+
+        $preferences = is_array($profile->preferences) ? $profile->preferences : [];
+        $preferences['dashboard_visibility'] = array_merge(
+            $defaults,
+            $preferences['dashboard_visibility'] ?? [],
+            $filtered
+        );
+
+        $profile->preferences = $preferences;
+        $profile->save();
+
+        return $this->getAsmDashboardVisibilityForUser($user);
+    }
+
+    private function persistAsmSectionViewPreferences(User $user, array $submitted): array
+    {
+        $defaults = $this->defaultSectionViewPreferences();
+        $allowedKeys = array_keys($defaults);
+
+        $profile = SalesManagerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            ['preferences' => []]
+        );
+
+        $filtered = [];
+        foreach ($allowedKeys as $key) {
+            if (array_key_exists($key, $submitted)) {
+                $filtered[$key] = $submitted[$key] === 'list' ? 'list' : 'card';
+            }
+        }
+
+        $preferences = is_array($profile->preferences) ? $profile->preferences : [];
+        $preferences['section_view_preferences'] = array_merge(
+            $defaults,
+            $preferences['section_view_preferences'] ?? [],
+            $filtered
+        );
+
+        $profile->preferences = $preferences;
+        $profile->save();
+
+        return $this->getAsmSectionViewPreferencesForUser($user);
+    }
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -23,6 +178,8 @@ class SalesManagerController extends Controller
             if (!$user->relationLoaded('role')) {
                 $user->load('role');
             }
+
+            view()->share('asmChatbotEnabled', $this->isAsmChatbotEnabledForUser($user));
             
             // Allow Admin, CRM, Sales Head, and Senior Manager to access
             // Only redirect Sales Head if they're trying to access sales-manager dashboard specifically
@@ -59,7 +216,10 @@ class SalesManagerController extends Controller
         // Generate API token for the session
         $token = $user->createToken('sales-manager-web-token')->plainTextToken;
         
-        return view('sales-manager.dashboard', ['api_token' => $token]);
+        return view('sales-manager.dashboard', [
+            'api_token' => $token,
+            'dashboardVisibility' => $this->getAsmDashboardVisibilityForUser($user),
+        ]);
     }
 
     /**
@@ -86,7 +246,10 @@ class SalesManagerController extends Controller
         // Generate API token for the session
         $token = $user->createToken('sales-manager-web-token')->plainTextToken;
         
-        return view('sales-manager.leads', ['api_token' => $token]);
+        return view('sales-manager.leads', [
+            'api_token' => $token,
+            'sectionViewPreferences' => $this->getAsmSectionViewPreferencesForUser($user),
+        ]);
     }
 
     /**
@@ -107,7 +270,11 @@ class SalesManagerController extends Controller
             return view('prospects.index', ['api_token' => $token, 'dynamicForm' => $dynamicForm]);
         }
         
-        return view('sales-manager.prospects', ['api_token' => $token, 'dynamicForm' => $dynamicForm]);
+        return view('sales-manager.prospects', [
+            'api_token' => $token,
+            'dynamicForm' => $dynamicForm,
+            'sectionViewPreferences' => $this->getAsmSectionViewPreferencesForUser($user),
+        ]);
     }
 
     /**
@@ -157,6 +324,61 @@ class SalesManagerController extends Controller
     }
 
     /**
+     * Show dashboard settings page for Assistant Sales Manager.
+     */
+    public function settings()
+    {
+        $user = auth()->user();
+
+        if (!$user->isAssistantSalesManager()) {
+            abort(403, 'Only Assistant Sales Managers can access dashboard settings.');
+        }
+
+        return view('sales-manager.settings', [
+            'dashboardVisibility' => $this->getAsmDashboardVisibilityForUser($user),
+            'sectionViewPreferences' => $this->getAsmSectionViewPreferencesForUser($user),
+        ]);
+    }
+
+    public function updateDashboardSettings(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->isAssistantSalesManager()) {
+            abort(403, 'Only Assistant Sales Managers can update dashboard settings.');
+        }
+
+        $validated = $request->validate([
+            'dashboard_visibility' => ['nullable', 'array'],
+            'section_view_preferences' => ['nullable', 'array'],
+        ]);
+
+        $dashboardVisibility = $this->getAsmDashboardVisibilityForUser($user);
+        $sectionViewPreferences = $this->getAsmSectionViewPreferencesForUser($user);
+
+        if (array_key_exists('dashboard_visibility', $validated)) {
+            $dashboardVisibility = $this->persistAsmDashboardVisibility(
+                $user,
+                $validated['dashboard_visibility']
+            );
+        }
+
+        if (array_key_exists('section_view_preferences', $validated)) {
+            $sectionViewPreferences = $this->persistAsmSectionViewPreferences(
+                $user,
+                $validated['section_view_preferences']
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dashboard settings updated successfully.',
+            'dashboard_visibility' => $dashboardVisibility,
+            'section_view_preferences' => $sectionViewPreferences,
+        ]);
+    }
+
+    /**
      * Show meetings page
      */
     public function meetings()
@@ -171,7 +393,10 @@ class SalesManagerController extends Controller
             return view('meetings.index', ['api_token' => $token]);
         }
         
-        return view('sales-manager.meetings', ['api_token' => $token]);
+        return view('sales-manager.meetings', [
+            'api_token' => $token,
+            'sectionViewPreferences' => $this->getAsmSectionViewPreferencesForUser($user),
+        ]);
     }
 
     /**
@@ -207,7 +432,22 @@ class SalesManagerController extends Controller
             return view('site-visits.index', ['api_token' => $token]);
         }
         
-        return view('sales-manager.site-visits', ['api_token' => $token]);
+        return view('sales-manager.site-visits', [
+            'api_token' => $token,
+            'sectionViewPreferences' => $this->getAsmSectionViewPreferencesForUser($user),
+        ]);
+    }
+
+    /**
+     * Show closed leads page
+     */
+    public function closedLeads()
+    {
+        $user = auth()->user();
+
+        $token = $user->createToken('sales-manager-web-token')->plainTextToken;
+
+        return view('sales-manager.closed', ['api_token' => $token]);
     }
 
     /**
@@ -220,7 +460,10 @@ class SalesManagerController extends Controller
         // Generate API token for the session
         $token = $user->createToken('sales-manager-web-token')->plainTextToken;
         
-        return view('sales-manager.tasks', ['api_token' => $token]);
+        return view('sales-manager.tasks', [
+            'api_token' => $token,
+            'sectionViewPreferences' => $this->getAsmSectionViewPreferencesForUser($user),
+        ]);
     }
 
     public function editProspect($id)

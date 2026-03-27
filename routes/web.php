@@ -343,10 +343,13 @@ Route::middleware(['auth'])->prefix('sales-manager')->name('sales-manager.')->gr
     Route::get('/tasks', [\App\Http\Controllers\SalesManagerController::class, 'tasks'])->name('tasks');
     Route::get('/reports', [\App\Http\Controllers\SalesManagerController::class, 'reports'])->name('reports');
     Route::get('/profile', [\App\Http\Controllers\SalesManagerController::class, 'profile'])->name('profile');
+    Route::get('/settings', [\App\Http\Controllers\SalesManagerController::class, 'settings'])->name('settings');
+    Route::post('/settings/dashboard-visibility', [\App\Http\Controllers\SalesManagerController::class, 'updateDashboardSettings'])->name('settings.update');
     Route::get('/meetings', [\App\Http\Controllers\SalesManagerController::class, 'meetings'])->name('meetings');
     Route::get('/meetings/create', [\App\Http\Controllers\SalesManagerController::class, 'createMeeting'])->name('meetings.create');
         Route::get('/site-visits', [\App\Http\Controllers\SalesManagerController::class, 'siteVisits'])->name('site-visits');
         Route::get('/site-visits/create', [\App\Http\Controllers\SalesManagerController::class, 'createSiteVisit'])->name('site-visits.create');
+    Route::get('/closed', [\App\Http\Controllers\SalesManagerController::class, 'closedLeads'])->name('closed');
 });
 
 // Protected Routes
@@ -446,6 +449,10 @@ Route::middleware(['auth'])->group(function () {
         // Target Management (CRM/Admin/Sales Head) - CRM-friendly URLs
         Route::resource('targets', \App\Http\Controllers\Admin\TargetController::class);
         Route::post('targets/bulk-set', [\App\Http\Controllers\Admin\TargetController::class, 'bulkSet'])->name('targets.bulk-set');
+    });
+
+    Route::middleware(['role:admin,crm'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/verifications', [\App\Http\Controllers\Crm\VerificationController::class, 'index'])->name('verifications');
     });
 
     // Finance Manager Routes
@@ -645,6 +652,8 @@ Route::middleware(['auth'])->group(function () {
     // Automation Rules (Admin only)
     Route::middleware(['auth', 'role:admin'])->prefix('admin/automation')->name('admin.automation.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\AutomationController::class, 'index'])->name('index');
+        Route::get('/cnp', [\App\Http\Controllers\Admin\AsmCnpAutomationController::class, 'index'])->name('cnp.index');
+        Route::post('/cnp', [\App\Http\Controllers\Admin\AsmCnpAutomationController::class, 'update'])->name('cnp.update');
         Route::get('/create', [\App\Http\Controllers\Admin\AutomationController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Admin\AutomationController::class, 'store'])->name('store');
         Route::get('/{rule}/edit', [\App\Http\Controllers\Admin\AutomationController::class, 'edit'])->name('edit');

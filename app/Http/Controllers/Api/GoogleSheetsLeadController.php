@@ -67,7 +67,7 @@ class GoogleSheetsLeadController extends Controller
             // Ensure required fields
             $mappedData['name'] = $mappedData['name'] ?? $request->name;
             $mappedData['phone'] = $mappedData['phone'] ?? $request->phone;
-            $mappedData['source'] = $mappedData['source'] ?? 'google_sheets';
+            $mappedData['source'] = Lead::normalizeSource($mappedData['source'] ?? 'google_sheets');
             $mappedData['status'] = 'new';
 
             // Sanitize/validate phone (avoid importing IDs/timestamps as phone numbers)
@@ -132,7 +132,7 @@ class GoogleSheetsLeadController extends Controller
                 'budget' => $mappedData['budget'] ?? null,
                 'requirements' => $mappedData['requirements'] ?? null,
                 'notes' => $mappedData['notes'] ?? null,
-                'source' => $mappedData['source'] ?? 'google_sheets',
+                'source' => Lead::normalizeSource($mappedData['source'] ?? 'google_sheets'),
                 'status' => $mappedData['status'] ?? 'new',
                 'created_by' => $config->created_by,
             ]);

@@ -17,7 +17,7 @@
     }
     .meeting-card {
         background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
-        padding: 18px;
+        padding: 16px;
         border-radius: 20px;
         box-shadow: 0 18px 45px rgba(6, 58, 28, 0.08);
         border: 1px solid rgba(32, 90, 68, 0.10);
@@ -43,7 +43,7 @@
     .meeting-header {
         display: flex;
         flex-direction: column;
-        margin-bottom: 14px;
+        margin-bottom: 10px;
     }
     .meeting-topline {
         display: flex;
@@ -55,12 +55,59 @@
         margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
     .meeting-actions .btn {
         width: 100%;
         margin-top: 0;
         margin-left: 0;
+    }
+    .card-action-menu {
+        position: relative;
+        width: 100%;
+    }
+    .card-action-trigger {
+        width: 100%;
+    }
+    .card-action-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 1px solid #dbe7de;
+        box-shadow: 0 20px 40px rgba(6, 58, 28, 0.14);
+        min-width: 100%;
+    }
+    .card-action-dropdown.show {
+        display: flex;
+    }
+    .card-action-item {
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 0.86rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        cursor: pointer;
+    }
+    .card-action-item.btn-success,
+    .card-action-item.btn-danger,
+    .card-action-item.btn-primary,
+    .card-action-item.btn-warning {
+        width: 100%;
+        margin: 0;
     }
     .meeting-info h3 {
         font-size: 1.2rem;
@@ -81,9 +128,9 @@
         background: #f8fbf9;
         border: 1px solid #e3ece7;
         border-radius: 12px;
-        padding: 10px 12px;
-        min-height: 64px;
-        margin-bottom: 12px;
+        padding: 9px 11px;
+        min-height: 0;
+        margin-bottom: 10px;
     }
     .meeting-remark strong {
         display: block;
@@ -112,6 +159,7 @@
         flex-wrap: wrap;
         gap: 8px;
         margin-top: 0;
+        margin-bottom: 4px;
     }
     .badge {
         display: inline-flex;
@@ -153,6 +201,10 @@
     .badge-cancelled-conf {
         background: #fee2e2;
         color: #991b1b;
+    }
+    .badge-awaiting {
+        background: #fff7ed;
+        color: #c2410c;
     }
     .btn {
         padding: 10px 14px;
@@ -196,23 +248,6 @@
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         color: white;
         box-shadow: 0 10px 22px rgba(245, 158, 11, 0.18);
-    }
-    .status-note {
-        text-align: center;
-        padding: 10px;
-        border-radius: 12px;
-        background: #fff7e6;
-        color: #92400e;
-        font-size: 0.82rem;
-        font-weight: 600;
-        border: 1px solid #fde68a;
-    }
-    .status-note small {
-        display: block;
-        margin-top: 4px;
-        color: #a16207;
-        font-size: 0.77rem;
-        font-weight: 500;
     }
     .view-toggle-group {
         display: inline-flex;
@@ -260,15 +295,16 @@
     }
     #meetingsContainer.list-view .meeting-card {
         flex-direction: row;
-        align-items: center;
-        gap: 18px;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 16px;
     }
     #meetingsContainer.list-view .meeting-header {
         flex: 1 1 auto;
         margin-bottom: 0;
     }
     #meetingsContainer.list-view .meeting-actions {
-        flex: 0 0 230px;
+        flex: 0 0 170px;
         margin-top: 0;
     }
     .empty-state {
@@ -341,8 +377,8 @@
             margin: 0 auto;
         }
         .meeting-card {
-            padding: 15px;
-            border-radius: 18px;
+            padding: 14px;
+            border-radius: 16px;
         }
         .meeting-info h3 {
             font-size: 1.1rem;
@@ -354,6 +390,10 @@
         }
         .meeting-actions {
             gap: 8px;
+        }
+        .card-action-dropdown {
+            position: static;
+            margin-top: 8px;
         }
         .view-toggle-group {
             width: auto;
@@ -369,6 +409,9 @@
         }
         #meetingsContainer.list-view .meeting-actions {
             flex: 1 1 auto;
+        }
+        .meeting-remark {
+            margin-bottom: 8px;
         }
         .filters {
             flex-direction: row;
@@ -425,6 +468,25 @@
         .form-group > div[style*="display: flex"] button {
             width: 100%;
         }
+        .complete-meeting-modal-head,
+        .complete-meeting-modal-body,
+        .complete-meeting-actions {
+            padding-left: 18px;
+            padding-right: 18px;
+        }
+        .complete-meeting-modal-head {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .complete-meeting-grid {
+            grid-template-columns: 1fr;
+        }
+        .complete-meeting-actions {
+            flex-direction: column-reverse;
+        }
+        .complete-meeting-actions .btn {
+            width: 100%;
+        }
     }
 </style>
 @endpush
@@ -433,14 +495,6 @@
 <div class="mb-6">
     <div class="asm-page-header">
         <h2 class="asm-page-title">My Meetings</h2>
-        <div class="view-toggle-group" aria-label="Meeting View Toggle">
-            <button type="button" class="view-toggle-btn active" data-view="card" onclick="setMeetingsView('card')">
-                <i class="fas fa-grip"></i>Cards
-            </button>
-            <button type="button" class="view-toggle-btn" data-view="list" onclick="setMeetingsView('list')">
-                <i class="fas fa-list"></i>List
-            </button>
-        </div>
     </div>
 
     <div class="filters">
@@ -464,11 +518,6 @@
             <option value="this_year">This Year</option>
             <option value="custom">Custom Date</option>
         </select>
-        <button type="button" class="filter-btn btn btn-primary" style="text-align: center; padding: 10px 16px; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="openQuickMeetingModal()">
-            <i class="fas fa-bolt"></i>
-            <span class="desktop-text">1-Click Meeting</span>
-            <span class="mobile-text">Meeting</span>
-        </button>
         <div id="customDateInputs">
             <input type="date" id="dateFrom" class="filter-select" onchange="loadMeetings()">
             <input type="date" id="dateTo" class="filter-select" onchange="loadMeetings()">
@@ -487,6 +536,35 @@
 @push('scripts')
 <script>
     const API_BASE_URL = '{{ url("/api/sales-manager") }}';
+    const ASM_SECTION_VIEW_PREFERENCES = @json($sectionViewPreferences ?? []);
+    const ASM_SECTION_VIEW_SAVE_URL = @json(route('sales-manager.settings.update'));
+
+    function getAsmPreferredView(sectionKey, fallbackView) {
+        const preferred = ASM_SECTION_VIEW_PREFERENCES?.[sectionKey];
+        return preferred === 'list' || preferred === 'card' ? preferred : fallbackView;
+    }
+
+    async function persistAsmSectionViewPreference(sectionKey, view) {
+        try {
+            ASM_SECTION_VIEW_PREFERENCES[sectionKey] = view;
+            await fetch(ASM_SECTION_VIEW_SAVE_URL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    section_view_preferences: {
+                        [sectionKey]: view
+                    }
+                })
+            });
+        } catch (error) {
+            console.error('Failed to persist section view preference:', error);
+        }
+    }
     
     function getToken() {
         return localStorage.getItem('sales_manager_token') || '{{ session("api_token") }}';
@@ -762,7 +840,7 @@
         return text.length > maxLength ? text.slice(0, maxLength).trim() + '...' : text;
     }
 
-    function setMeetingsView(view) {
+    function setMeetingsView(view, shouldPersist = true) {
         const container = document.getElementById('meetingsContainer');
         if (!container) return;
         container.classList.toggle('list-view', view === 'list');
@@ -772,6 +850,9 @@
         try {
             localStorage.setItem('asm_meetings_view', view);
         } catch (e) {}
+        if (shouldPersist) {
+            persistAsmSectionViewPreference('meetings', view);
+        }
     }
 
     async function loadMeetings() {
@@ -821,6 +902,54 @@
                                               meeting.customer_confirmation_status === 'cancelled' ? 'badge-cancelled-conf' : 'badge-pending-conf';
                 const confirmationStatusText = meeting.customer_confirmation_status || 'pending';
                 const remark = truncateText(getMeetingRemark(meeting), 120);
+                const isScheduled = meeting.status === 'scheduled';
+                const isCompleted = meeting.status === 'completed';
+                const isPendingVerification = isCompleted && meeting.verification_status === 'pending';
+                const isVerified = meeting.verification_status === 'verified';
+
+                const meetingActionItems = [];
+
+                if (isScheduled && meeting.customer_confirmation_status !== 'cancelled') {
+                    meetingActionItems.push(`
+                        <button class="card-action-item btn btn-success" onclick="closeAllMeetingActionMenus(); showCompleteMeetingModal(${meeting.id});">
+                            <i class="fas fa-check"></i>Complete
+                        </button>
+                    `);
+                    meetingActionItems.push(`
+                        <button class="card-action-item btn btn-danger" onclick="closeAllMeetingActionMenus(); showMarkDeadModal('meeting', ${meeting.id});">
+                            <i class="fas fa-skull"></i>Mark as Dead
+                        </button>
+                    `);
+                    meetingActionItems.push(`
+                        <button class="card-action-item btn btn-warning" onclick="closeAllMeetingActionMenus(); showRescheduleMeetingModal(${meeting.id});">
+                            <i class="fas fa-calendar-plus"></i>Reschedule
+                        </button>
+                    `);
+                }
+
+                if (isCompleted && isVerified) {
+                    meetingActionItems.push(`
+                        <button class="card-action-item btn btn-primary" onclick="closeAllMeetingActionMenus(); showConvertToSiteVisitModal(${meeting.id});">
+                            <i class="fas fa-exchange-alt"></i>Convert to Site Visit
+                        </button>
+                    `);
+                }
+
+                if (isCompleted && meeting.verification_status !== 'pending') {
+                    meetingActionItems.push(`
+                        <button class="card-action-item btn btn-danger" onclick="closeAllMeetingActionMenus(); showMarkDeadModal('meeting', ${meeting.id});">
+                            <i class="fas fa-skull"></i>Mark as Dead
+                        </button>
+                    `);
+                }
+
+                if (meeting.lead_id) {
+                    meetingActionItems.push(`
+                        <a href="/leads/${meeting.lead_id}" class="card-action-item btn btn-primary" onclick="closeAllMeetingActionMenus()">
+                            <i class="fas fa-eye"></i>View Detail
+                        </a>
+                    `);
+                }
 
                 return `
                     <div class="meeting-card ${statusClass}">
@@ -845,36 +974,20 @@
                                     <span class="badge ${statusBadge}">${meeting.status}</span>
                                     ${meeting.verification_status ? `<span class="badge ${verificationBadge}">${meeting.verification_status}</span>` : ''}
                                     <span class="badge ${confirmationStatusBadge}">${confirmationStatusText}</span>
+                                    ${isPendingVerification ? `<span class="badge badge-awaiting">Awaiting Verification</span>` : ''}
                                 </div>
                             </div>
                         </div>
                         <div class="meeting-actions">
-                            ${meeting.lead_id ? `
-                                <a href="/leads/${meeting.lead_id}" class="btn btn-primary">
-                                    <i class="fas fa-eye"></i>Lead Detail
-                                </a>
-                            ` : ''}
-                            ${meeting.status === 'scheduled' && meeting.customer_confirmation_status !== 'cancelled' ? `
-                                <button class="btn btn-success" onclick="showCompleteMeetingModal(${meeting.id})">
-                                    <i class="fas fa-check"></i>Complete
-                                </button>
-                                <button class="btn btn-danger" onclick="showMarkDeadModal('meeting', ${meeting.id})">
-                                    <i class="fas fa-skull"></i>Mark as Dead
-                                </button>
-                            ` : ''}
-                            ${meeting.status === 'completed' ? `
-                                ${meeting.verification_status === 'verified' ? `
-                                    <button class="btn btn-primary" onclick="showConvertToSiteVisitModal(${meeting.id})">
-                                        <i class="fas fa-exchange-alt"></i>Convert to Site Visit
+                            ${meetingActionItems.length ? `
+                                <div class="card-action-menu" data-meeting-action-menu="${meeting.id}">
+                                    <button class="btn btn-primary card-action-trigger" onclick="toggleMeetingActionMenu(${meeting.id}, event)">
+                                        <i class="fas fa-bolt"></i>Action
                                     </button>
-                                ` : ''}
-                                ${meeting.verification_status === 'pending' ? `
-                                    <div class="status-note">
-                                        Awaiting Verification
-                                        ${meeting.pending_verification_with ? `<small>Pending with: ${(meeting.pending_verification_with || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</small>` : ''}
+                                    <div class="card-action-dropdown" id="meetingActionDropdown${meeting.id}">
+                                        ${meetingActionItems.join('')}
                                     </div>
-                                ` : ''}
-                                ${meeting.verification_status !== 'pending' ? `<button class="btn btn-danger" onclick="showMarkDeadModal('meeting', ${meeting.id})"><i class="fas fa-skull"></i>Mark as Dead</button>` : ''}
+                                </div>
                             ` : ''}
                         </div>
                     </div>
@@ -889,6 +1002,35 @@
     }
 
     let currentMeetingId = null;
+
+    function closeAllMeetingActionMenus() {
+        document.querySelectorAll('.card-action-dropdown.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+
+    function toggleMeetingActionMenu(id, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const targetMenu = document.getElementById(`meetingActionDropdown${id}`);
+        if (!targetMenu) return;
+
+        const shouldOpen = !targetMenu.classList.contains('show');
+        closeAllMeetingActionMenus();
+
+        if (shouldOpen) {
+            targetMenu.classList.add('show');
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('[data-meeting-action-menu]')) {
+            closeAllMeetingActionMenus();
+        }
+    });
 
     function showCompleteMeetingModal(id) {
         currentMeetingId = id;
@@ -1676,10 +1818,25 @@
 
     // Initialize
     (function() {
+        const pageParams = new URLSearchParams(window.location.search);
+        const requestedDateFilter = pageParams.get('date_filter');
+        const dateFilterEl = document.getElementById('dateFilter');
+        const dateFromEl = document.getElementById('dateFrom');
+        const dateToEl = document.getElementById('dateTo');
         const savedView = (() => {
             try { return localStorage.getItem('asm_meetings_view') || 'card'; } catch (e) { return 'card'; }
         })();
-        setMeetingsView(savedView);
+        setMeetingsView(getAsmPreferredView('meetings', savedView), false);
+
+        if (dateFilterEl && requestedDateFilter && ['today', 'this_week', 'this_month', 'this_year', 'custom'].includes(requestedDateFilter)) {
+            dateFilterEl.value = requestedDateFilter;
+            if (requestedDateFilter === 'custom') {
+                if (dateFromEl && pageParams.get('date_from')) dateFromEl.value = pageParams.get('date_from');
+                if (dateToEl && pageParams.get('date_to')) dateToEl.value = pageParams.get('date_to');
+            }
+            toggleCustomDate();
+        }
+
         loadMeetings();
     })();
 </script>
@@ -1827,40 +1984,56 @@
 
 <!-- Complete Meeting Modal -->
 <div id="completeMeetingModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 20px;">Complete Meeting</h3>
-        <p style="color: #ef4444; margin-bottom: 16px;"><strong>Proof photos are required to complete the meeting.</strong></p>
-        
-        <div class="form-group">
-            <label>Proof Photos <span style="color: #ef4444;">*</span></label>
-            <input type="file" id="proofPhotosInput" multiple accept="image/*" onchange="handleProofPhotosChange(event)" required>
-            <div id="proofPhotosPreview" style="display: flex; flex-wrap: wrap; margin-top: 10px;"></div>
-            <small style="color: #6b7280;">Upload at least one photo as proof. Max 5MB per image.</small>
+    <div class="modal-content complete-meeting-modal-card" style="max-width: 760px; padding: 0; overflow: hidden;">
+        <div class="complete-meeting-modal-head">
+            <div>
+                <h3>Complete Meeting</h3>
+                <p>Upload proof and record the outcome before submitting.</p>
+            </div>
+            <span class="complete-meeting-badge">Required</span>
         </div>
 
-        <div class="form-group">
-            <label>Feedback</label>
-            <textarea id="meetingFeedback" rows="3" placeholder="Meeting feedback..."></textarea>
+        <div class="complete-meeting-modal-body">
+            <div class="complete-meeting-alert">
+                <i class="fas fa-camera"></i>
+                <div>
+                    <strong>Proof photos are mandatory.</strong>
+                    <span>Add at least one clear meeting proof photo. Max 5MB per image.</span>
+                </div>
+            </div>
+
+            <div class="complete-meeting-upload">
+                <label for="proofPhotosInput">Proof Photos <span class="req">*</span></label>
+                <input type="file" id="proofPhotosInput" multiple accept="image/*" onchange="handleProofPhotosChange(event)" required>
+                <div id="proofPhotosPreview" class="complete-meeting-preview"></div>
+            </div>
+
+            <div class="complete-meeting-grid">
+                <div class="form-group complete-meeting-field complete-meeting-field-wide">
+                    <label for="meetingFeedback">Feedback</label>
+                    <textarea id="meetingFeedback" rows="4" placeholder="Summarize discussion, interest level, and next steps..."></textarea>
+                </div>
+
+                <div class="form-group complete-meeting-field">
+                    <label for="meetingRating">Rating</label>
+                    <select id="meetingRating">
+                        <option value="">Select rating</option>
+                        <option value="1">1 - Poor</option>
+                        <option value="2">2 - Fair</option>
+                        <option value="3">3 - Good</option>
+                        <option value="4">4 - Very Good</option>
+                        <option value="5">5 - Excellent</option>
+                    </select>
+                </div>
+
+                <div class="form-group complete-meeting-field complete-meeting-field-wide">
+                    <label for="meetingNotes">Notes</label>
+                    <textarea id="meetingNotes" rows="4" placeholder="Add internal notes, objections, or follow-up context..."></textarea>
+                </div>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>Rating</label>
-            <select id="meetingRating">
-                <option value="">Select rating</option>
-                <option value="1">1 - Poor</option>
-                <option value="2">2 - Fair</option>
-                <option value="3">3 - Good</option>
-                <option value="4">4 - Very Good</option>
-                <option value="5">5 - Excellent</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Notes</label>
-            <textarea id="meetingNotes" rows="3" placeholder="Additional notes..."></textarea>
-        </div>
-
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <div class="complete-meeting-actions">
             <button type="button" class="btn btn-secondary" onclick="closeCompleteMeetingModal()">Cancel</button>
             <button type="button" class="btn btn-success" onclick="submitCompleteMeeting()">Submit</button>
         </div>
@@ -2074,6 +2247,8 @@
 }
 .modal.show {
     display: flex;
+    overflow-y: auto;
+    padding: 18px 0;
 }
 .modal-content {
     background: white;
@@ -2101,6 +2276,157 @@
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
+}
+.complete-meeting-modal-card {
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 92vw);
+    max-height: min(88vh, 920px);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+    border: 1px solid #dce9e2;
+    box-shadow: 0 24px 48px rgba(6, 58, 28, 0.14);
+}
+.complete-meeting-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 28px 18px;
+    background: linear-gradient(135deg, #f5fbf7 0%, #eef7f2 100%);
+    border-bottom: 1px solid #dce9e2;
+}
+.complete-meeting-modal-head h3 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    color: #0b3d29;
+}
+.complete-meeting-modal-head p {
+    margin: 8px 0 0;
+    color: #5e7669;
+    font-size: 14px;
+}
+.complete-meeting-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #e6f4ea;
+    color: #0f6d3c;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.complete-meeting-modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 24px 28px 12px;
+}
+.complete-meeting-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border: 1px solid #ffd4d4;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #fff5f5 0%, #fffafa 100%);
+}
+.complete-meeting-alert i {
+    font-size: 20px;
+    color: #dc2626;
+    margin-top: 2px;
+}
+.complete-meeting-alert strong,
+.complete-meeting-alert span {
+    display: block;
+}
+.complete-meeting-alert strong {
+    color: #b42318;
+    margin-bottom: 3px;
+}
+.complete-meeting-alert span {
+    color: #7a5c5c;
+    font-size: 13px;
+}
+.complete-meeting-upload {
+    padding: 18px;
+    margin-bottom: 20px;
+    border: 1px solid #dce9e2;
+    border-radius: 18px;
+    background: #f9fcfa;
+}
+.complete-meeting-upload label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #103c2b;
+}
+.complete-meeting-upload input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed #9fc2b0;
+    border-radius: 14px;
+    background: #fff;
+}
+.complete-meeting-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+.complete-meeting-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.52fr);
+    gap: 18px;
+}
+.complete-meeting-field {
+    margin-bottom: 0;
+}
+.complete-meeting-field-wide {
+    grid-column: 1 / -1;
+}
+.complete-meeting-field label {
+    margin-bottom: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #103c2b;
+}
+.complete-meeting-field textarea,
+.complete-meeting-field select {
+    border: 1px solid #d6e1db;
+    border-radius: 14px;
+    padding: 14px 15px;
+    color: #183c2c;
+    background: #fff;
+}
+.complete-meeting-field textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+.complete-meeting-field textarea:focus,
+.complete-meeting-field select:focus,
+.complete-meeting-upload input[type="file"]:focus {
+    outline: none;
+    border-color: #205A44;
+    box-shadow: 0 0 0 3px rgba(32, 90, 68, 0.12);
+}
+.complete-meeting-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 18px 28px 24px;
+    border-top: 1px solid #e4ede8;
+    background: #ffffff;
+}
+.complete-meeting-actions .btn {
+    min-width: 120px;
+    min-height: 46px;
+    border-radius: 12px;
+    font-weight: 700;
 }
 .btn-secondary {
     background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
