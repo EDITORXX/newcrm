@@ -683,6 +683,14 @@
         .task-card h3 {
             font-size: 16px !important;
         }
+        .task-lead-link {
+            color: inherit;
+            text-decoration: none;
+        }
+        .task-lead-link:hover {
+            color: #205A44;
+            text-decoration: underline;
+        }
         .task-card p {
             font-size: 13px !important;
         }
@@ -1504,6 +1512,7 @@
     const API_BASE_URL = '/api/sales-manager';
     const API_TOKEN = '{{ $api_token ?? session("api_token") ?? "" }}';
     const IS_ASSISTANT_SALES_MANAGER = @json(auth()->check() && auth()->user()->isAssistantSalesManager());
+    const LEAD_DETAIL_URL_TEMPLATE = @json(route('leads.show', '__LEAD_ID__'));
     window.managerLeadMeetingCreateUrl = '{{ route("sales-manager.meetings.create") }}';
     window.managerLeadSiteVisitCreateUrl = '{{ route("sales-manager.site-visits.create") }}';
     
@@ -1679,6 +1688,14 @@
                 "'": '&#039;'
             }[char];
         });
+    }
+
+    function getLeadDetailUrl(leadId) {
+        if (!leadId) {
+            return '#';
+        }
+
+        return LEAD_DETAIL_URL_TEMPLATE.replace('__LEAD_ID__', String(leadId));
     }
 
     // Filter tasks function - must be globally accessible for onclick handlers
@@ -1966,6 +1983,8 @@
                                        (task.title && task.title.includes('Reminder: Site Visit'));
             const isFollowUpTask = task.category === 'follow_up';
             const followUpRemark = escapeHtml((task.notes || '').trim());
+            const leadNameHtml = escapeHtml(leadName);
+            const leadDetailUrl = lead.id ? getLeadDetailUrl(lead.id) : '#';
 
             const cleanPhone = String(leadPhone).replace(/[^0-9]/g, '');
             return `
@@ -1974,7 +1993,7 @@
                         <div class="task-head-main">
                             <div class="task-avatar">${initial}</div>
                             <div class="task-head-content">
-                                <h3 class="task-name">${leadName}</h3>
+                                <h3 class="task-name">${lead.id ? `<a href="${leadDetailUrl}" class="task-lead-link">${leadNameHtml}</a>` : leadNameHtml}</h3>
                                 <div class="task-badge-row">
                                     ${isOverdue ? '<span class="overdue-badge">OVERDUE</span>' : ''}
                                     ${isPendingMeeting ? '<span class="task-mini-tag meeting">M</span>' : ''}
