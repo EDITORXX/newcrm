@@ -13,7 +13,7 @@
 @section('content')
     <div class="space-y-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                 <div class="xl:col-span-2">
                     <label for="assigned-user" class="block text-sm font-medium text-gray-700 mb-1">Assigned User</label>
                     <select id="assigned-user" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
@@ -39,45 +39,16 @@
                     <label for="gap-minutes" class="block text-sm font-medium text-gray-700 mb-1">Gap (minutes)</label>
                     <input id="gap-minutes" type="number" min="0" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" value="5">
                 </div>
-                <div>
-                    <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select id="status-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                        <option value="">All status</option>
-                        @foreach($statusOptions as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="source-filter" class="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                    <select id="source-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                        <option value="">All sources</option>
-                        @foreach($leadSources as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="search-filter" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    <input id="search-filter" type="text" placeholder="Name, phone, email" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                </div>
             </div>
 
             <div class="mt-4">
                 <label for="task-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea id="task-notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Optional notes for all created tasks"></textarea>
-                <p class="mt-2 text-sm text-gray-500">First lead gets the selected start date and time. Every next lead gets the selected gap added automatically.</p>
+                <p class="mt-2 text-sm text-gray-500">Pehli selected lead ko chosen start date aur time milega. Uske baad har next selected lead ko selected interval ke hisab se auto time milega.</p>
             </div>
 
             <div class="mt-4 flex flex-wrap items-center gap-4">
-                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input id="include-existing" type="checkbox" class="rounded border-gray-300 text-[#205A44] focus:ring-[#205A44]">
-                    Include leads with existing open call task
-                </label>
-                <button id="load-leads-btn" type="button" class="px-4 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d]">
-                    Load Leads
-                </button>
-                <span id="summary-text" class="text-sm text-gray-500">Select a user to preview assigned leads.</span>
+                <span id="summary-text" class="text-sm text-gray-500">Pehle user select karo. Leads automatically yahan load ho jayengi.</span>
             </div>
         </div>
 
@@ -91,9 +62,6 @@
                 <div class="flex flex-wrap gap-2">
                     <button type="button" id="create-selected-btn" class="px-4 py-2 bg-gradient-to-r from-[#063A1C] to-[#205A44] text-white rounded-lg hover:from-[#205A44] hover:to-[#15803d]">
                         Create For Selected Leads
-                    </button>
-                    <button type="button" id="create-all-btn" class="px-4 py-2 border border-[#205A44] text-[#205A44] rounded-lg hover:bg-[#F7F6F3]">
-                        Create For All Eligible Leads
                     </button>
                 </div>
             </div>
@@ -137,10 +105,6 @@
         const startDate = document.getElementById('start-date');
         const startTime = document.getElementById('start-time');
         const gapMinutes = document.getElementById('gap-minutes');
-        const searchFilter = document.getElementById('search-filter');
-        const statusFilter = document.getElementById('status-filter');
-        const sourceFilter = document.getElementById('source-filter');
-        const includeExisting = document.getElementById('include-existing');
         const notesInput = document.getElementById('task-notes');
         const tableBody = document.getElementById('lead-table-body');
         const selectedCount = document.getElementById('selected-count');
@@ -155,10 +119,6 @@
         function currentFilters() {
             return {
                 assigned_user_id: assignedUser.value,
-                search: searchFilter.value.trim(),
-                status: statusFilter.value,
-                source: sourceFilter.value,
-                include_existing_open_tasks: includeExisting.checked ? 1 : 0,
             };
         }
 
@@ -250,7 +210,7 @@
             }
         }
 
-        async function createTasks(allEligible) {
+        async function createTasks() {
             clearFeedback();
 
             if (!assignedUser.value) {
@@ -269,7 +229,7 @@
             }
 
             const leadIds = selectedLeadIds();
-            if (!allEligible && leadIds.length === 0) {
+            if (leadIds.length === 0) {
                 renderFeedback('error', 'Please select at least one lead.');
                 return;
             }
@@ -281,8 +241,7 @@
                     start_time: startTime.value,
                     gap_minutes: Number(gapMinutes.value),
                     notes: notesInput.value,
-                    all_eligible: allEligible,
-                    lead_ids: allEligible ? [] : leadIds,
+                    lead_ids: leadIds,
                 });
 
                 const reasonCounts = response.data.reason_counts || {};
@@ -303,9 +262,7 @@
             }
         }
 
-        document.getElementById('load-leads-btn').addEventListener('click', loadLeads);
-        document.getElementById('create-selected-btn').addEventListener('click', () => createTasks(false));
-        document.getElementById('create-all-btn').addEventListener('click', () => createTasks(true));
+        document.getElementById('create-selected-btn').addEventListener('click', createTasks);
         document.getElementById('select-all-btn').addEventListener('click', () => {
             document.querySelectorAll('.lead-checkbox').forEach((checkbox) => checkbox.checked = true);
             updateSelectionSummary();
@@ -319,6 +276,5 @@
             updateSelectionSummary();
         });
         assignedUser.addEventListener('change', loadLeads);
-        includeExisting.addEventListener('change', loadLeads);
     </script>
 @endpush

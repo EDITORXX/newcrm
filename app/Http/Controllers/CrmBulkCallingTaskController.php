@@ -19,23 +19,6 @@ class CrmBulkCallingTaskController extends Controller
     {
         return view('lead-assignment.calling-tasks', [
             'eligibleUsers' => $this->service->getEligibleUsers(),
-            'leadSources' => Lead::sourceOptions(),
-            'statusOptions' => [
-                'new' => 'New',
-                'connected' => 'Connected',
-                'verified_prospect' => 'Verified Prospect',
-                'meeting_scheduled' => 'Meeting Scheduled',
-                'meeting_completed' => 'Meeting Completed',
-                'visit_scheduled' => 'Visit Scheduled',
-                'visit_done' => 'Visit Done',
-                'revisited_scheduled' => 'Revisited Scheduled',
-                'revisited_completed' => 'Revisited Completed',
-                'closed' => 'Closed',
-                'dead' => 'Dead',
-                'junk' => 'Junk',
-                'not_interested' => 'Not Interested',
-                'on_hold' => 'On Hold',
-            ],
         ]);
     }
 
@@ -43,10 +26,6 @@ class CrmBulkCallingTaskController extends Controller
     {
         $validated = $request->validate([
             'assigned_user_id' => ['required', 'integer', 'exists:users,id'],
-            'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'max:50'],
-            'source' => ['nullable', 'string', 'max:50'],
-            'include_existing_open_tasks' => ['nullable', 'boolean'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
@@ -55,8 +34,7 @@ class CrmBulkCallingTaskController extends Controller
             return response()->json(['message' => 'Selected user cannot receive bulk calling tasks.'], 422);
         }
 
-        $includeExisting = (bool) ($validated['include_existing_open_tasks'] ?? false);
-        $leads = $this->service->previewLeads($assignedUser, $validated, $includeExisting, (int) ($validated['per_page'] ?? 50));
+        $leads = $this->service->previewLeads($assignedUser, [], false, (int) ($validated['per_page'] ?? 50));
 
         return response()->json($leads);
     }
@@ -69,20 +47,11 @@ class CrmBulkCallingTaskController extends Controller
             'start_time' => ['required', 'date_format:H:i'],
             'gap_minutes' => ['required', 'integer', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
-            'lead_ids' => ['nullable', 'array'],
+            'lead_ids' => ['required', 'array', 'min:1'],
             'lead_ids.*' => ['integer', 'exists:leads,id'],
-            'all_eligible' => ['nullable', 'boolean'],
-            'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'max:50'],
-            'source' => ['nullable', 'string', 'max:50'],
-            'include_existing_open_tasks' => ['nullable', 'boolean'],
         ]);
 
-        $allEligible = (bool) ($validated['all_eligible'] ?? false);
         $leadIds = $validated['lead_ids'] ?? [];
-        if (!$allEligible && count($leadIds) === 0) {
-            return response()->json(['message' => 'Please select at least one lead.'], 422);
-        }
 
         $startAt = Carbon::createFromFormat('Y-m-d H:i', $validated['start_date'] . ' ' . $validated['start_time']);
         if ($startAt === false || $startAt->lt(now()->subMinute())) {
@@ -99,9 +68,9 @@ class CrmBulkCallingTaskController extends Controller
             $startAt,
             (int) $validated['gap_minutes'],
             $validated['notes'] ?? null,
-            (bool) ($validated['include_existing_open_tasks'] ?? false),
-            $allEligible,
-            $validated,
+            false,
+            false,
+            [],
             $leadIds
         );
 

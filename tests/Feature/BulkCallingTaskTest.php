@@ -106,7 +106,6 @@ class BulkCallingTaskTest extends TestCase
 
         $preview = $this->actingAs($crm)->getJson(route('lead-assignment.calling-tasks.leads', [
             'assigned_user_id' => $assignee->id,
-            'include_existing_open_tasks' => 0,
         ]));
 
         $preview->assertOk();
@@ -120,8 +119,6 @@ class BulkCallingTaskTest extends TestCase
             'gap_minutes' => 5,
             'notes' => 'Bulk created',
             'lead_ids' => [$duplicateLead->id, $readyLead->id, $notEligibleLead->id],
-            'include_existing_open_tasks' => false,
-            'all_eligible' => false,
         ]);
 
         $response->assertOk();
@@ -143,7 +140,35 @@ class BulkCallingTaskTest extends TestCase
         ]);
     }
 
-    public function test_all_eligible_creation_respects_filters_and_uses_manager_task_model(): void
+    public function test_preview_returns_all_eligible_leads_for_selected_user_without_filters(): void
+    {
+        $crmRole = $this->createRole(Role::CRM);
+        $assistantManagerRole = $this->createRole(Role::ASSISTANT_SALES_MANAGER);
+
+        $crm = $this->createUser($crmRole);
+        $assignee = $this->createUser($assistantManagerRole, ['name' => 'ASM']);
+        $otherAssignee = $this->createUser($assistantManagerRole, ['name' => 'Other ASM']);
+
+        $matchingLead = $this->createLead('Meta New Lead', ['status' => 'new', 'source' => 'meta']);
+        $otherStatusLead = $this->createLead('Connected Lead', ['status' => 'connected', 'source' => 'meta']);
+        $otherSourceLead = $this->createLead('Google Lead', ['status' => 'new', 'source' => 'google']);
+        $otherUserLead = $this->createLead('Other User Lead', ['status' => 'new', 'source' => 'meta']);
+
+        $this->assignLead($matchingLead, $assignee, $crm);
+        $this->assignLead($otherStatusLead, $assignee, $crm);
+        $this->assignLead($otherSourceLead, $assignee, $crm);
+        $this->assignLead($otherUserLead, $otherAssignee, $crm);
+
+        $preview = $this->actingAs($crm)->getJson(route('lead-assignment.calling-tasks.leads', [
+            'assigned_user_id' => $assignee->id,
+        ]));
+
+        $preview->assertOk();
+        $previewIds = collect($preview->json('data'))->pluck('id')->all();
+        $this->assertSame([$otherSourceLead->id, $otherStatusLead->id, $matchingLead->id], $previewIds);
+    }
+
+    public function test_manager_assignee_still_creates_phone_call_task_for_selected_leads(): void
     {
         $crmRole = $this->createRole(Role::CRM);
         $assistantManagerRole = $this->createRole(Role::ASSISTANT_SALES_MANAGER);
@@ -152,12 +177,10 @@ class BulkCallingTaskTest extends TestCase
         $assignee = $this->createUser($assistantManagerRole, ['name' => 'ASM']);
 
         $matchingLead = $this->createLead('Meta New Lead', ['status' => 'new', 'source' => 'meta']);
-        $otherStatusLead = $this->createLead('Connected Lead', ['status' => 'connected', 'source' => 'meta']);
-        $otherSourceLead = $this->createLead('Google Lead', ['status' => 'new', 'source' => 'google']);
+        $secondLead = $this->createLead('Second Lead', ['status' => 'connected', 'source' => 'meta']);
 
         $this->assignLead($matchingLead, $assignee, $crm);
-        $this->assignLead($otherStatusLead, $assignee, $crm);
-        $this->assignLead($otherSourceLead, $assignee, $crm);
+        $this->assignLead($secondLead, $assignee, $crm);
 
         $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
             'assigned_user_id' => $assignee->id,
@@ -165,64 +188,22 @@ class BulkCallingTaskTest extends TestCase
             'start_time' => now()->addHours(2)->format('H:i'),
             'gap_minutes' => 5,
             'notes' => 'Manager bulk task',
-            'all_eligible' => true,
-            'status' => 'new',
-            'source' => 'meta',
-            'include_existing_open_tasks' => false,
+            'lead_ids' => [$matchingLead->id, $secondLead->id],
         ]);
 
         $response->assertOk();
         $response->assertJson([
-            'created' => 1,
+            'created' => 2,
             'skipped' => 0,
         ]);
 
-        $this->assertEquals(1, Task::count());
+        $this->assertEquals(2, Task::count());
         $this->assertDatabaseHas('tasks', [
             'lead_id' => $matchingLead->id,
             'assigned_to' => $assignee->id,
             'type' => 'phone_call',
             'notes' => 'Manager bulk task',
         ]);
-    }
-
-    public function test_include_existing_open_tasks_allows_duplicate_creation(): void
-    {
-        $crmRole = $this->createRole(Role::CRM);
-        $salesExecutiveRole = $this->createRole(Role::SALES_EXECUTIVE);
-
-        $crm = $this->createUser($crmRole);
-        $assignee = $this->createUser($salesExecutiveRole);
-        $lead = $this->createLead('Duplicate Allowed', ['source' => 'meta']);
-
-        $this->assignLead($lead, $assignee, $crm);
-
-        TelecallerTask::create([
-            'lead_id' => $lead->id,
-            'assigned_to' => $assignee->id,
-            'task_type' => 'calling',
-            'status' => 'pending',
-            'scheduled_at' => now()->addMinutes(20),
-            'created_by' => $crm->id,
-        ]);
-
-        $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
-            'assigned_user_id' => $assignee->id,
-            'start_date' => now()->addHour()->format('Y-m-d'),
-            'start_time' => now()->addHour()->format('H:i'),
-            'gap_minutes' => 5,
-            'lead_ids' => [$lead->id],
-            'include_existing_open_tasks' => true,
-            'all_eligible' => false,
-        ]);
-
-        $response->assertOk();
-        $response->assertJson([
-            'created' => 1,
-            'skipped' => 0,
-        ]);
-
-        $this->assertEquals(2, TelecallerTask::count());
     }
 
     public function test_staggered_schedule_uses_current_query_order_and_gap_minutes(): void
@@ -247,8 +228,6 @@ class BulkCallingTaskTest extends TestCase
             'start_time' => '10:05',
             'gap_minutes' => 5,
             'lead_ids' => [$firstLead->id, $secondLead->id, $thirdLead->id],
-            'all_eligible' => false,
-            'include_existing_open_tasks' => false,
         ]);
 
         $response->assertOk();
@@ -283,14 +262,45 @@ class BulkCallingTaskTest extends TestCase
             'start_time' => '11:00',
             'gap_minutes' => 0,
             'lead_ids' => [$firstLead->id, $secondLead->id],
-            'all_eligible' => false,
-            'include_existing_open_tasks' => false,
         ]);
 
         $response->assertOk();
 
         $tasks = TelecallerTask::query()->pluck('scheduled_at')->map(fn ($time) => Carbon::parse($time)->format('Y-m-d H:i:s'))->unique()->values()->all();
         $this->assertSame(['2026-03-28 11:00:00'], $tasks);
+    }
+
+    public function test_non_selected_listed_leads_do_not_get_tasks(): void
+    {
+        $crmRole = $this->createRole(Role::CRM);
+        $salesExecutiveRole = $this->createRole(Role::SALES_EXECUTIVE);
+
+        $crm = $this->createUser($crmRole);
+        $assignee = $this->createUser($salesExecutiveRole);
+
+        $firstLead = $this->createLead('Selected Lead');
+        $secondLead = $this->createLead('Unselected Lead');
+
+        $this->assignLead($firstLead, $assignee, $crm);
+        $this->assignLead($secondLead, $assignee, $crm);
+
+        $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
+            'assigned_user_id' => $assignee->id,
+            'start_date' => '2026-03-28',
+            'start_time' => '11:30',
+            'gap_minutes' => 5,
+            'lead_ids' => [$firstLead->id],
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('telecaller_tasks', [
+            'lead_id' => $firstLead->id,
+            'assigned_to' => $assignee->id,
+        ]);
+        $this->assertDatabaseMissing('telecaller_tasks', [
+            'lead_id' => $secondLead->id,
+            'assigned_to' => $assignee->id,
+        ]);
     }
 
     private function createSchema(): void
