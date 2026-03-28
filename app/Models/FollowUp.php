@@ -12,12 +12,39 @@ class FollowUp extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::saving(function (FollowUp $followUp) {
+            $scheduledChanged = $followUp->isDirty('scheduled_at');
+            $statusChanged = $followUp->isDirty('status');
+            $completedChanged = $followUp->isDirty('completed_at');
+
+            if (!$scheduledChanged && !$statusChanged && !$completedChanged) {
+                return;
+            }
+
+            $isScheduledOpen = $followUp->status === 'scheduled' && $followUp->completed_at === null;
+            $wasScheduledOpen = $followUp->getOriginal('status') === 'scheduled' && $followUp->getOriginal('completed_at') === null;
+
+            if ($isScheduledOpen && ($scheduledChanged || !$wasScheduledOpen)) {
+                $followUp->reminder_sent_at = null;
+                $followUp->overdue_notified_at = null;
+            }
+
+            if (!$isScheduledOpen) {
+                $followUp->overdue_notified_at = null;
+            }
+        });
+    }
+
     protected $fillable = [
         'lead_id',
         'created_by',
         'type',
         'notes',
         'scheduled_at',
+        'reminder_sent_at',
+        'overdue_notified_at',
         'completed_at',
         'status',
         'outcome',
@@ -25,6 +52,8 @@ class FollowUp extends Model
 
     protected $casts = [
         'scheduled_at' => 'datetime',
+        'reminder_sent_at' => 'datetime',
+        'overdue_notified_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
 
@@ -38,4 +67,3 @@ class FollowUp extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 }
-

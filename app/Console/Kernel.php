@@ -21,8 +21,14 @@ class Kernel extends ConsoleKernel
         // Send 10-minute reminder notifications
         $schedule->command('telecaller:send-reminder-notifications')->everyMinute();
         
-        // Send follow-up reminder notifications every 15 minutes
-        $schedule->command('notifications:followup-reminders')->everyFifteenMinutes();
+        // Send follow-up reminder notifications exactly 5 minutes before due time
+        $schedule->command('notifications:followup-reminders')->everyMinute();
+
+        // Notify responsible users and managers about overdue tasks
+        $schedule->command('notifications:overdue-tasks')->everyMinute();
+
+        // Notify responsible users and managers about overdue follow-ups
+        $schedule->command('notifications:overdue-followups')->everyMinute();
 
         // Process ASM fresh lead CNP automation every 5 minutes
         $schedule->command('asm-cnp:process')->everyFiveMinutes();

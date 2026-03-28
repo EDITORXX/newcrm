@@ -5,18 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\FollowUp;
 use App\Models\Lead;
-use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class FollowUpController extends Controller
 {
-    protected $notificationService;
-
-    public function __construct(NotificationService $notificationService)
-    {
-        $this->notificationService = $notificationService;
-    }
-
     public function index(Request $request)
     {
         $user = $request->user();
@@ -62,15 +54,6 @@ class FollowUpController extends Controller
         $lead = Lead::find($validated['lead_id']);
         $lead->update(['next_followup_at' => $validated['scheduled_at']]);
 
-        // Send notification if scheduled within next hour
-        $scheduledAt = \Carbon\Carbon::parse($validated['scheduled_at']);
-        $now = \Carbon\Carbon::now();
-        if ($scheduledAt->diffInHours($now) <= 1) {
-            $user = $request->user();
-            $actionUrl = url('/follow-ups/' . $followUp->id);
-            $this->notificationService->notifyFollowup($user, $followUp, $actionUrl);
-        }
-
         return response()->json($followUp, 201);
     }
 
@@ -110,4 +93,3 @@ class FollowUpController extends Controller
         return response()->json(['message' => 'Follow-up deleted successfully']);
     }
 }
-

@@ -28,6 +28,8 @@ class AppNotification extends Model
     public const TYPE_NEW_LEAD = 'new_lead';
     public const TYPE_NEW_VERIFICATION = 'new_verification';
     public const TYPE_FOLLOWUP_REMINDER = 'followup_reminder';
+    public const TYPE_TASK_OVERDUE = 'task_overdue';
+    public const TYPE_FOLLOWUP_OVERDUE = 'followup_overdue';
     public const TYPE_ADMIN_BROADCAST = 'admin_broadcast';
     public const TYPE_SITE_VISIT = 'site_visit';
     public const TYPE_MEETING = 'meeting';

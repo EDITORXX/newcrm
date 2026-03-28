@@ -37,41 +37,23 @@ class SendFollowupReminders extends Command
     public function handle()
     {
         $now = Carbon::now();
-        $oneHourLater = $now->copy()->addHour();
-        $thirtyMinutesLater = $now->copy()->addMinutes(30);
+        $windowStart = $now->copy()->addMinutes(5)->startOfMinute();
+        $windowEnd = $windowStart->copy()->endOfMinute();
 
-        // Get follow-ups scheduled in next hour
-        $followups = FollowUp::where('scheduled_at', '>=', $now)
-            ->where('scheduled_at', '<=', $oneHourLater)
+        $followups = FollowUp::whereBetween('scheduled_at', [$windowStart, $windowEnd])
             ->whereNull('completed_at')
             ->where('status', 'scheduled')
-            ->with(['creator', 'lead'])
+            ->whereNull('reminder_sent_at')
+            ->with(['creator.manager', 'lead.activeAssignments.assignedTo.manager'])
             ->get();
 
         $notifiedCount = 0;
 
         foreach ($followups as $followup) {
-            $user = $followup->creator;
-            if (!$user) {
-                continue;
-            }
-
-            // Check if notification already sent (to avoid duplicates)
-            $existingNotification = \App\Models\AppNotification::where('user_id', $user->id)
-                ->where('type', \App\Models\AppNotification::TYPE_FOLLOWUP_REMINDER)
-                ->whereJsonContains('data->followup_id', $followup->id)
-                ->where('created_at', '>=', $now->copy()->subHour())
-                ->first();
-
-            if ($existingNotification) {
-                continue; // Already notified
-            }
-
-            $actionUrl = url('/follow-ups/' . $followup->id);
-            
             try {
-                $this->notificationService->notifyFollowup($user, $followup, $actionUrl);
-                $notifiedCount++;
+                $notifications = $this->notificationService->notifyFollowupReminder($followup);
+                $followup->forceFill(['reminder_sent_at' => $now])->save();
+                $notifiedCount += $notifications->count();
             } catch (\Exception $e) {
                 $this->error("Failed to send notification for follow-up {$followup->id}: " . $e->getMessage());
             }

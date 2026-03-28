@@ -12,6 +12,32 @@ class TelecallerTask extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::saving(function (TelecallerTask $task) {
+            $scheduledChanged = $task->isDirty('scheduled_at');
+            $statusChanged = $task->isDirty('status');
+            $completedChanged = $task->isDirty('completed_at');
+
+            if (!$scheduledChanged && !$statusChanged && !$completedChanged) {
+                return;
+            }
+
+            $activeStatuses = ['pending', 'in_progress', 'rescheduled'];
+            $isActive = in_array($task->status, $activeStatuses, true) && $task->completed_at === null;
+            $wasActive = in_array($task->getOriginal('status'), $activeStatuses, true) && $task->getOriginal('completed_at') === null;
+
+            if ($isActive && ($scheduledChanged || !$wasActive)) {
+                $task->notification_sent_at = null;
+                $task->overdue_notified_at = null;
+            }
+
+            if (!$isActive) {
+                $task->overdue_notified_at = null;
+            }
+        });
+    }
+
     protected $fillable = [
         'lead_id',
         'meeting_id',
@@ -24,6 +50,7 @@ class TelecallerTask extends Model
         'notes',
         'created_by',
         'notification_sent_at',
+        'overdue_notified_at',
         'moved_to_pending_at',
     ];
 
@@ -31,6 +58,7 @@ class TelecallerTask extends Model
         'scheduled_at' => 'datetime',
         'completed_at' => 'datetime',
         'notification_sent_at' => 'datetime',
+        'overdue_notified_at' => 'datetime',
         'moved_to_pending_at' => 'datetime',
     ];
 
