@@ -14,9 +14,17 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    private const ASM_ALLOWED_MANAGER_SLUGS = [
+        Role::ADMIN,
+        Role::CRM,
+        Role::SALES_MANAGER,
+        Role::SENIOR_MANAGER,
+    ];
+
     public function __construct(
         protected UserDeletionTransferService $userDeletionTransferService
     ) {
@@ -112,12 +120,7 @@ class UserController extends Controller
             });
         }
         
-        $managers = User::where('is_active', true)
-            ->whereHas('role', function($q) {
-                $q->whereIn('slug', [Role::ADMIN, Role::CRM, Role::SALES_MANAGER, Role::SENIOR_MANAGER, Role::ASSISTANT_SALES_MANAGER]);
-            })
-            ->with('role')
-            ->get();
+        $managers = $this->getManagerCandidates();
 
         return view('users.form', [
             'user' => null,
@@ -153,6 +156,8 @@ class UserController extends Controller
                     ->withInput();
             }
         }
+
+        $this->validateManagerSelection($validated);
 
         $plainPassword = $validated['password'];
         $validated['password'] = Hash::make($validated['password']);
@@ -224,13 +229,7 @@ class UserController extends Controller
             });
         }
         
-        $managers = User::where('is_active', true)
-            ->where('id', '!=', $user->id)
-            ->whereHas('role', function($q) {
-                $q->whereIn('slug', [Role::ADMIN, Role::CRM, Role::SALES_MANAGER, Role::SENIOR_MANAGER, Role::ASSISTANT_SALES_MANAGER]);
-            })
-            ->with('role')
-            ->get();
+        $managers = $this->getManagerCandidates($user);
 
         return view('users.form', [
             'user' => $user,
@@ -317,6 +316,8 @@ class UserController extends Controller
                 }
             }
         }
+
+        $this->validateManagerSelection($validated, $user);
 
         if (isset($validated['is_active'])) {
             $validated['is_active'] = $request->has('is_active') ? true : false;
@@ -450,5 +451,41 @@ class UserController extends Controller
         }
 
         return null;
+    }
+
+    protected function getManagerCandidates(?User $excludeUser = null)
+    {
+        return User::where('is_active', true)
+            ->when($excludeUser, fn ($query) => $query->where('id', '!=', $excludeUser->id))
+            ->whereHas('role', function($q) {
+                $q->whereIn('slug', [Role::ADMIN, Role::CRM, Role::SALES_MANAGER, Role::SENIOR_MANAGER, Role::ASSISTANT_SALES_MANAGER]);
+            })
+            ->with('role')
+            ->orderBy('name')
+            ->get();
+    }
+
+    protected function validateManagerSelection(array $validated, ?User $user = null): void
+    {
+        $selectedRoleId = $validated['role_id'] ?? $user?->role_id;
+        $selectedManagerId = $validated['manager_id'] ?? $user?->manager_id;
+
+        if (!$selectedRoleId || !$selectedManagerId) {
+            return;
+        }
+
+        $selectedRole = Role::find($selectedRoleId);
+        if (!$selectedRole || $selectedRole->slug !== Role::ASSISTANT_SALES_MANAGER) {
+            return;
+        }
+
+        $manager = User::with('role')->find($selectedManagerId);
+        $managerSlug = $manager?->role?->slug;
+
+        if (!$managerSlug || !in_array($managerSlug, self::ASM_ALLOWED_MANAGER_SLUGS, true)) {
+            throw ValidationException::withMessages([
+                'manager_id' => 'Assistant Sales Manager can only report to Senior Manager, Sales Manager, Sales Head, CRM, or Admin.',
+            ]);
+        }
     }
 }
