@@ -13,7 +13,7 @@
 @section('content')
     <div class="space-y-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4">
                 <div class="xl:col-span-2">
                     <label for="assigned-user" class="block text-sm font-medium text-gray-700 mb-1">Assigned User</label>
                     <select id="assigned-user" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
@@ -28,8 +28,16 @@
                     </select>
                 </div>
                 <div>
-                    <label for="scheduled-at" class="block text-sm font-medium text-gray-700 mb-1">Scheduled At</label>
-                    <input id="scheduled-at" type="datetime-local" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input id="start-date" type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label for="start-time" class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <input id="start-time" type="time" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label for="gap-minutes" class="block text-sm font-medium text-gray-700 mb-1">Gap (minutes)</label>
+                    <input id="gap-minutes" type="number" min="0" step="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg" value="5">
                 </div>
                 <div>
                     <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -58,6 +66,7 @@
             <div class="mt-4">
                 <label for="task-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea id="task-notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Optional notes for all created tasks"></textarea>
+                <p class="mt-2 text-sm text-gray-500">First lead gets the selected start date and time. Every next lead gets the selected gap added automatically.</p>
             </div>
 
             <div class="mt-4 flex flex-wrap items-center gap-4">
@@ -125,7 +134,9 @@
         };
 
         const assignedUser = document.getElementById('assigned-user');
-        const scheduledAt = document.getElementById('scheduled-at');
+        const startDate = document.getElementById('start-date');
+        const startTime = document.getElementById('start-time');
+        const gapMinutes = document.getElementById('gap-minutes');
         const searchFilter = document.getElementById('search-filter');
         const statusFilter = document.getElementById('status-filter');
         const sourceFilter = document.getElementById('source-filter');
@@ -137,7 +148,9 @@
         const summaryText = document.getElementById('summary-text');
         const feedbackBox = document.getElementById('feedback-box');
 
-        scheduledAt.value = new Date(Date.now() + 30 * 60000).toISOString().slice(0, 16);
+        const defaultStartDate = new Date(Date.now() + 30 * 60000);
+        startDate.value = defaultStartDate.toISOString().slice(0, 10);
+        startTime.value = defaultStartDate.toTimeString().slice(0, 5);
 
         function currentFilters() {
             return {
@@ -245,8 +258,13 @@
                 return;
             }
 
-            if (!scheduledAt.value) {
-                renderFeedback('error', 'Please select a scheduled date and time.');
+            if (!startDate.value || !startTime.value) {
+                renderFeedback('error', 'Please select a start date and start time.');
+                return;
+            }
+
+            if (gapMinutes.value === '' || Number(gapMinutes.value) < 0) {
+                renderFeedback('error', 'Please enter a valid gap in minutes.');
                 return;
             }
 
@@ -259,7 +277,9 @@
             try {
                 const response = await axios.post('{{ route('lead-assignment.calling-tasks.store') }}', {
                     ...currentFilters(),
-                    scheduled_at: scheduledAt.value,
+                    start_date: startDate.value,
+                    start_time: startTime.value,
+                    gap_minutes: Number(gapMinutes.value),
                     notes: notesInput.value,
                     all_eligible: allEligible,
                     lead_ids: allEligible ? [] : leadIds,
@@ -271,6 +291,10 @@
                     `Duplicate/open-task skipped: ${reasonCounts.duplicate_open_task || 0}.`,
                     `Not eligible skipped: ${reasonCounts.lead_not_eligible || 0}.`,
                 ];
+
+                if (response.data.first_scheduled_at) {
+                    parts.push(`Time window: ${response.data.first_scheduled_at} to ${response.data.last_scheduled_at}.`);
+                }
 
                 renderFeedback('success', parts.join(' '));
                 await loadLeads();

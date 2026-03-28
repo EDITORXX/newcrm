@@ -60,7 +60,8 @@ class BulkCallingTaskService
 
     public function createTasks(
         User $assignedUser,
-        Carbon $scheduledAt,
+        Carbon $startAt,
+        int $gapMinutes,
         ?string $notes,
         bool $includeExistingOpenTasks,
         bool $allEligible,
@@ -77,15 +78,20 @@ class BulkCallingTaskService
             : $baseQuery->whereIn('id', $requestedIds)->get();
 
         $candidateLeads = $candidateLeads->keyBy('id');
-        $sourceIds = $allEligible ? $candidateLeads->keys() : $requestedIds;
+        $eligibleIds = $candidateLeads->keys()->values();
+        $sourceIds = $allEligible
+            ? $eligibleIds
+            : $eligibleIds->concat($requestedIds->diff($eligibleIds))->values();
 
         $created = 0;
         $skipped = 0;
+        $createdScheduleTimes = [];
         $reasons = [
             'duplicate_open_task' => 0,
             'lead_not_eligible' => 0,
         ];
 
+        $scheduleIndex = 0;
         foreach ($sourceIds as $leadId) {
             /** @var Lead|null $lead */
             $lead = $candidateLeads->get((int) $leadId);
@@ -102,14 +108,21 @@ class BulkCallingTaskService
                 continue;
             }
 
+            $scheduledAt = $startAt->copy()->addMinutes($scheduleIndex * $gapMinutes);
             $this->createSingleTask($lead, $assignedUser, $scheduledAt, $notes);
             $created++;
+            $scheduleIndex++;
+            $createdScheduleTimes[] = $scheduledAt->copy();
         }
 
         return [
             'created' => $created,
             'skipped' => $skipped,
             'reason_counts' => $reasons,
+            'first_scheduled_at' => $createdScheduleTimes[0]?->toDateTimeString(),
+            'last_scheduled_at' => !empty($createdScheduleTimes)
+                ? $createdScheduleTimes[array_key_last($createdScheduleTimes)]->toDateTimeString()
+                : null,
         ];
     }
 

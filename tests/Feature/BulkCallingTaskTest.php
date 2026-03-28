@@ -115,7 +115,9 @@ class BulkCallingTaskTest extends TestCase
 
         $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
             'assigned_user_id' => $assignee->id,
-            'scheduled_at' => now()->addHour()->toDateTimeString(),
+            'start_date' => now()->addHour()->format('Y-m-d'),
+            'start_time' => now()->addHour()->format('H:i'),
+            'gap_minutes' => 5,
             'notes' => 'Bulk created',
             'lead_ids' => [$duplicateLead->id, $readyLead->id, $notEligibleLead->id],
             'include_existing_open_tasks' => false,
@@ -159,7 +161,9 @@ class BulkCallingTaskTest extends TestCase
 
         $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
             'assigned_user_id' => $assignee->id,
-            'scheduled_at' => now()->addHours(2)->toDateTimeString(),
+            'start_date' => now()->addHours(2)->format('Y-m-d'),
+            'start_time' => now()->addHours(2)->format('H:i'),
+            'gap_minutes' => 5,
             'notes' => 'Manager bulk task',
             'all_eligible' => true,
             'status' => 'new',
@@ -204,7 +208,9 @@ class BulkCallingTaskTest extends TestCase
 
         $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
             'assigned_user_id' => $assignee->id,
-            'scheduled_at' => now()->addHour()->toDateTimeString(),
+            'start_date' => now()->addHour()->format('Y-m-d'),
+            'start_time' => now()->addHour()->format('H:i'),
+            'gap_minutes' => 5,
             'lead_ids' => [$lead->id],
             'include_existing_open_tasks' => true,
             'all_eligible' => false,
@@ -217,6 +223,74 @@ class BulkCallingTaskTest extends TestCase
         ]);
 
         $this->assertEquals(2, TelecallerTask::count());
+    }
+
+    public function test_staggered_schedule_uses_current_query_order_and_gap_minutes(): void
+    {
+        $crmRole = $this->createRole(Role::CRM);
+        $salesExecutiveRole = $this->createRole(Role::SALES_EXECUTIVE);
+
+        $crm = $this->createUser($crmRole);
+        $assignee = $this->createUser($salesExecutiveRole);
+
+        $firstLead = $this->createLead('First Lead');
+        $secondLead = $this->createLead('Second Lead');
+        $thirdLead = $this->createLead('Third Lead');
+
+        $this->assignLead($firstLead, $assignee, $crm);
+        $this->assignLead($secondLead, $assignee, $crm);
+        $this->assignLead($thirdLead, $assignee, $crm);
+
+        $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
+            'assigned_user_id' => $assignee->id,
+            'start_date' => '2026-03-28',
+            'start_time' => '10:05',
+            'gap_minutes' => 5,
+            'lead_ids' => [$firstLead->id, $secondLead->id, $thirdLead->id],
+            'all_eligible' => false,
+            'include_existing_open_tasks' => false,
+        ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'created' => 3,
+            'skipped' => 0,
+            'first_scheduled_at' => '2026-03-28 10:05:00',
+            'last_scheduled_at' => '2026-03-28 10:15:00',
+        ]);
+
+        $tasks = TelecallerTask::query()->orderBy('scheduled_at')->pluck('scheduled_at')->map(fn ($time) => Carbon::parse($time)->format('H:i'))->values()->all();
+        $this->assertSame(['10:05', '10:10', '10:15'], $tasks);
+    }
+
+    public function test_gap_zero_creates_same_scheduled_time_for_all_tasks(): void
+    {
+        $crmRole = $this->createRole(Role::CRM);
+        $salesExecutiveRole = $this->createRole(Role::SALES_EXECUTIVE);
+
+        $crm = $this->createUser($crmRole);
+        $assignee = $this->createUser($salesExecutiveRole);
+
+        $firstLead = $this->createLead('Gap Zero One');
+        $secondLead = $this->createLead('Gap Zero Two');
+
+        $this->assignLead($firstLead, $assignee, $crm);
+        $this->assignLead($secondLead, $assignee, $crm);
+
+        $response = $this->actingAs($crm)->postJson(route('lead-assignment.calling-tasks.store'), [
+            'assigned_user_id' => $assignee->id,
+            'start_date' => '2026-03-28',
+            'start_time' => '11:00',
+            'gap_minutes' => 0,
+            'lead_ids' => [$firstLead->id, $secondLead->id],
+            'all_eligible' => false,
+            'include_existing_open_tasks' => false,
+        ]);
+
+        $response->assertOk();
+
+        $tasks = TelecallerTask::query()->pluck('scheduled_at')->map(fn ($time) => Carbon::parse($time)->format('Y-m-d H:i:s'))->unique()->values()->all();
+        $this->assertSame(['2026-03-28 11:00:00'], $tasks);
     }
 
     private function createSchema(): void

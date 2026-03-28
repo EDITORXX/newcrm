@@ -65,7 +65,9 @@ class CrmBulkCallingTaskController extends Controller
     {
         $validated = $request->validate([
             'assigned_user_id' => ['required', 'integer', 'exists:users,id'],
-            'scheduled_at' => ['required', 'date'],
+            'start_date' => ['required', 'date_format:Y-m-d'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'gap_minutes' => ['required', 'integer', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'lead_ids' => ['nullable', 'array'],
             'lead_ids.*' => ['integer', 'exists:leads,id'],
@@ -82,9 +84,9 @@ class CrmBulkCallingTaskController extends Controller
             return response()->json(['message' => 'Please select at least one lead.'], 422);
         }
 
-        $scheduledAt = Carbon::parse($validated['scheduled_at']);
-        if ($scheduledAt->lt(now()->subMinute())) {
-            return response()->json(['message' => 'Scheduled time must be in the future.'], 422);
+        $startAt = Carbon::createFromFormat('Y-m-d H:i', $validated['start_date'] . ' ' . $validated['start_time']);
+        if ($startAt === false || $startAt->lt(now()->subMinute())) {
+            return response()->json(['message' => 'Start date and time must be in the future.'], 422);
         }
 
         $assignedUser = User::with('role')->findOrFail($validated['assigned_user_id']);
@@ -94,7 +96,8 @@ class CrmBulkCallingTaskController extends Controller
 
         $result = $this->service->createTasks(
             $assignedUser,
-            $scheduledAt,
+            $startAt,
+            (int) $validated['gap_minutes'],
             $validated['notes'] ?? null,
             (bool) ($validated['include_existing_open_tasks'] ?? false),
             $allEligible,
@@ -107,6 +110,8 @@ class CrmBulkCallingTaskController extends Controller
             'created' => $result['created'],
             'skipped' => $result['skipped'],
             'reason_counts' => $result['reason_counts'],
+            'first_scheduled_at' => $result['first_scheduled_at'],
+            'last_scheduled_at' => $result['last_scheduled_at'],
         ]);
     }
 }
