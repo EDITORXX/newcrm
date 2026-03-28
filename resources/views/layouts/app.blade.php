@@ -1697,9 +1697,13 @@
                     <i class="fas fa-wpforms" style="margin-right: 10px; width: 20px;"></i>
                     Forms
                 </a>
-                <a href="{{ route('lead-assignment.index') }}" class="sidebar-link {{ request()->routeIs('lead-assignment.*') ? 'active' : '' }}" data-tooltip="Lead Assignment" title="Lead Assignment">
+                <a href="{{ route('lead-assignment.index') }}" class="sidebar-link {{ request()->routeIs('lead-assignment.*') && !request()->routeIs('lead-assignment.calling-tasks.*') ? 'active' : '' }}" data-tooltip="Lead Assignment" title="Lead Assignment">
                     <i class="fas fa-users-cog" style="margin-right: 10px; width: 20px;"></i>
                     Lead Assignment
+                </a>
+                <a href="{{ route('lead-assignment.calling-tasks.index') }}" class="sidebar-link {{ request()->routeIs('lead-assignment.calling-tasks.*') ? 'active' : '' }}" data-tooltip="Calling Tasks" title="Calling Tasks">
+                    <i class="fas fa-phone-volume" style="margin-right: 10px; width: 20px;"></i>
+                    Calling Tasks
                 </a>
                 <a href="{{ route('lead-import.index') }}" class="sidebar-link {{ request()->routeIs('lead-import.*') ? 'active' : '' }}" data-tooltip="Lead Import" title="Lead Import">
                     <i class="fas fa-cloud-upload-alt" style="margin-right: 10px; width: 20px;"></i>
@@ -1865,7 +1869,7 @@
                 <div class="nav-section-label">System</div>
                 @if(auth()->user()->isAdmin())
                 <a href="{{ route('integrations.index') }}"
-                   class="sidebar-link {{ request()->routeIs('integrations.*') || request()->routeIs('lead-assignment.*') ? 'active' : '' }}"
+                   class="sidebar-link {{ request()->routeIs('integrations.*') ? 'active' : '' }}"
                    data-tooltip="Integration"
                    title="Integration">
                     <i class="fas fa-plug" style="margin-right: 10px; width: 20px;"></i>
@@ -1888,11 +1892,18 @@
                 @endif
                 @if(auth()->user()->isCrm())
                 <a href="{{ route('lead-assignment.index') }}"
-                   class="sidebar-link {{ request()->routeIs('lead-assignment.*') ? 'active' : '' }}"
+                   class="sidebar-link {{ request()->routeIs('lead-assignment.*') && !request()->routeIs('lead-assignment.calling-tasks.*') ? 'active' : '' }}"
                    data-tooltip="Lead Assignment"
                    title="Lead Assignment">
                     <i class="fas fa-clipboard" style="margin-right: 10px; width: 20px;"></i>
                     Lead Assignment
+                </a>
+                <a href="{{ route('lead-assignment.calling-tasks.index') }}"
+                   class="sidebar-link {{ request()->routeIs('lead-assignment.calling-tasks.*') ? 'active' : '' }}"
+                   data-tooltip="Calling Tasks"
+                   title="Calling Tasks">
+                    <i class="fas fa-phone-volume" style="margin-right: 10px; width: 20px;"></i>
+                    Calling Tasks
                 </a>
                 <a href="{{ route('lead-assignment.lead-off-users') }}"
                    class="sidebar-link {{ request()->routeIs('lead-assignment.telecaller-status') || request()->routeIs('lead-assignment.lead-off-users') ? 'active' : '' }}"
@@ -2019,6 +2030,10 @@
                 <i class="fas fa-download"></i>
                 <span>Export</span>
             </a>
+            <a href="{{ route('lead-assignment.calling-tasks.index') }}" class="footer-nav-link {{ request()->routeIs('lead-assignment.calling-tasks.*') ? 'active' : '' }}">
+                <i class="fas fa-phone-volume"></i>
+                <span>Call Tasks</span>
+            </a>
             <a href="{{ route('admin.company-settings.index') }}" class="footer-nav-link {{ request()->routeIs('admin.company-settings.*') || request()->routeIs('admin.system-settings.*') ? 'active' : '' }}">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
@@ -2044,9 +2059,13 @@
                 <i class="fas fa-cloud-upload-alt"></i>
                 <span>Lead Import</span>
             </a>
-            <a href="{{ route('lead-assignment.index') }}" class="footer-nav-link {{ request()->routeIs('lead-assignment.*') ? 'active' : '' }}">
+            <a href="{{ route('lead-assignment.index') }}" class="footer-nav-link {{ request()->routeIs('lead-assignment.*') && !request()->routeIs('lead-assignment.calling-tasks.*') ? 'active' : '' }}">
                 <i class="fas fa-clipboard"></i>
                 <span>Lead Assign</span>
+            </a>
+            <a href="{{ route('lead-assignment.calling-tasks.index') }}" class="footer-nav-link {{ request()->routeIs('lead-assignment.calling-tasks.*') ? 'active' : '' }}">
+                <i class="fas fa-phone-volume"></i>
+                <span>Call Tasks</span>
             </a>
             <a href="{{ route('lead-assignment.lead-off-users') }}" class="footer-nav-link {{ request()->routeIs('lead-assignment.telecaller-status') || request()->routeIs('lead-assignment.lead-off-users') ? 'active' : '' }}">
                 <i class="fas fa-user-slash"></i>

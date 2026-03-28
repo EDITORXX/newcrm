@@ -846,6 +846,9 @@ Route::middleware(['auth', 'role:crm,admin'])->prefix('lead-assignment')->name('
     Route::post('/assign', [\App\Http\Controllers\LeadAssignmentController::class, 'assignLeads'])->name('assign');
     Route::post('/delete', [\App\Http\Controllers\LeadAssignmentController::class, 'deleteLeads'])->name('delete');
     Route::get('/telecaller-stats', [\App\Http\Controllers\LeadAssignmentController::class, 'getTelecallerStats'])->name('telecaller-stats');
+    Route::get('/calling-tasks', [\App\Http\Controllers\CrmBulkCallingTaskController::class, 'index'])->name('calling-tasks.index');
+    Route::get('/calling-tasks/leads', [\App\Http\Controllers\CrmBulkCallingTaskController::class, 'leads'])->name('calling-tasks.leads');
+    Route::post('/calling-tasks', [\App\Http\Controllers\CrmBulkCallingTaskController::class, 'store'])->name('calling-tasks.store');
     
     // Telecaller Limits
     Route::get('/telecaller-limits', [\App\Http\Controllers\TelecallerLimitController::class, 'index'])->name('telecaller-limits');
